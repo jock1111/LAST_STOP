@@ -2,8 +2,11 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local RemoteNames = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"):WaitForChild("RemoteNames"))
-local HUDController = require(script.Parent.Controllers.HUDController)
-local InputController = require(script.Parent.Controllers.InputController)
+-- In PlayerScripts, sibling folders may replicate a frame after this
+-- LocalScript. Waiting prevents a client startup race in Studio and live play.
+local controllers = script.Parent:WaitForChild("Controllers")
+local HUDController = require(controllers:WaitForChild("HUDController"))
+local InputController = require(controllers:WaitForChild("InputController"))
 
 local player = Players.LocalPlayer
 local remoteFolder = ReplicatedStorage:WaitForChild("Remotes")

@@ -39,9 +39,17 @@ local function normalise(saved, config)
 end
 
 function ProfileService.new(config)
+	local store
+	local storeAvailable, storeError = pcall(function()
+		store = DataStoreService:GetDataStore(config.ProfileStoreName)
+	end)
+	if not storeAvailable then
+		warn("[ProfileService] DataStore unavailable; using session-only profiles:", storeError)
+	end
 	return setmetatable({
 		_config = config,
-		_store = DataStoreService:GetDataStore(config.ProfileStoreName),
+		_store = store,
+		_storeAvailable = storeAvailable,
 		_profiles = {},
 		_dirty = {},
 	}, ProfileService)
@@ -50,9 +58,12 @@ end
 function ProfileService:Load(player)
 	local key = "p_" .. player.UserId
 	local loaded
-	local ok, err = pcall(function()
-		loaded = self._store:GetAsync(key)
-	end)
+	local ok, err = self._storeAvailable, "DataStore unavailable"
+	if self._storeAvailable then
+		ok, err = pcall(function()
+			loaded = self._store:GetAsync(key)
+		end)
+	end
 	if not ok then
 		warn("[ProfileService] load failed for", player.UserId, err)
 	end
@@ -80,6 +91,9 @@ function ProfileService:Save(player)
 	local profile = self._profiles[player]
 	if not profile or not self._dirty[player] then
 		return true
+	end
+	if not self._storeAvailable then
+		return false, "DataStore unavailable"
 	end
 	local key = "p_" .. player.UserId
 	local snapshot = profile
