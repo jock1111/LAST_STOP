@@ -1,0 +1,24 @@
+-- Central tuning values. Keep gameplay rules out of UI code.
+return {
+	Version = 1,
+	MaxExpeditionPlayers = 12,
+	MinExpeditionPlayers = 1,
+	LobbyQueueCountdown = 20,
+	BoardingSeconds = 12,
+	TravelSeconds = 7,
+	EscapeSeconds = 20,
+	DecisionSeconds = 25,
+	FloorTimeLimitSeconds = 240,
+	LateJoinPolicy = "LobbyOnly", -- late joiners wait safely in the lobby
+	SafeRegionPadding = Vector3.new(10, 7, 10),
+	InteractionDistance = 12,
+	RemoteRateLimit = { Count = 10, WindowSeconds = 2 },
+	ProfileStoreName = "LastStopProfile_v1",
+	AutosaveSeconds = 60,
+	StarterLoadout = { Flashlight = true, Scanner = true, Medkit = 1 },
+	StarterCoins = 0,
+	StarterXP = 0,
+	FirstEscapeBonus = 50,
+	RecentFloorWindow = 2,
+	Debug = false,
+}

@@ -1,0 +1,177 @@
+-- LAST STOP Milestone A server bootstrap. Place as a Script in ServerScriptService.
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
+
+local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
+local RemoteNames = require(ReplicatedStorage.Shared.Config.RemoteNames)
+local RateLimiter = require(ReplicatedStorage.Shared.Util.RateLimiter)
+local ProfileService = require(script.Parent.Services.ProfileService)
+local EconomyService = require(script.Parent.Services.EconomyService)
+local FloorService = require(script.Parent.Services.FloorService)
+local EnemyService = require(script.Parent.Services.EnemyService)
+local InventoryService = require(script.Parent.Services.InventoryService)
+local MatchmakingService = require(script.Parent.Services.MatchmakingService)
+local ExpeditionService = require(script.Parent.Services.ExpeditionService)
+
+local function ensureRemotes()
+	local folder = ReplicatedStorage:FindFirstChild("Remotes")
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = "Remotes"
+		folder.Parent = ReplicatedStorage
+	end
+	local remotes = {}
+	for key, name in pairs(RemoteNames) do
+		local remote = folder:FindFirstChild(name)
+		if not remote then
+			remote = Instance.new("RemoteEvent")
+			remote.Name = name
+			remote.Parent = folder
+		end
+		assert(remote:IsA("RemoteEvent"), "Remote " .. name .. " must be a RemoteEvent")
+		remotes[key] = remote
+	end
+	return remotes
+end
+
+local remotes = ensureRemotes()
+local profiles = ProfileService.new(GameConfig)
+local economy = EconomyService.new(profiles, GameConfig)
+local floors = FloorService.new()
+local enemyService = EnemyService.new()
+local inventory = InventoryService.new()
+local lobby = floors:BuildWorld()
+enemyService:Start()
+
+Lighting.Brightness = 1.4
+Lighting.Ambient = Color3.fromRGB(38, 45, 54)
+Lighting.OutdoorAmbient = Color3.fromRGB(20, 25, 31)
+Lighting.FogColor = Color3.fromRGB(34, 43, 51)
+Lighting.FogEnd = 350
+
+local limiter = RateLimiter.new(GameConfig.RemoteRateLimit.Count, GameConfig.RemoteRateLimit.WindowSeconds)
+local currentExpedition = nil
+local matchmaking
+
+local function toast(player, message)
+	remotes.Toast:FireClient(player, message)
+end
+
+local function moveToLobby(player)
+	task.spawn(function()
+		local character = player.Character or player.CharacterAdded:Wait()
+		local root = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart", 5)
+		if root then
+			character:PivotTo(lobby.LobbySpawn)
+		end
+	end)
+end
+
+local function canQueue(player)
+	return profiles:Get(player) ~= nil and (not currentExpedition or not currentExpedition:IsRunning())
+end
+
+matchmaking = MatchmakingService.new(GameConfig, canQueue, function(group, finished)
+	local expedition
+	expedition = ExpeditionService.new(
+		GameConfig,
+		floors,
+		enemyService,
+		economy,
+		profiles,
+		inventory,
+		remotes,
+		function(reason)
+			if currentExpedition == expedition then
+				currentExpedition = nil
+			end
+			finished()
+			print("[LAST STOP] Expedition ended:", reason)
+		end
+	)
+	currentExpedition = expedition
+	expedition:Start(group)
+end, toast)
+
+local function remotelyAllowed(remoteName, player)
+	if not limiter:Allow(remoteName .. ":" .. player.UserId) then
+		toast(player, "Too many requests. Please wait a moment.")
+		return false
+	end
+	return true
+end
+
+remotes.RequestQueue.OnServerEvent:Connect(function(player, ...)
+	if select("#", ...) ~= 0 or not remotelyAllowed("Queue", player) then
+		return
+	end
+	local ok, message = matchmaking:RequestJoin(player)
+	toast(player, message)
+end)
+
+remotes.RequestDecision.OnServerEvent:Connect(function(player, decision, ...)
+	if select("#", ...) ~= 0 or type(decision) ~= "string" or #decision > 10 or not remotelyAllowed("Decision", player) then
+		return
+	end
+	if not currentExpedition then
+		return
+	end
+	local ok, message = currentExpedition:RequestDecision(player, decision)
+	if not ok then
+		toast(player, message)
+	end
+end)
+
+remotes.RequestMedkit.OnServerEvent:Connect(function(player, ...)
+	if select("#", ...) ~= 0 or not remotelyAllowed("Medkit", player) then
+		return
+	end
+	if currentExpedition then
+		local ok, message = currentExpedition:RequestMedkit(player)
+		toast(player, message)
+	end
+end)
+
+lobby.QueuePrompt.Triggered:Connect(function(player)
+	local ok, message = matchmaking:RequestJoin(player)
+	toast(player, message)
+end)
+
+local function onPlayerAdded(player)
+	profiles:Load(player)
+	player:SetAttribute("LastStopProfileLoaded", true)
+	moveToLobby(player)
+	toast(player, "Welcome to LAST STOP. Queue at the terminal or press PLAY.")
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+for _, player in ipairs(Players:GetPlayers()) do
+	task.spawn(onPlayerAdded, player)
+end
+
+Players.PlayerRemoving:Connect(function(player)
+	matchmaking:Remove(player)
+	if currentExpedition then
+		currentExpedition:OnPlayerRemoving(player)
+	end
+	limiter:Forget("Queue:" .. player.UserId)
+	limiter:Forget("Decision:" .. player.UserId)
+	limiter:Forget("Medkit:" .. player.UserId)
+	profiles:Release(player)
+end)
+
+task.spawn(function()
+	while task.wait(GameConfig.AutosaveSeconds) do
+		profiles:SaveAll()
+	end
+end)
+
+game:BindToClose(function()
+	if currentExpedition then
+		currentExpedition:Destroy()
+	end
+	profiles:SaveAll()
+end)
+
+matchmaking:Start()
