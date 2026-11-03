@@ -1,22 +1,31 @@
-# LAST STOP art asset manifest
+# LAST STOP art manifest — Recovery V3
 
-This manifest intentionally records only assets with verified sources and Roblox upload status. No guessed or borrowed Roblox asset IDs are used.
+The four original models are authored by tools/build-prefabs.mjs and saved under assets/prefabs/. No downloaded model, copied paid-game content, or Toolbox script is included. The models are local source assets and need no Roblox model upload IDs.
 
-| Asset | Local source file | Source / creator | License | Target usage | Roblox asset ID | Studio verification |
-| --- | --- | --- | --- | --- | --- | --- |
-| Chipped concrete albedo | `assets/polyhaven/chipped_concrete/chipped_concrete_diff_1k.jpg` | [Poly Haven — chipped_concrete](https://polyhaven.com/a/chipped_concrete), community asset library | [CC0](https://polyhaven.com/license) | Concourse floor, concrete station walls | Not uploaded | Import-ready; not applied until a user-authorized Studio upload provides an ID |
-| Chipped concrete normal (OpenGL) | `assets/polyhaven/chipped_concrete/chipped_concrete_nor_gl_1k.jpg` | Poly Haven | CC0 | `ChippedConcrete` MaterialVariant normal map | Not uploaded | Import-ready |
-| Chipped concrete ARM | `assets/polyhaven/chipped_concrete/chipped_concrete_arm_1k.jpg` | Poly Haven | CC0 | Source map (R = AO, G = roughness, B = metalness) | Not uploaded | Source preserved |
-| Chipped concrete roughness | `assets/polyhaven/chipped_concrete/chipped_concrete_rough_1k.png` | Derived losslessly from the Poly Haven ARM green channel | CC0 derivative | `ChippedConcrete` MaterialVariant roughness map | Not uploaded | 1024×1024 grayscale; import-ready |
-| Chipped concrete metalness | `assets/polyhaven/chipped_concrete/chipped_concrete_metal_1k.png` | Derived losslessly from the Poly Haven ARM blue channel | CC0 derivative | `ChippedConcrete` MaterialVariant metalness map | Not uploaded | 1024×1024 grayscale; import-ready |
-| Metal plate albedo | `assets/polyhaven/metal_plate/metal_plate_diff_1k.jpg` | [Poly Haven — metal_plate](https://polyhaven.com/a/metal_plate), community asset library | [CC0](https://polyhaven.com/license) | Elevator panels, floor plates, service hardware | Not uploaded | Import-ready; not applied until a user-authorized Studio upload provides an ID |
-| Metal plate normal (OpenGL) | `assets/polyhaven/metal_plate/metal_plate_nor_gl_1k.jpg` | Poly Haven | CC0 | `MetalPlate` MaterialVariant normal map | Not uploaded | Import-ready |
-| Metal plate ARM | `assets/polyhaven/metal_plate/metal_plate_arm_1k.jpg` | Poly Haven | CC0 | Source map (R = AO, G = roughness, B = metalness) | Not uploaded | Source preserved |
-| Metal plate roughness | `assets/polyhaven/metal_plate/metal_plate_rough_1k.png` | Derived losslessly from the Poly Haven ARM green channel | CC0 derivative | `MetalPlate` MaterialVariant roughness map | Not uploaded | 1024×1024 grayscale; import-ready |
-| Metal plate metalness | `assets/polyhaven/metal_plate/metal_plate_metal_1k.png` | Derived losslessly from the Poly Haven ARM blue channel | CC0 derivative | `MetalPlate` MaterialVariant metalness map | Not uploaded | 1024×1024 grayscale; import-ready |
+| Prefab | Permanent Studio path | Instances | Source |
+| --- | --- | ---: | --- |
+| Lobby.rbxmx | ServerStorage.LastStopAssets.Lobby | 537 | Original project authoring |
+| Elevator.rbxmx | ServerStorage.LastStopAssets.Elevator | 116 | Original project authoring |
+| Hospital.rbxmx | ServerStorage.LastStopAssets.Floors.Hospital | 805 | Original project authoring |
+| Stalker.rbxmx | ServerStorage.LastStopAssets.Stalker | 40 | Original Motor6D rig and procedural animations |
 
-Downloaded: 2026-11-02. Asset configuration lives in `src/ReplicatedStorage/Shared/ArtTheme.lua`. Its map fields are deliberately blank until final asset IDs are owned by the Roblox experience account and verified in Studio.
+All eight 1024×1024 maps below were uploaded through Studio Asset Manager under **gakez007** on 2026-11-03. Each import showed success and appeared in the account inventory. IDs were read from that inventory. Import copies are in assets/roblox-upload/; originals and packed ARM sources remain in assets/polyhaven/.
 
-## Required final import step
+| Filename | Roblox image ID | Saved target property |
+| --- | ---: | --- |
+| chipped_concrete_diff_1k.jpg | 80959961009929 | MaterialService.ChippedConcrete.ColorMap |
+| chipped_concrete_nor_gl_1k.jpg | 80291856302301 | MaterialService.ChippedConcrete.NormalMap |
+| chipped_concrete_rough_1k.png | 77587300776452 | MaterialService.ChippedConcrete.RoughnessMap |
+| chipped_concrete_metal_1k.png | 80777076182700 | MaterialService.ChippedConcrete.MetalnessMap; PaintedSteel.MetalnessMap |
+| metal_plate_diff_1k.jpg | 137105055040989 | MaterialService.MetalPlate.ColorMap; PaintedSteel.ColorMap |
+| metal_plate_nor_gl_1k.jpg | 72038388556893 | MaterialService.MetalPlate.NormalMap; PaintedSteel.NormalMap |
+| metal_plate_rough_1k.png | 88399395045423 | MaterialService.MetalPlate.RoughnessMap; PaintedSteel.RoughnessMap |
+| metal_plate_metal_1k.png | 91150503292713 | MaterialService.MetalPlate.MetalnessMap |
 
-Upload the selected maps through the project's Roblox Studio Asset Manager, record the resulting image asset IDs here, set the corresponding `ArtTheme.Pbr` fields, then verify a MaterialVariant on actual lobby and elevator parts under neutral lighting and in a Play session. The maps must not be described as applied before that verification.
+Sources: [Poly Haven chipped_concrete](https://polyhaven.com/a/chipped_concrete) and [Poly Haven metal_plate](https://polyhaven.com/a/metal_plate). Both use [CC0](https://polyhaven.com/license), permitting modification, redistribution, and commercial Roblox use. Attribution is voluntary. The roughness/metalness PNGs were extracted from the ARM green/blue channels. PaintedSteel reuses the black concrete metalness for its nonmetallic paint layer. Packed ARM files are retained as source data, not bound to a Roblox map slot. No emissive map is claimed.
+
+Concrete tiles at 8 studs; steel at 5. Prefab parts carry a PbrMaterial StringValue. The runtime applies saved variants to the clones. Structural surfaces use ChippedConcrete. PaintedSteel covers painted doors/panels/columns; MetalPlate covers exposed plates, thresholds, and pipes. Cloth, rubber, plastic, glass, warning stripes, and lettering use built-in materials and authored geometry.
+
+The build audit checks map IDs against ArtTheme and the built place. The real Play screenshots show applied surface textures and normal detail, especially the elevator close-up. Newly combined MaterialVariants emitted temporary generated-representation/cache warnings during startup; those are retained in the logs. No claim is made that local screenshots verify permissions/moderation in a different account or published universe. Cross-experience permission checks remain outstanding.
+
+To reimport for another owner: Asset Manager → Import → select all eight files in assets/roblox-upload → choose the intended creator → Start Import. Record the new image IDs. Update both ArtTheme.Pbr and default.project.json MaterialService properties, rebuild, run the audit, and inspect Play after image moderation/material generation finishes. Never invent IDs or simply assume copied files have uploaded.

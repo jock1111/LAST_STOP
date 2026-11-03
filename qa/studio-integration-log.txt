@@ -1,0 +1,43 @@
+08:33:55.422   ▶ [LAST STOP] RECOVERY V3 / AUTHORED HOSPITAL loaded prefab Lobby + Elevator (x2)  -  Server - FloorService:68
+  08:33:55.549  [LAST STOP] Prefab lifecycle PASS: two rounds, objective reset, source preservation, authored sibling preservation  -  Server - PrefabLifecycleSpec:37
+  08:33:55.549  [LAST STOP] Vertical-slice pure logic tests passed.  -  Server - TestRunner:16
+  08:33:55.555  [ProfileService] DataStore unavailable; using session-only profiles: You must publish this place to the web to access DataStore.  -  Server - ProfileService:47
+  08:33:55.573  [LAST STOP] RECOVERY V3 / AUTHORED HOSPITAL loaded prefab Lobby + Elevator  -  Server - FloorService:68
+  08:33:55.789  ContentId: rbxassetid://137192480655540 failed due to: Asset content representation is being generated  -  Studio
+  08:33:55.790   ▶ ContentId: rbxassetid://123270635775608 failed due to: Asset content representation is being generated (x2)  -  Studio
+  08:33:55.790   ▶ ContentId: rbxassetid://137192480655540 failed due to: Asset content representation is being generated (x2)  -  Studio
+  08:33:56.434  ContentId: rbxassetid://137192480655540 failed due to: Asset content representation is being generated  -  Studio
+  08:33:56.434   ▶ ContentId: rbxassetid://123270635775608 failed due to: Asset content representation is being generated (x2)  -  Studio
+  08:33:56.434   ▶ ContentId: rbxassetid://137192480655540 failed due to: Asset content representation is being generated (x2)  -  Studio
+  08:33:56.623   ▶ ContentId: rbxassetid://123270635775608 failed due to: Asset content representation is being generated (x3)  -  Studio
+  08:33:56.624   ▶ ContentId: rbxassetid://137192480655540 failed due to: Asset content representation is being generated (x3)  -  Studio
+  08:37:05.536  [ProfileService] load failed for -1 DataStore unavailable  -  Server - ProfileService:68
+  08:37:10.227  [ProfileService] load failed for -2 DataStore unavailable  -  Server - ProfileService:68
+  08:37:40.911  [V3 CLIENT COUNT] 2  -  Server
+  08:37:40.945  [LAST STOP] RECOVERY V3 / AUTHORED HOSPITAL loaded prefab Lobby + Elevator  -  Server - FloorService:68
+  08:37:40.946  [LAST STOP] Expedition seed 1794295037 players 2  -  Server - ExpeditionService:204
+  08:38:04.115  ServerScriptService.Tests.TwoPlayerRecoverySpec:80: ServerScriptService.Tests.TwoPlayerRecoverySpec:34: [V3 TWO PLAYER] Timed out: objective completion; state=Floor ServerScriptService.Tests.TwoPlayerRecoverySpec:34 function waitFor ServerScriptService.Tests.TwoPlayerRecoverySpec:56 function recoverRound ServerScriptService.Tests.TwoPlayerRecoverySpec:64 ServerScriptService.Tests.TwoPlayerRecoverySpec:62 CommandBar:1   -  Server - TwoPlayerRecoverySpec:80
+  08:38:04.115  Stack Begin  -  Studio
+  08:38:04.115  Script 'ServerScriptService.Tests.TwoPlayerRecoverySpec', Line 80  -  Studio - TwoPlayerRecoverySpec:80
+  08:38:04.115  Script 'CommandBar', Line 1  -  Studio
+  08:38:04.115  Stack End  -  Studio
+  08:39:32.943  [LAST STOP] RECOVERY V3 / AUTHORED HOSPITAL loaded prefab Lobby + Elevator  -  Server - FloorService:68
+  08:39:32.944  [LAST STOP] Expedition seed 1794586181 players 2  -  Server - ExpeditionService:204
+  08:39:35.342  [V3 DIAGNOSTIC] false ServerScriptService.Tests.TwoPlayerRecoverySpec:80: ServerScriptService.Tests.TwoPlayerRecoverySpec:46: Record route blocked: Archive_2 ServerScriptService.Tests.TwoPlayerRecoverySpec:46 function recoverRound ServerScriptService.Tests.TwoPlayerRecoverySpec:64 ServerScriptService.Tests.TwoPlayerRecoverySpec:62 CommandBar:1   -  Server
+  08:40:45.775  [LAST STOP] RECOVERY V3 / AUTHORED HOSPITAL loaded prefab Lobby + Elevator  -  Server - FloorService:68
+  08:40:45.776  [LAST STOP] Expedition seed 1794081245 players 2  -  Server - ExpeditionService:204
+  08:40:48.013  [V3 PATH] Archive_1 Enum.PathStatus.Success  -  Server - V3Diagnostic:46
+  08:40:48.113  [V3 PATH] Archive_2 Enum.PathStatus.NoPath  -  Server - V3Diagnostic:46
+  08:40:48.213  [V3 PATH] Archive_3 Enum.PathStatus.Success  -  Server - V3Diagnostic:46
+  08:40:48.430  [V3 INTERACT] Archive_1 3.605551242828369 true Workspace.LastStopWorld.Runtime.ActiveExpedition.Hospital.ObjectiveSockets.Archive_RecordDesk.RecordPaper  -  Server
+  08:40:48.430  [V3 USED] Archive_1 true  -  Server
+  08:40:48.431  [V3 USED] Archive_1 true  -  Server
+  08:40:48.647  [V3 INTERACT] Archive_2 3.605551242828369 true Workspace.LastStopWorld.Runtime.ActiveExpedition.Hospital.Rooms.MonitorHousing  -  Server
+  08:40:48.647  [V3 USED] Archive_2 false  -  Server
+  08:40:48.864  [V3 INTERACT] Archive_3 3.605551242828369 true Workspace.LastStopWorld.Runtime.ActiveExpedition.Hospital.ObjectiveSockets.Ward_RecordDesk.RecordPaper  -  Server
+  08:40:48.864  [V3 USED] Archive_3 true  -  Server
+  08:41:08.970  [V3 DIAGNOSTIC] false ServerScriptService.Tests.V3Diagnostic:80: ServerScriptService.Tests.V3Diagnostic:34: [V3 TWO PLAYER] Timed out: objective completion; state=Floor ServerScriptService.Tests.V3Diagnostic:34 function waitFor ServerScriptService.Tests.V3Diagnostic:56 function recoverRound ServerScriptService.Tests.V3Diagnostic:64 ServerScriptService.Tests.V3Diagnostic:62 CommandBar:1   -  Server
+  08:43:03.847  [LAST STOP] RECOVERY V3 / AUTHORED HOSPITAL loaded prefab Lobby + Elevator  -  Server - FloorService:68
+  08:43:03.848  [LAST STOP] Expedition seed 1794651261 players 2  -  Server - ExpeditionService:204
+  08:43:09.896  [V3 TWO PLAYER] PASS: two real players, three reachable records, duplicate rejection, escape region, independent BANK/CONTINUE, two floor clones, teardown; disposable profiles only  -  Server
+  08:43:09.897  [V3 RECHECK] true nil  -  Server

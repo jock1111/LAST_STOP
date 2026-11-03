@@ -1,103 +1,55 @@
-# LAST STOP — Milestone A Vertical Slice
+# LAST STOP — Recovery V3
 
-This is a native Roblox Studio/Rojo project containing the first playable LAST STOP slice. Runtime geometry is source-controlled; the first visual-overhaul pass adds a detailed station concourse and elevator without unreviewed free models or third-party scripts.
+Open **LAST_STOP.rbxlx** in Roblox Studio and start Play. The bottom-left label must read **RECOVERY V3 / AUTHORED HOSPITAL**. This is the single current runnable place. Local files named visual_m1 or RECOVERY_V3_QA/FINAL/TESTED are obsolete development snapshots; do not launch them. Earlier builds remain in Git history.
 
-## What is built
+This slice contains an authored subway concourse, working elevator, hospital with three medical records, and an original articulated Stalker. The live pool deliberately contains only the hospital. Models use editable Roblox parts, joints, signage, and imported PBR materials. The Stalker is a Motor6D rig with procedural animation; it is not a skinned external mesh or a borrowed Toolbox asset.
 
-- A charcoal/cyan/red subway lobby, illuminated queue terminal, central elevator, working doors, and a floor display.
-- Server-local matchmaking for one to twelve players, including solo starts and safe lobby waiting for late joiners.
-- A server-authoritative state machine: `Boarding → Travel → Floor → Escape → Decision → Results`.
-- Three deterministic, weighted room types without recent repeats: Medical Records, Flooded Laboratory, and Security Lockdown. Each uses working proximity-validated objective stations.
-- One Stalker enemy using a server-side Patrol/Chase/Attack finite state machine with pathfinding, line-of-sight checks, and non-instant damage.
-- The complete reward loop: each successful floor grants at-risk coins; each survivor independently chooses BANK or CONTINUE; BANK saves only that player’s coins and returns them safely to the lobby; death, disconnect, timeout, or missed elevator loses only at-risk coins.
-- Persistent profile skeleton using `DataStoreService` with schema normalization, `UpdateAsync`, periodic saves, and shutdown saves. A failed datastore read starts a session-only fallback rather than trusting the client.
-- Functional flashlight and server-validated, limited medkit; responsive mouse/touch/gamepad-capable HUD; short skippable first-session tutorial.
-- Server-side remote schemas, rate limits, state checks, distance checks, and currency/objective ownership.
+## Build and sync
 
-## Explorer hierarchy
+The source of truth is src/, assets/prefabs/, tools/build-prefabs.mjs, and default.project.json. The place is generated. With Node.js and Rojo installed:
 
-```text
-ReplicatedStorage
-  Shared
-    Config
-      EconomyConfig
-      FloorConfig
-      GameConfig
-      RemoteNames
-    Util
-      Maid
-      RateLimiter
-  Remotes                         (created by Bootstrap at runtime)
-    RequestQueue
-    RequestInteract               (reserved; current objectives use secure ProximityPrompts)
-    RequestDecision
-    RequestMedkit
-    StateChanged
-    Toast
-ServerScriptService
-  Bootstrap                       [Script]
-  TestRunner                      [Script, Studio only]
-  Services
-    EconomyService
-    EnemyService
-    ExpeditionService
-    FloorService
-    InventoryService
-    MatchmakingService
-    ProfileService
-  Tests
-    VerticalSliceSpec
-StarterPlayer
-  StarterPlayerScripts
-    ClientBootstrap               [LocalScript]
-    Controllers
-      HUDController
-      InputController
-Workspace                         (created at runtime)
-  LastStopWorld
-    Lobby
-    ActiveExpedition
+```powershell
+node tools/build-prefabs.mjs
+rojo build default.project.json --output LAST_STOP.rbxlx
+node tools/verify-build.mjs
 ```
 
-## Install and run
+The deterministic authoring script writes four script-free editable .rbxmx models. For live sync, run `rojo serve default.project.json`, connect the official Rojo Studio plugin, and sync the **whole project**, including ServerStorage and MaterialService. Use a separate development place if the current Studio place contains unrelated work. Incorporate model edits into the authoring source; manual edits to generated prefabs are overwritten at rebuild.
 
-1. Install the Roblox Studio Rojo plugin and a compatible Rojo CLI.
-2. In this folder, run `rojo serve default.project.json` and connect the Studio plugin to the displayed endpoint. Sync into a new Baseplate place.
-3. Build a reproducible place with `rojo build default.project.json --output LAST_STOP_visual_m1_final.rbxlx`, open that file in Studio, and press Play. `Bootstrap` creates the world, remotes, HUD, and playable runtime geometry.
-4. For manual placement instead of Rojo, recreate the hierarchy above and insert each matching `.lua` file as the indicated Script, LocalScript, or ModuleScript. Files ending `.server.lua` become Scripts; `.client.lua` becomes a LocalScript; all others are ModuleScripts.
-5. To test persistent saves, publish to a private test experience and intentionally enable Studio API Services in Game Settings → Security. This project uses `LastStopProfile_v1`; use a separate test universe if real player data matters.
+Close an already-open old copy before reopening a rebuilt file. Studio retains an in-memory snapshot; Git pull and disk rebuild do not refresh it. To update a published game, open this file, verify the build label, and publish to the intended existing experience/place. GitHub pushes do not publish Roblox.
 
-Studio was used for a solo smoke test on 2026-11-02: the project launched and reached Lobby → Travel → Floor. See `VISUAL_CHANGELOG.md` for scope and remaining verification.
+## Startup and permanent assets
 
-## Visual-overhaul asset status
+```text
+ServerStorage.LastStopAssets
+  Lobby
+  Elevator
+  Stalker
+  Floors.Hospital
+MaterialService
+  ChippedConcrete
+  PaintedSteel
+  MetalPlate
+Workspace.LastStopWorld
+  Runtime
+    Lobby.CentralElevator
+    ActiveExpedition.Hospital
+```
 
-The project includes six locally stored CC0 Poly Haven material maps under `assets/polyhaven/`. They are **not uploaded or applied in Roblox Studio yet**, so the PBR portion of the visual overhaul is incomplete. Sources, licenses, filenames, and the required verification procedure are in `ART_ASSETS.md`; do not add unverified asset IDs.
+Bootstrap creates services/remotes and calls FloorService:BuildWorld(), cloning Lobby and Elevator. ExpeditionService:_beginNextFloor() creates a room; Room:Start() clones Hospital and connects named record props to secure objective logic. Missing templates/markers fail with actionable errors. BuildWorld replaces only Runtime; source templates and unrelated siblings survive. PBR definitions are saved in the place because their properties require Studio/plugin capability; runtime only assigns existing variants.
 
-## Core design decisions
+The server owns queue membership, active-player checks, objective distance/line-of-sight/idempotency, targeting/damage, escape regions, and rewards. Survivors independently BANK or CONTINUE. Late joins wait in the lobby. Profiles use UpdateAsync and session-only fallback when an unpublished place has no DataStore access.
 
-`ExpeditionService` is the authority for every gameplay transition and reward. `HUDController` only renders snapshots it receives; it cannot award coins, complete objectives, damage enemies, or decide whether a player reached the elevator. `FloorService` exposes the requested reusable lifecycle: `Initialize(context)`, `Start()`, `ObjectiveProgress()`, `Complete()`, `Fail()`, and `Cleanup()`.
+## Validation
 
-The current queue is deliberately server-local. It satisfies solo play and a 1–12 player vertical-slice run without marooning late joiners, but global queues, party invites, and private reservation are deferred to the core-launch matchmaking service.
+See [qa/ACCEPTANCE.md](qa/ACCEPTANCE.md), [ART_ASSETS.md](ART_ASSETS.md), and [VISUAL_CHANGELOG.md](VISUAL_CHANGELOG.md) for evidence and limitations.
 
-## Milestone A checklist
+Studio Play automatically runs pure logic/security and prefab lifecycle tests. For the two-player integration test, start **Test → Start Test Session → Server and Clients**, add exactly two clients, and execute in the **server** Command Bar with Ctrl+Enter:
 
-| Feature | Implemented | Tested here | Status |
-| --- | --- | --- | --- |
-| Runtime lobby/elevator/queue terminal | Yes | No Studio runtime | Pending Studio test |
-| 1–12 server-local queue | Yes | No Studio runtime | Pending Studio test |
-| Three working objective floors | Yes | No Studio runtime | Pending Studio test |
-| Stalker AI, pathfinding, non-instant hits | Yes | No Studio runtime | Pending Studio test |
-| Objective/escape/bank/continue loop | Yes | No Studio runtime | Pending Studio test |
-| Individual BANK outcomes | Yes | No Studio runtime | Pending Studio test |
-| Profile persistence/fallback | Yes | No live DataStore | Pending published-place test |
-| Basic HUD/tutorial/flashlight/medkit | Yes | No device matrix | Pending device tests |
-| Pure reward/rate-limit automated smoke tests | Yes | Not executable without Studio | Pending Studio Play test |
-| Cross-server parties/private matchmaking | No | — | Blocked until Milestone B |
-| Revives/spectator/equipment beyond starter kit | No | — | Milestone B |
-| Store, passes, developer products, receipts | No | — | Milestone C |
+```lua
+require(game.ServerScriptService.Tests.TwoPlayerRecoverySpec)()
+```
 
-## Known limitations and next milestone
+Use a fresh local session before entering the normal queue. Restart Play after this test: its fixture deliberately replaces the runtime world and then tears down its own expedition. This test uses real local Players and gameplay services, shortened phase timings, and disposable in-memory profiles. It checks navigation paths, physical Stalker movement, 15-point windup damage, records/duplicate rejection, escape regions, independent BANK/CONTINUE, accounting, two floor clones, and teardown. It teleports players for interaction assertions; it is not a fully manual controller playthrough and does not test live persistent balances.
 
-This is explicitly a vertical slice, not the full 20-floor launch. It does not yet have the other four enemy archetypes, all seven equipment items, party invitations, global matchmaking, missions, accessibility settings, localization tables, audio assets, purchases, or production analytics. The expected next step is Milestone B: extract each generated room into a reusable template module, add floors 4–10, implement the remaining enemy/equipment systems, parties, five safe random events, spectator mode, and device accessibility verification.
-
-See [TEST_PLAN.md](TEST_PLAN.md) for reproducible Studio verification steps and [CONTENT_NOTES.md](CONTENT_NOTES.md) for the Milestone A publication-safe copy/concepts.
+Persistent-save acceptance requires a separate private test universe with Studio API Services intentionally enabled. Live saves, published-experience texture permissions, reduced-quality mobile hardware, and 12-client performance remain unverified.

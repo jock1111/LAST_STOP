@@ -1,6 +1,6 @@
--- Creates only verified, owner-uploaded PBR MaterialVariants. Empty entries in
--- ArtTheme are intentionally ignored: an unverified texture ID must never
--- become a production dependency.
+-- MaterialVariants are authored in default.project.json. BaseMaterial and map
+-- properties require Studio/plugin capability and must never be written by a
+-- live server script. Runtime only assigns the saved variant to cloned parts.
 local MaterialService = game:GetService("MaterialService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -25,22 +25,10 @@ function PbrMaterialService:Configure()
 	for name, definition in pairs(ArtTheme.Pbr) do
 		if isComplete(definition) then
 			local variant = MaterialService:FindFirstChild(name)
-			if variant and not variant:IsA("MaterialVariant") then
-				warn(("[LAST STOP] Cannot create PBR material %s: name is already occupied."):format(name))
-			elseif not variant then
-				variant = Instance.new("MaterialVariant")
-				variant.Name = name
-				variant.Parent = MaterialService
-			end
-
-			if variant then
-				variant.BaseMaterial = definition.BaseMaterial
-				variant.ColorMap = definition.ColorMap
-				variant.NormalMap = definition.NormalMap
-				variant.RoughnessMap = definition.RoughnessMap
-				variant.MetalnessMap = definition.MetalnessMap
-				configured[name] = true
-			end
+			assert(variant and variant:IsA("MaterialVariant"),
+				("[LAST STOP] Missing saved MaterialService.%s; rebuild default.project.json"):format(name))
+			-- Map reads are also Plugin-protected. The offline build audit checks IDs.
+			configured[name] = true
 		end
 	end
 	return configured
@@ -54,7 +42,8 @@ function PbrMaterialService:Apply(root)
 
 	for _, descendant in ipairs(root:GetDescendants()) do
 		if descendant:IsA("BasePart") then
-			local materialName = descendant:GetAttribute("PbrMaterial")
+			local tag = descendant:FindFirstChild("PbrMaterial")
+			local materialName = descendant:GetAttribute("PbrMaterial") or (tag and tag.Value)
 			local definition = materialName and ArtTheme.Pbr[materialName]
 			if definition and configured[materialName] then
 				descendant.Material = definition.BaseMaterial

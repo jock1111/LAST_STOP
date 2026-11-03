@@ -284,7 +284,7 @@ function ExpeditionService:_beginNextFloor(token)
 	})
 	self.floor:Start()
 	for index, player in ipairs(self:_activePlayers()) do
-		self:_movePlayer(player, self.floor.spawnCFrame * CFrame.new((index - 1) * 3, 0, 0))
+		self:_movePlayer(player, self.floor.spawnCFrame * CFrame.new((((index - 1) % 4) - 1.5) * 3, 0, (math.floor((index - 1) / 4) - 1) * 3))
 	end
 	self:_setState("Floor", { message = self.floorDefinition.Prompt })
 	task.delay(5, function()

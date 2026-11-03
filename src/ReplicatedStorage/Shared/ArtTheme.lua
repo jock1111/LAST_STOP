@@ -12,11 +12,11 @@ return {
 		OffWhite = Color3.fromRGB(233, 240, 238),
 		Rubber = Color3.fromRGB(24, 29, 34),
 	},
-	-- Source art is held in assets/polyhaven. These entries deliberately remain
-	-- empty until their Studio upload IDs are verified under the experience owner;
-	-- never ship guessed, private, or borrowed asset IDs.
+	-- Poly Haven CC0 maps, uploaded through Studio by gakez007 on 2026-11-03.
+	-- Exact inventory IDs are documented in ART_ASSETS.md.
 	Pbr = {
-		ChippedConcrete = { BaseMaterial = Enum.Material.Concrete, ColorMap = "", NormalMap = "", MetalnessMap = "", RoughnessMap = "" },
-		MetalPlate = { BaseMaterial = Enum.Material.Metal, ColorMap = "", NormalMap = "", MetalnessMap = "", RoughnessMap = "" },
+		PaintedSteel = { BaseMaterial = Enum.Material.Metal, StudsPerTile = 5, ColorMap = "rbxassetid://137105055040989", NormalMap = "rbxassetid://72038388556893", MetalnessMap = "rbxassetid://80777076182700", RoughnessMap = "rbxassetid://88399395045423" },
+		ChippedConcrete = { BaseMaterial = Enum.Material.Concrete, StudsPerTile = 8, ColorMap = "rbxassetid://80959961009929", NormalMap = "rbxassetid://80291856302301", MetalnessMap = "rbxassetid://80777076182700", RoughnessMap = "rbxassetid://77587300776452" },
+		MetalPlate = { BaseMaterial = Enum.Material.Metal, StudsPerTile = 5, ColorMap = "rbxassetid://137105055040989", NormalMap = "rbxassetid://72038388556893", MetalnessMap = "rbxassetid://91150503292713", RoughnessMap = "rbxassetid://88399395045423" },
 	},
 }

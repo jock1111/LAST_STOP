@@ -1,27 +1,26 @@
-# Visual overhaul changelog
+# Recovery V3 investigation and changes
 
-## Milestone 1 — lobby / elevator foundation (in progress)
+Investigation began on branch visual-recovery-v3 at fddf7d476fb91978ff43e13a7bae15c2e562a16d. The only commit after the supplied baseline bbc0c34fc81ac41d4a2141d93e169bd394ab1efe was fddf7d4, “Add milestone 1 visual overhaul foundation.”
 
-### Built
+The old canonical LAST_STOP.rbxlx had not been rebuilt for the newer source. The M1 deliverable contained scripts that generated decor at runtime, not persistent environment templates. default.project.json did not map ServerStorage prefabs. Thus opening the old canonical file or syncing only script services could reproduce the original prototype. PBR downloads were unbound, with empty IDs.
 
-- Added a centralized `ArtTheme` palette: navy, steel, worn concrete, cyan signage, amber safety markings, and alarm red.
-- Rebuilt the runtime station shell into a multi-layered concourse: layered flooring, rail trench and sleepers, platform edge, ceiling beams/ribs, service lamps, structural walls, recessed panels, columns, vents, pipe runs, cable-like hardware, benches, ticket gates, waste bins, maintenance barriers, and route signage.
-- Added a separate elevator detail model: threshold, outer frame, door header, ceiling fixtures, floor inlays, indicator housing, call/emergency panel, and safety stripes while retaining the server-owned door tween contract and invisible gameplay regions.
-- Added restrained Future lighting, atmosphere, color correction, and bloom in `Bootstrap.server.lua`.
-- Made the HUD scale from viewport dimensions and added restrained panel strokes rather than changing the game-state interface contract.
-- Added a guarded MaterialVariant pipeline (`PbrMaterialService`) and tagged major lobby concrete/metal surfaces. It configures only complete, verified map sets from `ArtTheme.Pbr`, so empty placeholders cannot introduce broken asset dependencies.
-- Hardened expedition teardown against a Studio player-removal race that previously produced `LoadCharacter: Failed spawn player, player not in world` after stopping a play session.
+The previous startup path was Bootstrap → FloorService:BuildWorld → runtime part construction. RoomRuntime:Start built generic room geometry. BuildWorld destroyed the whole LastStopWorld container. The recovery path is Bootstrap → FloorService:BuildWorld → saved Lobby/Elevator clones, followed by ExpeditionService → Room:Start → saved Hospital clone. Only LastStopWorld.Runtime is replaced; permanent templates and unrelated siblings survive.
 
-### Verified in Roblox Studio on 2026-11-02
+## Concrete changes
 
-- Rojo built `LAST_STOP_visual_m1.rbxlx` and an unlocked test copy successfully.
-- The test build launched in Studio.
-- Solo queue progressed through `LOBBY → TRAVEL → FLOOR (Depth 1)` and displayed the existing objective HUD.
-- Studio used the session-only profile fallback because this local place cannot access DataStores; that is expected.
+- Four script-free editable source models: 537 lobby, 116 elevator, 805 hospital, and 40 Stalker instances (1,498 total). Runtime adds secure prompts, animation welds, and state attributes.
+- Layered concourse: columns/flanges, plinths, coffers/beams, practical lights, service pipes/cable racks, platform edge/rails, recessed wall panels, benches, ticket barriers, queue terminal, printed signs/posters.
+- Elevator: separate moving leaves, welded inset art, seals/jambs, warning stripes, floor display, threshold grooves, handrails, panel seams/bolts, buttons, ceiling louvres and lighting. Door generation guards prevent stale tween callbacks; obstruction checks postpone closure.
+- Hospital: arrival foyer, corridor, four-bed ward with curtains/IVs/monitors, treatment/scanner room, archive shelving/binders, and connecting east loop. Preplaced medical records replace generic glowing stations. The imaging desk was moved after actual two-player testing found an obstructing monitor.
+- Required markers are validated: EntranceSpawn, ElevatorSocket, ElevatorReturnZone, EnemySpawn, PatrolPaths, ObjectiveSockets, RoomBounds. There is no silent primitive-room fallback.
+- Original Motor6D Stalker with asymmetrical shoulder, restraint straps, mask, fingers, dim eyes, Humanoid physics, server-owned network simulation, path waypoint following/repath, procedural gait and windup attack.
+- Eight real CC0 image uploads, three saved MaterialVariants, tiled structural surfaces, practical lighting and restrained atmosphere. Runtime cannot read/write Plugin-protected material map properties; definitions live in the Rojo place, with offline consistency checks.
+- Realistic lighting saved in the place; removed runtime writes to protected lighting settings. RespawnLocation/initial placement corrected. HUD inverse-scale layout keeps health/actions/build label on screen. Floor spawns use a four-column group grid.
+- Existing economy, persistence fallback, remote validation/rate limits, late-join behavior, independent BANK/CONTINUE, and teardown retained. The live floor pool now focuses only Hospital.
+- Automatic prefab lifecycle integration test, opt-in real two-client test including physical enemy movement/damage, and offline source/build audit.
 
-### Not complete / deliberately not claimed
+## Before/after evidence
 
-- The six CC0 Poly Haven maps are downloaded and documented, but none has been uploaded to Roblox. Therefore no `MaterialVariant` maps are visible in Studio yet.
-- The current floor templates and Stalker are still the existing vertical-slice implementations. Hospital, flooded-lab, lockdown, and enemy overhaul work remain future milestones.
-- The return-to-lobby player-removal race was patched after the above run; it needs one clean follow-up Studio run before it is marked verified.
-- No performance or mobile-device measurements have been collected.
+No baseline screenshot with a recorded camera CFrame was available in the supplied project or prior deliverables. Consequently an honest identical-camera before/after pair cannot be claimed. The four new screenshots are unedited Studio Play captures from the rebuilt canonical place. Camera CFrames were set through the client Command Bar for framing; no scene was separately rendered or generated. The earlier runtime-only scene can be recovered from the supplied baseline commit for a separate camera-matched comparison.
+
+See qa/ACCEPTANCE.md for exact executed tests and remaining acceptance limits. Source and build inventories are reproducible using tools/verify-build.mjs; this document does not treat source edits alone as proof of visual acceptance.

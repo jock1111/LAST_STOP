@@ -6,7 +6,10 @@ if not RunService:IsStudio() then
 end
 
 local spec = require(script.Parent.Tests.VerticalSliceSpec)
-local ok, err = pcall(spec)
+local ok, err = pcall(function()
+	spec()
+	require(script.Parent.Tests.PrefabLifecycleSpec)()
+end)
 if not ok then
 	error("[LAST STOP] Vertical-slice tests failed: " .. tostring(err))
 end

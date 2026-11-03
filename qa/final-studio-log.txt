@@ -1,0 +1,14 @@
+08:54:39.246  ContentId: rbxassethash://5b8dff33c4af87155e5a0bc8153f5b10 failed due to: Invalid place ID  -  Studio
+  08:54:39.246  ContentId: rbxassethash://2b75d9366e28f7ea14abd9caba416ee1 failed due to: Invalid place ID  -  Studio
+  08:54:39.256  ContentId: rbxassethash://0eb81b18384aa4c467a65d2a6c92d2ce failed due to: Invalid place ID  -  Studio
+  08:54:40.306  [ProfileService] DataStore unavailable; using session-only profiles: You must publish this place to the web to access DataStore.  -  Server - ProfileService:47
+  08:54:40.332   ▶ [LAST STOP] RECOVERY V3 / AUTHORED HOSPITAL loaded prefab Lobby + Elevator (x3)  -  Server - FloorService:68
+  08:54:40.483  [LAST STOP] Prefab lifecycle PASS: two rounds, objective reset, source preservation, authored sibling preservation  -  Server - PrefabLifecycleSpec:37
+  08:54:40.483  [LAST STOP] Vertical-slice pure logic tests passed.  -  Server - TestRunner:16
+  08:54:40.641   ▶ ContentId: rbxassetid://82646617798005 failed due to: Asset content representation is being generated (x9)  -  Studio
+  08:56:43.424  [ProfileService] load failed for -1 DataStore unavailable  -  Server - ProfileService:68
+  08:56:44.274  [ProfileService] load failed for -2 DataStore unavailable  -  Server - ProfileService:68
+  08:58:03.553  [LAST STOP] RECOVERY V3 / AUTHORED HOSPITAL loaded prefab Lobby + Elevator  -  Server - FloorService:68
+  08:58:03.555  [LAST STOP] Expedition seed 1794335581 players 2  -  Server - ExpeditionService:204
+  08:58:12.098  [V3 TWO PLAYER] Stalker moved physically and dealt 15 damage after windup  -  Server - TwoPlayerRecoverySpec:53
+  08:58:15.947  [V3 TWO PLAYER] PASS: two real players, three reachable records, duplicate rejection, escape region, independent BANK/CONTINUE, two floor clones, teardown; disposable profiles only  -  Server - TwoPlayerRecoverySpec:98

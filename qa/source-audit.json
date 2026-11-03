@@ -1,0 +1,63 @@
+{
+  "baseline": "bbc0c34fc81ac41d4a2141d93e169bd394ab1efe",
+  "previous": "fddf7d476fb91978ff43e13a7bae15c2e562a16d",
+  "branch": "visual-recovery-v3",
+  "commitsBeforeRecovery": [
+    "fddf7d476fb91978ff43e13a7bae15c2e562a16d Add milestone 1 visual overhaul foundation"
+  ],
+  "baselinePlace": {
+    "bytes": 69451,
+    "classes": {
+      "ReplicatedStorage": 1,
+      "Folder": 6,
+      "ModuleScript": 16,
+      "ServerScriptService": 1,
+      "Script": 2,
+      "StarterPlayer": 1,
+      "StarterPlayerScripts": 1,
+      "LocalScript": 1
+    }
+  },
+  "previousCanonicalPlace": {
+    "bytes": 69451,
+    "classes": {
+      "ReplicatedStorage": 1,
+      "Folder": 6,
+      "ModuleScript": 16,
+      "ServerScriptService": 1,
+      "Script": 2,
+      "StarterPlayer": 1,
+      "StarterPlayerScripts": 1,
+      "LocalScript": 1
+    }
+  },
+  "recoveryPlace": {
+    "bytes": 1661045,
+    "classes": {
+      "Lighting": 1,
+      "MaterialService": 1,
+      "MaterialVariant": 3,
+      "ReplicatedStorage": 1,
+      "Folder": 38,
+      "ModuleScript": 20,
+      "ServerScriptService": 1,
+      "Script": 2,
+      "ServerStorage": 1,
+      "Model": 4,
+      "Part": 1065,
+      "StringValue": 225,
+      "PointLight": 38,
+      "SurfaceGui": 58,
+      "TextLabel": 58,
+      "SpawnLocation": 1,
+      "Motor6D": 6,
+      "WeldConstraint": 12,
+      "Humanoid": 1,
+      "StarterPlayer": 1,
+      "StarterPlayerScripts": 1,
+      "LocalScript": 1,
+      "TextChatService": 1,
+      "Workspace": 1
+    }
+  }
+}

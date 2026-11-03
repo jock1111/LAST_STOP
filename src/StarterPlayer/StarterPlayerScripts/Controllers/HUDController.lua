@@ -72,13 +72,15 @@ function HUDController:_build()
 	scale.Parent = safe
 	self.scale = scale
 	self.safe = safe
+	local buildLabel = makeLabel(safe, "BuildVersion", "RECOVERY V3  /  AUTHORED HOSPITAL", UDim2.fromOffset(360, 22), UDim2.new(0, 18, 1, -24), Enum.Font.GothamMedium, 11)
+	buildLabel.TextColor3 = Color3.fromRGB(180, 199, 195)
 
 	local top = Instance.new("Frame")
 	top.Name = "RunPanel"
 	top.BackgroundColor3 = PANEL
 	top.BackgroundTransparency = 0.1
 	top.BorderSizePixel = 0
-	top.Position = UDim2.fromOffset(18, 18)
+	top.Position = UDim2.fromOffset(18, 58)
 	top.Size = UDim2.new(0.44, 0, 0, 130)
 	rounded(top, 10)
 	local topStroke = Instance.new("UIStroke")
@@ -100,7 +102,7 @@ function HUDController:_build()
 	healthPanel.BackgroundTransparency = 0.1
 	healthPanel.BorderSizePixel = 0
 	healthPanel.AnchorPoint = Vector2.new(1, 0)
-	healthPanel.Position = UDim2.new(1, -18, 0, 18)
+	healthPanel.Position = UDim2.new(1, -18, 0, 58)
 	healthPanel.Size = UDim2.fromOffset(180, 46)
 	rounded(healthPanel, 10)
 	healthPanel.Parent = safe
@@ -203,8 +205,9 @@ function HUDController:_bindResponsiveScale()
 		local camera = workspace.CurrentCamera
 		if not camera then return end
 		local viewport = camera.ViewportSize
-		local scale = math.clamp(math.min(viewport.X / 1280, viewport.Y / 720), 0.62, 1.12)
+		local scale = math.clamp(math.min(viewport.X / 1280, viewport.Y / 720), 0.8, 1.12)
 		self.scale.Scale = scale
+		self.safe.Size = UDim2.fromScale(1 / scale, 1 / scale)
 		self.runPanel.Size = viewport.X < 700 and UDim2.new(0.72, 0, 0, 130) or UDim2.new(0.44, 0, 0, 130)
 	end
 	local function watch(camera)
@@ -250,7 +253,7 @@ function HUDController:ApplyState(data)
 	end
 	local tutorialSteps = {
 		Lobby = "1/4  Enter the elevator: press PLAY or use the terminal.",
-		Floor = "2/4  Complete the glowing objective stations.",
+		Floor = "2/4  Recover records in the ward, imaging room, and archive.",
 		Escape = "3/4  Return inside the marked elevator before its doors close.",
 		Decision = "4/4  BANK to secure coins, or CONTINUE to risk them for more.",
 	}

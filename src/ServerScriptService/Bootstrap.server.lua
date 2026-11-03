@@ -46,15 +46,16 @@ local lobby = floors:BuildWorld()
 PbrMaterialService:Apply(lobby.Model)
 enemyService:Start()
 
-Lighting.Brightness = 1.4
-Lighting.Ambient = Color3.fromRGB(38, 45, 54)
+Lighting.Brightness = 2
+Lighting.ClockTime = 0
+Lighting.Ambient = Color3.fromRGB(96, 108, 114)
 Lighting.OutdoorAmbient = Color3.fromRGB(20, 25, 31)
 Lighting.FogColor = Color3.fromRGB(34, 43, 51)
 Lighting.FogEnd = 350
 Lighting.GlobalShadows = true
-Lighting.Technology = Enum.Technology.Future
-Lighting.EnvironmentDiffuseScale = 0.3
-Lighting.EnvironmentSpecularScale = 0.45
+-- LightingStyle is saved in default.project.json (Studio-only capability).
+Lighting.EnvironmentDiffuseScale = 0.6
+Lighting.EnvironmentSpecularScale = 0.6
 
 local function effect(className, name, properties)
 	local instance = Lighting:FindFirstChild(name)
@@ -70,7 +71,7 @@ local function effect(className, name, properties)
 end
 
 effect("Atmosphere", "LastStopAtmosphere", {
-	Density = 0.28,
+	Density = 0.12,
 	Offset = 0.15,
 	Color = Color3.fromRGB(145, 169, 182),
 	Decay = Color3.fromRGB(38, 55, 65),
@@ -98,10 +99,13 @@ local function toast(player, message)
 end
 
 local function moveToLobby(player)
+	player.RespawnLocation = lobby.SpawnLocation
 	task.spawn(function()
 		local character = player.Character or player.CharacterAdded:Wait()
 		local root = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart", 5)
 		if root then
+			task.wait(.2) -- Allow the engine to finish initial spawn placement.
+			if not player.Parent then return end
 			character:PivotTo(lobby.LobbySpawn)
 		end
 	end)
