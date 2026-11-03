@@ -128,11 +128,30 @@ function ExpeditionService:_returnToLobby(player)
 		task.spawn(function()
 			if not player.Parent then return end
 			local previousCharacter = player.Character
-			player:LoadCharacter()
-			local character = player.Character
-			if character == previousCharacter then
-				character = player.CharacterAdded:Wait()
+			-- A player can leave between the parent check and LoadCharacter(),
+			-- especially when a Studio play session stops. Do not let that race
+			-- turn an otherwise-clean expedition teardown into an Output error.
+			local loaded = pcall(function()
+				if player.Parent then
+					player:LoadCharacter()
+				end
+			end)
+			if not loaded or not player.Parent then
+				return
 			end
+
+			local character = player.Character
+			for _ = 1, 120 do
+				if not player.Parent then
+					return
+				end
+				if character and character ~= previousCharacter then
+					break
+				end
+				task.wait()
+				character = player.Character
+			end
+			if not character or character == previousCharacter then return end
 			local root = character and (character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart", 5))
 			if root then
 				character:PivotTo(lobby.LobbySpawn)

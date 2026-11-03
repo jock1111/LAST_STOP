@@ -1,0 +1,5 @@
+# Transient Roblox Studio / Rojo runtime state
+*.rbxlx.lock
+sourcemap.json
+LAST_STOP_visual_m1_test.rbxlx
+LAST_STOP_visual_m1.rbxlx

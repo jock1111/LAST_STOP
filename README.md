@@ -1,6 +1,6 @@
 # LAST STOP — Milestone A Vertical Slice
 
-This is a native Roblox Studio/Rojo project for the first playable LAST STOP slice. It was authored from scratch because no Roblox project was supplied. All geometry is generated at runtime from basic Roblox instances; it uses no free models, asset IDs, or third-party scripts.
+This is a native Roblox Studio/Rojo project containing the first playable LAST STOP slice. Runtime geometry is source-controlled; the first visual-overhaul pass adds a detailed station concourse and elevator without unreviewed free models or third-party scripts.
 
 ## What is built
 
@@ -63,11 +63,15 @@ Workspace                         (created at runtime)
 
 1. Install the Roblox Studio Rojo plugin and a compatible Rojo CLI.
 2. In this folder, run `rojo serve default.project.json` and connect the Studio plugin to the displayed endpoint. Sync into a new Baseplate place.
-3. Press Play. `Bootstrap` creates the world, remotes, HUD, and playable runtime geometry.
+3. Build a reproducible place with `rojo build default.project.json --output LAST_STOP_visual_m1_final.rbxlx`, open that file in Studio, and press Play. `Bootstrap` creates the world, remotes, HUD, and playable runtime geometry.
 4. For manual placement instead of Rojo, recreate the hierarchy above and insert each matching `.lua` file as the indicated Script, LocalScript, or ModuleScript. Files ending `.server.lua` become Scripts; `.client.lua` becomes a LocalScript; all others are ModuleScripts.
 5. To test persistent saves, publish to a private test experience and intentionally enable Studio API Services in Game Settings → Security. This project uses `LastStopProfile_v1`; use a separate test universe if real player data matters.
 
-No Roblox Studio executable is available in the build environment, so these files have not been run in Studio. Do not mark any Studio test as passed until it is executed there.
+Studio was used for a solo smoke test on 2026-11-02: the project launched and reached Lobby → Travel → Floor. See `VISUAL_CHANGELOG.md` for scope and remaining verification.
+
+## Visual-overhaul asset status
+
+The project includes six locally stored CC0 Poly Haven material maps under `assets/polyhaven/`. They are **not uploaded or applied in Roblox Studio yet**, so the PBR portion of the visual overhaul is incomplete. Sources, licenses, filenames, and the required verification procedure are in `ART_ASSETS.md`; do not add unverified asset IDs.
 
 ## Core design decisions
 

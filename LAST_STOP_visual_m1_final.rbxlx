@@ -1,0 +1,2627 @@
+<roblox version="4">
+  <Item class="ReplicatedStorage" referent="0">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+    </Properties>
+    <Item class="Folder" referent="1">
+      <Properties>
+        <string name="Name">Shared</string>
+      </Properties>
+      <Item class="ModuleScript" referent="2">
+        <Properties>
+          <string name="Name">ArtTheme</string>
+          <string name="Source"><![CDATA[-- LAST STOP art direction tokens. Geometry services consume these values rather
+-- than scattering unrelated colors throughout the game world.
+return {
+	Palette = {
+		VoidNavy = Color3.fromRGB(17, 24, 32),
+		BlueGray = Color3.fromRGB(28, 39, 48),
+		Concrete = Color3.fromRGB(65, 73, 78),
+		Steel = Color3.fromRGB(101, 113, 120),
+		Cyan = Color3.fromRGB(99, 216, 213),
+		Amber = Color3.fromRGB(233, 166, 77),
+		Alarm = Color3.fromRGB(224, 75, 88),
+		OffWhite = Color3.fromRGB(233, 240, 238),
+		Rubber = Color3.fromRGB(24, 29, 34),
+	},
+	-- Source art is held in assets/polyhaven. These entries deliberately remain
+	-- empty until their Studio upload IDs are verified under the experience owner;
+	-- never ship guessed, private, or borrowed asset IDs.
+	Pbr = {
+		ChippedConcrete = { BaseMaterial = Enum.Material.Concrete, ColorMap = "", NormalMap = "", MetalnessMap = "", RoughnessMap = "" },
+		MetalPlate = { BaseMaterial = Enum.Material.Metal, ColorMap = "", NormalMap = "", MetalnessMap = "", RoughnessMap = "" },
+	},
+}
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="3">
+        <Properties>
+          <string name="Name">Config</string>
+        </Properties>
+        <Item class="ModuleScript" referent="4">
+          <Properties>
+            <string name="Name">EconomyConfig</string>
+            <string name="Source"><![CDATA[return {
+	BaseFloorCoins = 35,
+	ObjectiveBonus = 20,
+	TeamCompletionBonus = 10,
+	DepthMultiplierStep = 0.15,
+	MaxDepthMultiplier = 2.5,
+	XPPerFloor = 25,
+	XPPerObjectiveStep = 5,
+	-- Values are server-calculated. A client never proposes rewards or balances.
+}
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="5">
+          <Properties>
+            <string name="Name">FloorConfig</string>
+            <string name="Source"><![CDATA[-- The vertical slice uses three generated, solo-safe room templates.
+return {
+	RecentRepeatWindow = 2,
+	Floors = {
+		{
+			Id = "Archive",
+			Name = "Archive 01: Medical Records",
+			Weight = 50,
+			ObjectiveType = "Collect",
+			Target = 3,
+			Prompt = "Recover the medical records.",
+			Accent = Color3.fromRGB(73, 212, 210),
+		},
+		{
+			Id = "FloodedLab",
+			Name = "Flooded Laboratory",
+			Weight = 30,
+			ObjectiveType = "Activate",
+			Target = 3,
+			Prompt = "Restart all three pump systems.",
+			Accent = Color3.fromRGB(61, 146, 219),
+		},
+		{
+			Id = "Lockdown",
+			Name = "Security Lockdown",
+			Weight = 20,
+			ObjectiveType = "Activate",
+			Target = 3,
+			Prompt = "Hack each security terminal.",
+			Accent = Color3.fromRGB(225, 78, 78),
+		},
+	},
+}
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="6">
+          <Properties>
+            <string name="Name">GameConfig</string>
+            <string name="Source"><![CDATA[-- Central tuning values. Keep gameplay rules out of UI code.
+return {
+	Version = 1,
+	MaxExpeditionPlayers = 12,
+	MinExpeditionPlayers = 1,
+	LobbyQueueCountdown = 20,
+	BoardingSeconds = 12,
+	TravelSeconds = 7,
+	EscapeSeconds = 20,
+	DecisionSeconds = 25,
+	FloorTimeLimitSeconds = 240,
+	LateJoinPolicy = "LobbyOnly", -- late joiners wait safely in the lobby
+	SafeRegionPadding = Vector3.new(10, 7, 10),
+	InteractionDistance = 12,
+	RemoteRateLimit = { Count = 10, WindowSeconds = 2 },
+	ProfileStoreName = "LastStopProfile_v1",
+	AutosaveSeconds = 60,
+	StarterLoadout = { Flashlight = true, Scanner = true, Medkit = 1 },
+	StarterCoins = 0,
+	StarterXP = 0,
+	FirstEscapeBonus = 50,
+	RecentFloorWindow = 2,
+	Debug = false,
+}
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="7">
+          <Properties>
+            <string name="Name">RemoteNames</string>
+            <string name="Source"><![CDATA[return {
+	RequestQueue = "RequestQueue",
+	RequestInteract = "RequestInteract",
+	RequestDecision = "RequestDecision",
+	RequestMedkit = "RequestMedkit",
+	StateChanged = "StateChanged",
+	Toast = "Toast",
+}
+]]></string>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Folder" referent="8">
+        <Properties>
+          <string name="Name">Util</string>
+        </Properties>
+        <Item class="ModuleScript" referent="9">
+          <Properties>
+            <string name="Name">Maid</string>
+            <string name="Source"><![CDATA[local Maid = {}
+Maid.__index = Maid
+
+function Maid.new()
+	return setmetatable({ _tasks = {} }, Maid)
+end
+
+function Maid:Give(task)
+	table.insert(self._tasks, task)
+	return task
+end
+
+function Maid:Clean()
+	for _, task in ipairs(self._tasks) do
+		local kind = typeof(task)
+		if kind == "RBXScriptConnection" then
+			task:Disconnect()
+		elseif kind == "Instance" then
+			task:Destroy()
+		elseif type(task) == "function" then
+			task()
+		elseif type(task) == "table" and task.Destroy then
+			task:Destroy()
+		end
+	end
+	table.clear(self._tasks)
+end
+
+function Maid:Destroy()
+	self:Clean()
+end
+
+return Maid
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="10">
+          <Properties>
+            <string name="Name">RateLimiter</string>
+            <string name="Source"><![CDATA[local RateLimiter = {}
+RateLimiter.__index = RateLimiter
+
+function RateLimiter.new(maxCount, windowSeconds)
+	return setmetatable({ maxCount = maxCount, windowSeconds = windowSeconds, buckets = {} }, RateLimiter)
+end
+
+function RateLimiter:Allow(key)
+	local now = os.clock()
+	local bucket = self.buckets[key]
+	if not bucket or now - bucket.started >= self.windowSeconds then
+		self.buckets[key] = { started = now, count = 1 }
+		return true
+	end
+	if bucket.count >= self.maxCount then
+		return false
+	end
+	bucket.count += 1
+	return true
+end
+
+function RateLimiter:Forget(key)
+	self.buckets[key] = nil
+end
+
+return RateLimiter
+]]></string>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerScriptService" referent="11">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+    </Properties>
+    <Item class="Script" referent="12">
+      <Properties>
+        <string name="Name">Bootstrap</string>
+        <token name="RunContext">0</token>
+        <string name="Source"><![CDATA[-- LAST STOP Milestone A server bootstrap. Place as a Script in ServerScriptService.
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
+
+local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
+local RemoteNames = require(ReplicatedStorage.Shared.Config.RemoteNames)
+local RateLimiter = require(ReplicatedStorage.Shared.Util.RateLimiter)
+local ProfileService = require(script.Parent.Services.ProfileService)
+local EconomyService = require(script.Parent.Services.EconomyService)
+local FloorService = require(script.Parent.Services.FloorService)
+local PbrMaterialService = require(script.Parent.Services.PbrMaterialService)
+local EnemyService = require(script.Parent.Services.EnemyService)
+local InventoryService = require(script.Parent.Services.InventoryService)
+local MatchmakingService = require(script.Parent.Services.MatchmakingService)
+local ExpeditionService = require(script.Parent.Services.ExpeditionService)
+
+local function ensureRemotes()
+	local folder = ReplicatedStorage:FindFirstChild("Remotes")
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = "Remotes"
+		folder.Parent = ReplicatedStorage
+	end
+	local remotes = {}
+	for key, name in pairs(RemoteNames) do
+		local remote = folder:FindFirstChild(name)
+		if not remote then
+			remote = Instance.new("RemoteEvent")
+			remote.Name = name
+			remote.Parent = folder
+		end
+		assert(remote:IsA("RemoteEvent"), "Remote " .. name .. " must be a RemoteEvent")
+		remotes[key] = remote
+	end
+	return remotes
+end
+
+local remotes = ensureRemotes()
+local profiles = ProfileService.new(GameConfig)
+local economy = EconomyService.new(profiles, GameConfig)
+local floors = FloorService.new()
+local enemyService = EnemyService.new()
+local inventory = InventoryService.new()
+local lobby = floors:BuildWorld()
+PbrMaterialService:Apply(lobby.Model)
+enemyService:Start()
+
+Lighting.Brightness = 1.4
+Lighting.Ambient = Color3.fromRGB(38, 45, 54)
+Lighting.OutdoorAmbient = Color3.fromRGB(20, 25, 31)
+Lighting.FogColor = Color3.fromRGB(34, 43, 51)
+Lighting.FogEnd = 350
+Lighting.GlobalShadows = true
+Lighting.Technology = Enum.Technology.Future
+Lighting.EnvironmentDiffuseScale = 0.3
+Lighting.EnvironmentSpecularScale = 0.45
+
+local function effect(className, name, properties)
+	local instance = Lighting:FindFirstChild(name)
+	if not instance then
+		instance = Instance.new(className)
+		instance.Name = name
+		instance.Parent = Lighting
+	end
+	for property, value in pairs(properties) do
+		instance[property] = value
+	end
+	return instance
+end
+
+effect("Atmosphere", "LastStopAtmosphere", {
+	Density = 0.28,
+	Offset = 0.15,
+	Color = Color3.fromRGB(145, 169, 182),
+	Decay = Color3.fromRGB(38, 55, 65),
+	Glare = 0,
+	Haze = 1.15,
+})
+effect("ColorCorrectionEffect", "LastStopGrade", {
+	Brightness = -0.03,
+	Contrast = 0.12,
+	Saturation = -0.08,
+	TintColor = Color3.fromRGB(214, 235, 242),
+})
+effect("BloomEffect", "LastStopBloom", {
+	Intensity = 0.18,
+	Size = 28,
+	Threshold = 1.6,
+})
+
+local limiter = RateLimiter.new(GameConfig.RemoteRateLimit.Count, GameConfig.RemoteRateLimit.WindowSeconds)
+local currentExpedition = nil
+local matchmaking
+
+local function toast(player, message)
+	remotes.Toast:FireClient(player, message)
+end
+
+local function moveToLobby(player)
+	task.spawn(function()
+		local character = player.Character or player.CharacterAdded:Wait()
+		local root = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart", 5)
+		if root then
+			character:PivotTo(lobby.LobbySpawn)
+		end
+	end)
+end
+
+local function canQueue(player)
+	return profiles:Get(player) ~= nil and (not currentExpedition or not currentExpedition:IsRunning())
+end
+
+matchmaking = MatchmakingService.new(GameConfig, canQueue, function(group, finished)
+	local expedition
+	expedition = ExpeditionService.new(
+		GameConfig,
+		floors,
+		enemyService,
+		economy,
+		profiles,
+		inventory,
+		remotes,
+		function(reason)
+			if currentExpedition == expedition then
+				currentExpedition = nil
+			end
+			finished()
+			print("[LAST STOP] Expedition ended:", reason)
+		end
+	)
+	currentExpedition = expedition
+	expedition:Start(group)
+end, toast)
+
+local function remotelyAllowed(remoteName, player)
+	if not limiter:Allow(remoteName .. ":" .. player.UserId) then
+		toast(player, "Too many requests. Please wait a moment.")
+		return false
+	end
+	return true
+end
+
+remotes.RequestQueue.OnServerEvent:Connect(function(player, ...)
+	if select("#", ...) ~= 0 or not remotelyAllowed("Queue", player) then
+		return
+	end
+	local ok, message = matchmaking:RequestJoin(player)
+	toast(player, message)
+end)
+
+remotes.RequestDecision.OnServerEvent:Connect(function(player, decision, ...)
+	if select("#", ...) ~= 0 or type(decision) ~= "string" or #decision > 10 or not remotelyAllowed("Decision", player) then
+		return
+	end
+	if not currentExpedition then
+		return
+	end
+	local ok, message = currentExpedition:RequestDecision(player, decision)
+	if not ok then
+		toast(player, message)
+	end
+end)
+
+remotes.RequestMedkit.OnServerEvent:Connect(function(player, ...)
+	if select("#", ...) ~= 0 or not remotelyAllowed("Medkit", player) then
+		return
+	end
+	if currentExpedition then
+		local ok, message = currentExpedition:RequestMedkit(player)
+		toast(player, message)
+	end
+end)
+
+lobby.QueuePrompt.Triggered:Connect(function(player)
+	local ok, message = matchmaking:RequestJoin(player)
+	toast(player, message)
+end)
+
+local function onPlayerAdded(player)
+	profiles:Load(player)
+	player:SetAttribute("LastStopProfileLoaded", true)
+	moveToLobby(player)
+	toast(player, "Welcome to LAST STOP. Queue at the terminal or press PLAY.")
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+for _, player in ipairs(Players:GetPlayers()) do
+	task.spawn(onPlayerAdded, player)
+end
+
+Players.PlayerRemoving:Connect(function(player)
+	matchmaking:Remove(player)
+	if currentExpedition then
+		currentExpedition:OnPlayerRemoving(player)
+	end
+	limiter:Forget("Queue:" .. player.UserId)
+	limiter:Forget("Decision:" .. player.UserId)
+	limiter:Forget("Medkit:" .. player.UserId)
+	profiles:Release(player)
+end)
+
+task.spawn(function()
+	while task.wait(GameConfig.AutosaveSeconds) do
+		profiles:SaveAll()
+	end
+end)
+
+game:BindToClose(function()
+	if currentExpedition then
+		currentExpedition:Destroy()
+	end
+	profiles:SaveAll()
+end)
+
+matchmaking:Start()
+]]></string>
+      </Properties>
+    </Item>
+    <Item class="Folder" referent="13">
+      <Properties>
+        <string name="Name">Services</string>
+      </Properties>
+      <Item class="ModuleScript" referent="14">
+        <Properties>
+          <string name="Name">EconomyService</string>
+          <string name="Source"><![CDATA[local EconomyConfig = require(game:GetService("ReplicatedStorage").Shared.Config.EconomyConfig)
+
+local EconomyService = {}
+EconomyService.__index = EconomyService
+
+function EconomyService.new(profileService, gameConfig)
+	return setmetatable({ _profiles = profileService, _gameConfig = gameConfig }, EconomyService)
+end
+
+function EconomyService:CalculateFloorReward(depth, objectiveProgress)
+	local multiplier = math.min(
+		1 + math.max(0, depth - 1) * EconomyConfig.DepthMultiplierStep,
+		EconomyConfig.MaxDepthMultiplier
+	)
+	local gross = EconomyConfig.BaseFloorCoins + EconomyConfig.TeamCompletionBonus
+		+ EconomyConfig.ObjectiveBonus + objectiveProgress * EconomyConfig.XPPerObjectiveStep
+	return math.floor(gross * multiplier), math.floor(EconomyConfig.XPPerFloor * multiplier)
+end
+
+function EconomyService:Bank(player, unbanked, pendingXP, depth)
+	if unbanked <= 0 then
+		return 0
+	end
+	local granted = 0
+	self._profiles:Mutate(player, function(profile)
+		profile.Coins += unbanked
+		profile.XP += math.max(0, pendingXP or 0)
+		profile.Level = math.max(1, math.floor(profile.XP / 100) + 1)
+		profile.Stats.Escapes += 1
+		profile.Stats.BestDepth = math.max(profile.Stats.BestDepth or 0, depth)
+		if not profile.Stats.FirstEscapeClaimed then
+			profile.Stats.FirstEscapeClaimed = true
+			profile.Coins += self._gameConfig.FirstEscapeBonus
+			granted = unbanked + self._gameConfig.FirstEscapeBonus
+		else
+			granted = unbanked
+		end
+	end)
+	self._profiles:Save(player)
+	return granted
+end
+
+function EconomyService:GetBankedCoins(player)
+	local profile = self._profiles:Get(player)
+	return profile and profile.Coins or 0
+end
+
+return EconomyService
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="15">
+        <Properties>
+          <string name="Name">EnemyService</string>
+          <string name="Source"><![CDATA[-- One vertical-slice enemy: a readable Stalker. The FSM is server-owned and
+-- performs only non-lethal hits so a bad path never produces an instant kill.
+local PathfindingService = game:GetService("PathfindingService")
+local RunService = game:GetService("RunService")
+
+local EnemyService = {}
+EnemyService.__index = EnemyService
+
+local Stalker = {}
+Stalker.__index = Stalker
+
+local function createStalkerModel(position)
+	local model = Instance.new("Model")
+	model.Name = "Stalker"
+	local root = Instance.new("Part")
+	root.Name = "HumanoidRootPart"
+	root.Size = Vector3.new(2, 3, 2)
+	root.CFrame = CFrame.new(position)
+	root.Anchored = true
+	root.CanCollide = false
+	root.Color = Color3.fromRGB(18, 18, 21)
+	root.Material = Enum.Material.Slate
+	root.Parent = model
+	local head = Instance.new("Part")
+	head.Name = "Head"
+	head.Shape = Enum.PartType.Ball
+	head.Size = Vector3.new(1.6, 1.6, 1.6)
+	head.CFrame = root.CFrame * CFrame.new(0, 2.1, 0)
+	head.CanCollide = false
+	head.Color = Color3.fromRGB(221, 68, 68)
+	head.Material = Enum.Material.Neon
+	head.Parent = model
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = root
+	weld.Part1 = head
+	weld.Parent = root
+	local humanoid = Instance.new("Humanoid")
+	humanoid.Name = "Humanoid"
+	humanoid.WalkSpeed = 11
+	humanoid.MaxHealth = 100
+	humanoid.Health = 100
+	humanoid.Parent = model
+	model.PrimaryPart = root
+	return model, humanoid, root
+end
+
+function Stalker.new(parent, patrolPoints, context)
+	local model, humanoid, root = createStalkerModel(patrolPoints[1])
+	model.Parent = parent
+	return setmetatable({
+		model = model,
+		humanoid = humanoid,
+		root = root,
+		patrolPoints = patrolPoints,
+		context = context,
+		state = "Patrol",
+		patrolIndex = 1,
+		lastAttack = {},
+		lastPathAt = 0,
+		goal = patrolPoints[1],
+		destroyed = false,
+	}, Stalker)
+end
+
+function Stalker:_setState(nextState)
+	if self.state ~= nextState then
+		self.state = nextState
+		self.model:SetAttribute("AIState", nextState)
+	end
+end
+
+function Stalker:_canSee(root)
+	local origin = self.root.Position + Vector3.new(0, 1.5, 0)
+	local direction = root.Position - origin
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { self.model }
+	local result = workspace:Raycast(origin, direction, params)
+	return not result or result.Instance:IsDescendantOf(root.Parent)
+end
+
+function Stalker:_findTarget()
+	local chosen, chosenDistance
+	for _, player in ipairs(self.context.getActivePlayers()) do
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if root and humanoid and humanoid.Health > 0 then
+			local distance = (root.Position - self.root.Position).Magnitude
+			if distance <= 60 and (not chosenDistance or distance < chosenDistance) and self:_canSee(root) then
+				chosen = player
+				chosenDistance = distance
+			end
+		end
+	end
+	return chosen, chosenDistance
+end
+
+function Stalker:_moveToward(position)
+	if os.clock() - self.lastPathAt < 1 then
+		return
+	end
+	self.lastPathAt = os.clock()
+	local path = PathfindingService:CreatePath({ AgentRadius = 2, AgentHeight = 5, AgentCanJump = true })
+	local success = pcall(function()
+		path:ComputeAsync(self.root.Position, position)
+	end)
+	if success and path.Status == Enum.PathStatus.Success then
+		local waypoints = path:GetWaypoints()
+		local nextWaypoint = waypoints[math.min(2, #waypoints)]
+		if nextWaypoint then
+			self.goal = nextWaypoint.Position
+			return
+		end
+	end
+	self.goal = position
+end
+
+function Stalker:Step(deltaTime)
+	if self.destroyed or not self.root.Parent then
+		return
+	end
+	if self.goal then
+		local offset = self.goal - self.root.Position
+		local distanceToGoal = offset.Magnitude
+		if distanceToGoal > 0.05 then
+			local nextPosition = self.root.Position + offset.Unit * math.min(11 * (deltaTime or 0.05), distanceToGoal)
+			local lookAt = Vector3.new(self.goal.X, nextPosition.Y, self.goal.Z)
+			self.root.CFrame = CFrame.lookAt(nextPosition, lookAt)
+		end
+	end
+	local target, distance = self:_findTarget()
+	if target then
+		self:_setState("Chase")
+		local targetRoot = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+		if targetRoot then
+			self:_moveToward(targetRoot.Position)
+		end
+		if distance and distance <= 4 then
+			local now = os.clock()
+			if now - (self.lastAttack[target] or 0) >= 2 then
+				self.lastAttack[target] = now
+				self:_setState("Attack")
+				self.context.damagePlayer(target, 15, "Stalker")
+			end
+		end
+	else
+		self:_setState("Patrol")
+		local point = self.patrolPoints[self.patrolIndex]
+		if (self.root.Position - point).Magnitude < 4 then
+			self.patrolIndex = (self.patrolIndex % #self.patrolPoints) + 1
+			point = self.patrolPoints[self.patrolIndex]
+		end
+		self:_moveToward(point)
+	end
+end
+
+function Stalker:Destroy()
+	self.destroyed = true
+	if self.model then
+		self.model:Destroy()
+	end
+end
+
+function EnemyService.new()
+	return setmetatable({ _enemies = {} }, EnemyService)
+end
+
+function EnemyService:SpawnStalker(parent, patrolPoints, context)
+	local stalker = Stalker.new(parent, patrolPoints, context)
+	table.insert(self._enemies, stalker)
+	return stalker
+end
+
+function EnemyService:Start()
+	self._connection = RunService.Heartbeat:Connect(function(deltaTime)
+		for _, enemy in ipairs(self._enemies) do
+			enemy:Step(deltaTime)
+		end
+	end)
+end
+
+function EnemyService:Clear()
+	for _, enemy in ipairs(self._enemies) do
+		enemy:Destroy()
+	end
+	table.clear(self._enemies)
+end
+
+function EnemyService:Destroy()
+	self:Clear()
+	if self._connection then
+		self._connection:Disconnect()
+	end
+end
+
+return EnemyService
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="16">
+        <Properties>
+          <string name="Name">ExpeditionService</string>
+          <string name="Source"><![CDATA[-- Server-owned expedition state machine. The client receives snapshots for UI
+-- only; it never supplies damage, coins, objective progress, or escape status.
+local FloorConfig = require(game:GetService("ReplicatedStorage").Shared.Config.FloorConfig)
+
+local ExpeditionService = {}
+ExpeditionService.__index = ExpeditionService
+
+local function inBox(position, cframe, size)
+	local localPosition = cframe:PointToObjectSpace(position)
+	local half = size * 0.5
+	return math.abs(localPosition.X) <= half.X
+		and math.abs(localPosition.Y) <= half.Y
+		and math.abs(localPosition.Z) <= half.Z
+end
+
+local function characterRoot(player)
+	local character = player.Character
+	return character and character:FindFirstChild("HumanoidRootPart")
+end
+
+local function characterHumanoid(player)
+	local character = player.Character
+	return character and character:FindFirstChildOfClass("Humanoid")
+end
+
+function ExpeditionService.new(config, floorService, enemyService, economyService, profileService, inventoryService, remotes, onFinished)
+	return setmetatable({
+		_config = config,
+		_floorService = floorService,
+		_enemyService = enemyService,
+		_economyService = economyService,
+		_profileService = profileService,
+		_inventoryService = inventoryService,
+		_remotes = remotes,
+		_onFinished = onFinished,
+		state = "Idle",
+		_token = 0,
+		active = {},
+		allPlayers = {},
+		unbanked = {},
+		pendingXP = {},
+		votes = {},
+		recentFloorIds = {},
+		connections = {},
+		depth = 0,
+		floor = nil,
+		floorDefinition = nil,
+	}, ExpeditionService)
+end
+
+function ExpeditionService:IsRunning()
+	return self.state ~= "Idle" and self.state ~= "Ended"
+end
+
+function ExpeditionService:_activePlayers()
+	local result = {}
+	for player in pairs(self.active) do
+		if player.Parent then
+			table.insert(result, player)
+		end
+	end
+	return result
+end
+
+function ExpeditionService:_activeCount()
+	return #self:_activePlayers()
+end
+
+function ExpeditionService:_send(player, patch)
+	if not player.Parent then
+		return
+	end
+	local payload = {
+		state = self.state,
+		depth = self.depth,
+		floorName = self.floorDefinition and self.floorDefinition.Name or "Lobby",
+		objective = self.floorDefinition and self.floorDefinition.Prompt or "Queue for an expedition.",
+		progress = self.floor and select(1, self.floor:ObjectiveProgress()) or 0,
+		target = self.floorDefinition and self.floorDefinition.Target or 0,
+		unbanked = self.unbanked[player] or 0,
+		banked = self._economyService:GetBankedCoins(player),
+		activePlayers = self:_activeCount(),
+		seed = self.seed,
+	}
+	for key, value in pairs(patch or {}) do
+		payload[key] = value
+	end
+	self._remotes.StateChanged:FireClient(player, payload)
+end
+
+function ExpeditionService:_broadcast(patch)
+	for _, player in ipairs(self:_activePlayers()) do
+		self:_send(player, patch)
+	end
+end
+
+function ExpeditionService:_toast(player, text)
+	if player.Parent then
+		self._remotes.Toast:FireClient(player, text)
+	end
+end
+
+function ExpeditionService:_setState(nextState, patch)
+	self.state = nextState
+	self:_broadcast(patch)
+end
+
+function ExpeditionService:_movePlayer(player, cframe)
+	task.spawn(function()
+		if not player.Parent then
+			return
+		end
+		local character = player.Character
+		if not character then
+			player:LoadCharacter()
+			character = player.CharacterAdded:Wait()
+		end
+		local root = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart", 5)
+		if root then
+			character:PivotTo(cframe)
+		end
+	end)
+end
+
+function ExpeditionService:_returnToLobby(player)
+	local lobby = self._floorService.lobby
+	if lobby then
+		task.spawn(function()
+			if not player.Parent then return end
+			local previousCharacter = player.Character
+			-- A player can leave between the parent check and LoadCharacter(),
+			-- especially when a Studio play session stops. Do not let that race
+			-- turn an otherwise-clean expedition teardown into an Output error.
+			local loaded = pcall(function()
+				if player.Parent then
+					player:LoadCharacter()
+				end
+			end)
+			if not loaded or not player.Parent then
+				return
+			end
+
+			local character = player.Character
+			for _ = 1, 120 do
+				if not player.Parent then
+					return
+				end
+				if character and character ~= previousCharacter then
+					break
+				end
+				task.wait()
+				character = player.Character
+			end
+			if not character or character == previousCharacter then return end
+			local root = character and (character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart", 5))
+			if root then
+				character:PivotTo(lobby.LobbySpawn)
+			end
+		end)
+	end
+end
+
+function ExpeditionService:_watchPlayer(player)
+	local function watchCharacter(character)
+		local humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid", 5)
+		if humanoid then
+			table.insert(self.connections, humanoid.Died:Connect(function()
+				self:OnPlayerDied(player, "You were overwhelmed.")
+			end))
+		end
+	end
+	if player.Character then
+		watchCharacter(player.Character)
+	end
+	table.insert(self.connections, player.CharacterAdded:Connect(watchCharacter))
+end
+
+function ExpeditionService:Start(players)
+	assert(not self:IsRunning(), "An expedition is already running")
+	self._token += 1
+	local token = self._token
+	self.state = "Boarding"
+	self.depth = 0
+	self.seed = (os.time() + math.random(1, 1000000)) % 2147483647
+	self.active = {}
+	self.allPlayers = {}
+	self.unbanked = {}
+	self.pendingXP = {}
+	self.votes = {}
+	self.recentFloorIds = {}
+	self.floor = nil
+	self.floorDefinition = nil
+	for _, player in ipairs(players) do
+		self.active[player] = true
+		self.allPlayers[player] = true
+		self.unbanked[player] = 0
+		self.pendingXP[player] = 0
+		self._inventoryService:BeginRun(player)
+		self:_watchPlayer(player)
+		self:_movePlayer(player, self._floorService.lobby.BoardCFrame)
+	end
+	self._floorService:SetLobbyElevator(true, "BOARD NOW")
+	self:_broadcast({ message = "Board the elevator. Departure is imminent." })
+	print("[LAST STOP] Expedition seed", self.seed, "players", #players)
+	task.spawn(function()
+		if not self:_wait(self._config.BoardingSeconds, token) then
+			return
+		end
+		self._floorService:SetLobbyElevator(false, "DESCENDING")
+		self:_beginNextFloor(token)
+	end)
+end
+
+function ExpeditionService:_wait(seconds, token, predicate)
+	local finishAt = os.clock() + seconds
+	while os.clock() < finishAt do
+		if self._token ~= token or not self:IsRunning() then
+			return false
+		end
+		if predicate and predicate() then
+			return true
+		end
+		task.wait(0.2)
+	end
+	return self._token == token and self:IsRunning()
+end
+
+function ExpeditionService:_chooseFloor()
+	local candidates = {}
+	for _, definition in ipairs(FloorConfig.Floors) do
+		local recent = false
+		for _, recentId in ipairs(self.recentFloorIds) do
+			if recentId == definition.Id then
+				recent = true
+				break
+			end
+		end
+		if not recent then
+			table.insert(candidates, definition)
+		end
+	end
+	if #candidates == 0 then
+		candidates = FloorConfig.Floors
+	end
+	local totalWeight = 0
+	for _, definition in ipairs(candidates) do
+		totalWeight += definition.Weight
+	end
+	local random = Random.new(self.seed + self.depth * 104729)
+	local roll = random:NextNumber(0, totalWeight)
+	for _, definition in ipairs(candidates) do
+		roll -= definition.Weight
+		if roll <= 0 then
+			return definition
+		end
+	end
+	return candidates[#candidates]
+end
+
+function ExpeditionService:_beginNextFloor(token)
+	if self._token ~= token or self:_activeCount() == 0 then
+		self:_end("No eligible players remain.")
+		return
+	end
+	self:_setState("Travel", { message = "Descending..." })
+	if not self:_wait(self._config.TravelSeconds, token) then
+		return
+	end
+	self.depth += 1
+	self.floorDefinition = self:_chooseFloor()
+	table.insert(self.recentFloorIds, self.floorDefinition.Id)
+	if #self.recentFloorIds > self._config.RecentFloorWindow then
+		table.remove(self.recentFloorIds, 1)
+	end
+	self.floor = self._floorService:CreateRoom(self.floorDefinition, self.seed + self.depth)
+	self.floor:Initialize({
+		interactionDistance = self._config.InteractionDistance,
+		isPlayerActive = function(player)
+			return self.state == "Floor" and self.active[player] == true
+		end,
+		onObjectiveStep = function(player, key)
+			self:_onObjectiveStep(player, key)
+		end,
+	})
+	self.floor:Start()
+	for index, player in ipairs(self:_activePlayers()) do
+		self:_movePlayer(player, self.floor.spawnCFrame * CFrame.new((index - 1) * 3, 0, 0))
+	end
+	self:_setState("Floor", { message = self.floorDefinition.Prompt })
+	task.delay(5, function()
+		if self._token == token and self.state == "Floor" and self.floor then
+			self._enemyService:SpawnStalker(self.floor.model, self.floor.patrolPoints, {
+				getActivePlayers = function() return self:_activePlayers() end,
+				damagePlayer = function(player, amount, source) self:DamagePlayer(player, amount, source) end,
+			})
+			self:_broadcast({ message = "Something is moving in the dark." })
+		end
+	end)
+	task.delay(self._config.FloorTimeLimitSeconds, function()
+		if self._token == token and self.state == "Floor" then
+			self:_failCurrentFloor("The floor sealed before the objective was completed.")
+		end
+	end)
+end
+
+function ExpeditionService:_onObjectiveStep(player, key)
+	if self.state ~= "Floor" or not self.floor then
+		return
+	end
+	local progress, target = self.floor:ObjectiveProgress()
+	self:_broadcast({ message = player.DisplayName .. " advanced the objective (" .. progress .. "/" .. target .. ")." })
+	if progress >= target then
+		task.spawn(function()
+			self:_completeCurrentFloor()
+		end)
+	end
+end
+
+function ExpeditionService:_completeCurrentFloor()
+	if self.state ~= "Floor" or not self.floor then
+		return
+	end
+	local progress = select(1, self.floor:ObjectiveProgress())
+	if progress < self.floorDefinition.Target then
+		return
+	end
+	self.floor:Complete()
+	self._enemyService:Clear()
+	local coins, xp = self._economyService:CalculateFloorReward(self.depth, progress)
+	for _, player in ipairs(self:_activePlayers()) do
+		self.unbanked[player] += coins
+		self.pendingXP[player] += xp
+	end
+	self:_enterEscape(self._token, coins)
+end
+
+function ExpeditionService:_isInEscapeRegion(player)
+	if not self.floor then
+		return false
+	end
+	local root = characterRoot(player)
+	local humanoid = characterHumanoid(player)
+	return root ~= nil and humanoid ~= nil and humanoid.Health > 0
+		and inBox(root.Position, self.floor.escapeCFrame, self.floor.escapeSize)
+end
+
+function ExpeditionService:_enterEscape(token, coins)
+	if self._token ~= token or self.state ~= "Floor" then
+		return
+	end
+	self:_setState("Escape", { message = "Objective complete. Return to the elevator: +" .. coins .. " at risk." })
+	local allSafe = self:_wait(self._config.EscapeSeconds, token, function()
+		for _, player in ipairs(self:_activePlayers()) do
+			if not self:_isInEscapeRegion(player) then
+				return false
+			end
+		end
+		return self:_activeCount() > 0
+	end)
+	if self._token ~= token or self.state ~= "Escape" then
+		return
+	end
+	for _, player in ipairs(self:_activePlayers()) do
+		if not self:_isInEscapeRegion(player) then
+			self:_eliminate(player, "You missed the elevator and lost your at-risk haul.")
+		end
+	end
+	if self:_activeCount() == 0 then
+		self:_end("No one made the elevator.")
+		return
+	end
+	self:_enterDecision(token)
+end
+
+function ExpeditionService:_enterDecision(token)
+	if self._token ~= token or self:_activeCount() == 0 then
+		return
+	end
+	self.votes = {}
+	self:_setState("Decision", {
+		message = "BANK to secure your haul, or CONTINUE and keep it at risk.",
+		decisionDeadline = os.time() + self._config.DecisionSeconds,
+	})
+	self:_wait(self._config.DecisionSeconds, token, function()
+		for _, player in ipairs(self:_activePlayers()) do
+			if not self.votes[player] then
+				return false
+			end
+		end
+		return true
+	end)
+	if self._token ~= token or self.state ~= "Decision" then
+		return
+	end
+	local continuers = {}
+	for _, player in ipairs(self:_activePlayers()) do
+		if self.votes[player] == "Continue" then
+			table.insert(continuers, player)
+		else
+			self:_bankAndReturn(player)
+		end
+	end
+	if #continuers == 0 then
+		self:_end("All surviving players banked their rewards.")
+		return
+	end
+	if self.floor then
+		self.floor:Cleanup()
+		self.floor = nil
+	end
+	self:_beginNextFloor(token)
+end
+
+function ExpeditionService:RequestDecision(player, decision)
+	if self.state ~= "Decision" or not self.active[player] then
+		return false, "There is no active bank decision."
+	end
+	if decision ~= "Bank" and decision ~= "Continue" then
+		return false, "Invalid decision."
+	end
+	self.votes[player] = decision
+	self:_toast(player, decision == "Bank" and "You will bank at this stop." or "You will continue with your haul at risk.")
+	return true
+end
+
+function ExpeditionService:RequestMedkit(player)
+	return self._inventoryService:UseMedkit(player, function(candidate)
+		return candidate == player and self.active[player] == true and (self.state == "Floor" or self.state == "Escape")
+	end)
+end
+
+function ExpeditionService:_bankAndReturn(player)
+	if not self.active[player] then
+		return
+	end
+	local atRisk = self.unbanked[player] or 0
+	local secured = self._economyService:Bank(player, atRisk, self.pendingXP[player] or 0, self.depth)
+	self.active[player] = nil
+	self.unbanked[player] = 0
+	self.pendingXP[player] = 0
+	self._inventoryService:EndRun(player)
+	self:_send(player, { state = "Results", result = "BANKED", secured = secured, message = "Secured " .. secured .. " coins." })
+	self:_returnToLobby(player)
+	self._floorService:SetLobbyElevator(true, "LAST STOP")
+end
+
+function ExpeditionService:_eliminate(player, reason)
+	if not self.active[player] then
+		return
+	end
+	local lost = self.unbanked[player] or 0
+	self.active[player] = nil
+	self.unbanked[player] = 0
+	self.pendingXP[player] = 0
+	self._inventoryService:EndRun(player)
+	self:_send(player, { state = "Results", result = "LOST", lost = lost, message = reason })
+	self:_returnToLobby(player)
+	self._floorService:SetLobbyElevator(true, "LAST STOP")
+end
+
+function ExpeditionService:DamagePlayer(player, amount, source)
+	if not self.active[player] or (self.state ~= "Floor" and self.state ~= "Escape") then
+		return
+	end
+	if type(amount) ~= "number" or amount <= 0 or amount > 30 then
+		return
+	end
+	local humanoid = characterHumanoid(player)
+	if humanoid and humanoid.Health > 0 then
+		humanoid:TakeDamage(amount)
+		self:_toast(player, source .. " hit you for " .. amount .. ".")
+	end
+end
+
+function ExpeditionService:OnPlayerDied(player, reason)
+	if not self.active[player] then
+		return
+	end
+	self:_eliminate(player, reason)
+	if self:_activeCount() == 0 then
+		self:_end("The expedition has no survivors.")
+	end
+end
+
+function ExpeditionService:OnPlayerRemoving(player)
+	if self.active[player] then
+		self:_eliminate(player, "You disconnected and lost unbanked rewards.")
+		if self:_activeCount() == 0 then
+			self:_end("The expedition has no survivors.")
+		end
+	end
+end
+
+function ExpeditionService:_failCurrentFloor(reason)
+	if self.floor then
+		self.floor:Fail()
+	end
+	for _, player in ipairs(self:_activePlayers()) do
+		self:_eliminate(player, reason)
+	end
+	self:_end(reason)
+end
+
+function ExpeditionService:_end(reason)
+	if self.state == "Ended" or self.state == "Idle" then
+		return
+	end
+	self._token += 1
+	self._enemyService:Clear()
+	if self.floor then
+		self.floor:Cleanup()
+		self.floor = nil
+	end
+	for _, connection in ipairs(self.connections) do
+		connection:Disconnect()
+	end
+	table.clear(self.connections)
+	self.state = "Ended"
+	for player in pairs(self.allPlayers) do
+		if player.Parent and self.active[player] then
+			self:_eliminate(player, reason)
+		end
+	end
+	self.active = {}
+	if self._onFinished then
+		self._onFinished(reason)
+	end
+end
+
+function ExpeditionService:Destroy()
+	self:_end("Server shutdown")
+end
+
+return ExpeditionService
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="17">
+        <Properties>
+          <string name="Name">FloorService</string>
+          <string name="Source"><![CDATA[-- Builds original primitive-geometry rooms at runtime. This avoids unreviewed
+-- free models and gives every floor a common lifecycle interface.
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ArtTheme = require(ReplicatedStorage.Shared.ArtTheme)
+
+local FloorService = {}
+FloorService.__index = FloorService
+
+local PALETTE = ArtTheme.Palette
+local CHARCOAL = PALETTE.BlueGray
+local CYAN = PALETTE.Cyan
+local RED = PALETTE.Alarm
+
+local function part(parent, name, size, cframe, color, material, properties)
+	local instance = Instance.new("Part")
+	instance.Name = name
+	instance.Anchored = true
+	instance.CanCollide = true
+	instance.Size = size
+	instance.CFrame = cframe
+	instance.Color = color or CHARCOAL
+	instance.Material = material or Enum.Material.Metal
+	instance.TopSurface = Enum.SurfaceType.Smooth
+	instance.BottomSurface = Enum.SurfaceType.Smooth
+	if properties then
+		local pbrMaterial = properties.PbrMaterial
+		for property, value in pairs(properties) do
+			if property ~= "PbrMaterial" then
+				instance[property] = value
+			end
+		end
+		if pbrMaterial then
+			instance:SetAttribute("PbrMaterial", pbrMaterial)
+		end
+	end
+	instance.Parent = parent
+	return instance
+end
+
+local function surfaceText(parent, face, text, color, textSize)
+	local gui = Instance.new("SurfaceGui")
+	gui.Name = "SurfaceSign"
+	gui.Face = face or Enum.NormalId.Front
+	gui.CanvasSize = Vector2.new(800, 260)
+	gui.LightInfluence = 0
+	gui.AlwaysOnTop = false
+	gui.Adornee = parent
+	gui.Parent = parent
+	local textLabel = Instance.new("TextLabel")
+	textLabel.Size = UDim2.fromScale(1, 1)
+	textLabel.BackgroundTransparency = 1
+	textLabel.Text = text
+	textLabel.TextColor3 = color or PALETTE.OffWhite
+	textLabel.TextStrokeTransparency = 0.75
+	textLabel.Font = Enum.Font.GothamBold
+	textLabel.TextSize = textSize or 54
+	textLabel.TextWrapped = true
+	textLabel.Parent = gui
+	return gui
+end
+
+local function industrialLamp(parent, position, color, brightness, range)
+	local housing = part(parent, "CeilingFixture", Vector3.new(4, 0.35, 1.2), CFrame.new(position), Color3.fromRGB(40, 48, 55), Enum.Material.Metal)
+	local tube = part(parent, "LightTube", Vector3.new(3.3, 0.18, 0.5), CFrame.new(position - Vector3.new(0, 0.28, 0)), color, Enum.Material.Neon, { CanCollide = false })
+	local light = Instance.new("PointLight")
+	light.Color = color
+	light.Range = range or 20
+	light.Brightness = brightness or 1.5
+	light.Shadows = true
+	light.Parent = tube
+	return housing, tube
+end
+
+local function pipeRun(parent, startPosition, length, axis, color)
+	local rotation = axis == "X" and CFrame.Angles(0, 0, math.rad(90)) or CFrame.Angles(math.rad(90), 0, 0)
+	local pipe = part(parent, "ServicePipe", Vector3.new(1.1, length, 1.1), CFrame.new(startPosition) * rotation, color or PALETTE.Steel, Enum.Material.Metal)
+	pipe.Shape = Enum.PartType.Cylinder
+	for distance = -length / 2 + 3, length / 2 - 3, 6 do
+		local offset = axis == "X" and Vector3.new(distance, 0, 0) or Vector3.new(0, 0, distance)
+		local collar = part(parent, "PipeClamp", Vector3.new(1.45, 0.28, 1.45), CFrame.new(startPosition + offset) * rotation, Color3.fromRGB(39, 46, 51), Enum.Material.Metal)
+		collar.Shape = Enum.PartType.Cylinder
+	end
+	return pipe
+end
+
+local function bench(parent, position, direction)
+	local model = Instance.new("Model")
+	model.Name = "TransitBench"
+	model.Parent = parent
+	local facing = direction or CFrame.new()
+	part(model, "Seat", Vector3.new(8, 0.55, 1.7), CFrame.new(position) * facing, Color3.fromRGB(42, 52, 58), Enum.Material.Metal)
+	part(model, "Back", Vector3.new(8, 2.2, 0.35), CFrame.new(position + Vector3.new(0, 1.15, 0.66)) * facing, PALETTE.Steel, Enum.Material.Metal)
+	for _, x in ipairs({ -3.1, 0, 3.1 }) do
+		part(model, "SeatDivider", Vector3.new(0.16, 1.45, 1.85), CFrame.new(position + Vector3.new(x, 0.6, 0)) * facing, Color3.fromRGB(24, 29, 34), Enum.Material.Metal)
+	end
+	for _, x in ipairs({ -3.25, 3.25 }) do
+		part(model, "BenchLeg", Vector3.new(0.32, 2.1, 0.32), CFrame.new(position + Vector3.new(x, -1.05, 0)) * facing, PALETTE.Steel, Enum.Material.Metal)
+	end
+	return model
+end
+
+local function wallPanel(parent, position, width, height, rotation, labelText)
+	local panel = part(parent, "RecessedWallPanel", Vector3.new(width, height, 0.35), CFrame.new(position) * (rotation or CFrame.new()), Color3.fromRGB(33, 43, 50), Enum.Material.Metal)
+	local inset = part(parent, "PanelInset", Vector3.new(width - 0.5, height - 0.5, 0.16), panel.CFrame * CFrame.new(0, 0, -0.22), Color3.fromRGB(20, 27, 33), Enum.Material.SmoothPlastic)
+	if labelText then
+		surfaceText(inset, Enum.NormalId.Front, labelText, PALETTE.OffWhite, 34)
+	end
+	return panel
+end
+
+local function label(parent, text, cframe, color)
+	local board = Instance.new("BillboardGui")
+	board.Name = "Sign"
+	board.Size = UDim2.fromOffset(300, 70)
+	board.AlwaysOnTop = true
+	board.StudsOffset = Vector3.new(0, 4, 0)
+	board.Adornee = parent
+	board.Parent = parent
+	local textLabel = Instance.new("TextLabel")
+	textLabel.BackgroundTransparency = 1
+	textLabel.Size = UDim2.fromScale(1, 1)
+	textLabel.Font = Enum.Font.GothamBold
+	textLabel.TextScaled = true
+	textLabel.Text = text
+	textLabel.TextColor3 = color or CYAN
+	textLabel.TextStrokeTransparency = 0.55
+	textLabel.Parent = board
+	return board
+end
+
+local function addLight(parent, position, color, brightness)
+	local anchor = part(parent, "LightAnchor", Vector3.new(1, 1, 1), CFrame.new(position), color, Enum.Material.Neon)
+	anchor.CanCollide = false
+	local light = Instance.new("PointLight")
+	light.Color = color
+	light.Range = 22
+	light.Brightness = brightness or 2
+	light.Parent = anchor
+	return anchor
+end
+
+local RoomRuntime = {}
+RoomRuntime.__index = RoomRuntime
+
+function RoomRuntime.new(floorService, definition, seed)
+	return setmetatable({
+		_floorService = floorService,
+		definition = definition,
+		seed = seed,
+		context = nil,
+		model = nil,
+		targets = {},
+		connections = {},
+		completed = false,
+	}, RoomRuntime)
+end
+
+function RoomRuntime:Initialize(context)
+	self.context = context
+end
+
+function RoomRuntime:_createObjective(parent, key, position, caption)
+	local terminal = part(parent, key, Vector3.new(3, 4, 2), CFrame.new(position), self.definition.Accent, Enum.Material.Neon)
+	terminal:SetAttribute("ObjectiveKey", key)
+	terminal:SetAttribute("Used", false)
+	label(terminal, caption, terminal.CFrame, self.definition.Accent)
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.ActionText = "Interact"
+	prompt.ObjectText = caption
+	prompt.KeyboardKeyCode = Enum.KeyCode.E
+	prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
+	prompt.HoldDuration = 0.75
+	prompt.MaxActivationDistance = self.context.interactionDistance
+	prompt.RequiresLineOfSight = true
+	prompt.Parent = terminal
+	self.targets[key] = terminal
+	table.insert(self.connections, prompt.Triggered:Connect(function(player)
+		self:_attemptInteraction(player, key)
+	end))
+end
+
+function RoomRuntime:_attemptInteraction(player, key)
+	local target = self.targets[key]
+	if not target or target:GetAttribute("Used") then
+		return
+	end
+	if not self.context.isPlayerActive(player) then
+		return
+	end
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root or (root.Position - target.Position).Magnitude > self.context.interactionDistance then
+		return
+	end
+	target:SetAttribute("Used", true)
+	target.Color = Color3.fromRGB(100, 255, 160)
+	self.context.onObjectiveStep(player, key)
+end
+
+function RoomRuntime:Start()
+	assert(self.context, "RoomRuntime must be initialized before Start")
+	local model = Instance.new("Model")
+	model.Name = self.definition.Id
+	model.Parent = self._floorService._activeFolder
+	self.model = model
+
+	local origin = self._floorService._floorOrigin
+	part(model, "Floor", Vector3.new(76, 2, 96), CFrame.new(origin), CHARCOAL, Enum.Material.Concrete)
+	part(model, "NorthWall", Vector3.new(76, 18, 2), CFrame.new(origin + Vector3.new(0, 9, -47)), Color3.fromRGB(25, 28, 32))
+	part(model, "SouthWall", Vector3.new(76, 18, 2), CFrame.new(origin + Vector3.new(0, 9, 47)), Color3.fromRGB(25, 28, 32))
+	part(model, "WestWall", Vector3.new(2, 18, 96), CFrame.new(origin + Vector3.new(-37, 9, 0)), Color3.fromRGB(25, 28, 32))
+	part(model, "EastWall", Vector3.new(2, 18, 96), CFrame.new(origin + Vector3.new(37, 9, 0)), Color3.fromRGB(25, 28, 32))
+	part(model, "Ceiling", Vector3.new(76, 2, 96), CFrame.new(origin + Vector3.new(0, 18, 0)), Color3.fromRGB(27, 31, 35))
+	for _, x in ipairs({ -26, 0, 26 }) do
+		addLight(model, origin + Vector3.new(x, 15, 0), self.definition.Accent, 2)
+	end
+
+	-- The elevator is visually part of every room and its invisible region is the
+	-- server-validated escape destination after the objective completes.
+	local elevator = Instance.new("Model")
+	elevator.Name = "ReturnElevator"
+	elevator.Parent = model
+	part(elevator, "CabinFloor", Vector3.new(18, 1, 14), CFrame.new(origin + Vector3.new(0, 1, 36)), Color3.fromRGB(20, 23, 28))
+	part(elevator, "CabinBack", Vector3.new(18, 12, 1), CFrame.new(origin + Vector3.new(0, 7, 42)), Color3.fromRGB(46, 51, 58))
+	part(elevator, "CabinLeft", Vector3.new(1, 12, 14), CFrame.new(origin + Vector3.new(-9, 7, 36)), Color3.fromRGB(46, 51, 58))
+	part(elevator, "CabinRight", Vector3.new(1, 12, 14), CFrame.new(origin + Vector3.new(9, 7, 36)), Color3.fromRGB(46, 51, 58))
+	local escapePad = part(elevator, "SafeRegion", Vector3.new(16, 1, 12), CFrame.new(origin + Vector3.new(0, 1.5, 36)), Color3.fromRGB(73, 212, 210), Enum.Material.Neon)
+	escapePad.Transparency = 0.55
+	label(escapePad, "RETURN ELEVATOR", escapePad.CFrame, CYAN)
+	self.escapeCFrame = CFrame.new(origin + Vector3.new(0, 5, 36))
+	self.escapeSize = Vector3.new(16, 10, 12)
+	self.spawnCFrame = CFrame.new(origin + Vector3.new(0, 4, 30))
+
+	local targetPositions = {
+		origin + Vector3.new(-22, 3, -18),
+		origin + Vector3.new(0, 3, -8),
+		origin + Vector3.new(22, 3, -18),
+	}
+	for index = 1, self.definition.Target do
+		local word = self.definition.ObjectiveType == "Collect" and "Record Case" or "System Terminal"
+		self:_createObjective(model, self.definition.Id .. "_" .. index, targetPositions[index], word .. " " .. index)
+	end
+
+	if self.definition.Id == "FloodedLab" then
+		local water = part(model, "RisingWaterVisual", Vector3.new(70, 1, 55), CFrame.new(origin + Vector3.new(0, 1.6, -12)), Color3.fromRGB(48, 134, 205), Enum.Material.Glass)
+		water.Transparency = 0.4
+	elseif self.definition.Id == "Lockdown" then
+		for _, x in ipairs({ -14, 14 }) do
+			local laser = part(model, "SecurityLaser", Vector3.new(1, 0.3, 54), CFrame.new(origin + Vector3.new(x, 5, -4)), RED, Enum.Material.Neon)
+			laser.CanCollide = false
+		end
+	end
+
+	self.patrolPoints = {
+		origin + Vector3.new(-25, 2, -25), origin + Vector3.new(25, 2, -25),
+		origin + Vector3.new(25, 2, 20), origin + Vector3.new(-25, 2, 20),
+	}
+	return self
+end
+
+function RoomRuntime:ObjectiveProgress()
+	local used = 0
+	for _, target in pairs(self.targets) do
+		if target:GetAttribute("Used") then
+			used += 1
+		end
+	end
+	return used, self.definition.Target
+end
+
+function RoomRuntime:Complete()
+	self.completed = true
+	if self.model then
+		self.model:SetAttribute("Complete", true)
+	end
+end
+
+function RoomRuntime:Fail()
+	if self.model then
+		self.model:SetAttribute("Failed", true)
+	end
+end
+
+function RoomRuntime:Cleanup()
+	for _, connection in ipairs(self.connections) do
+		connection:Disconnect()
+	end
+	table.clear(self.connections)
+	if self.model then
+		self.model:Destroy()
+		self.model = nil
+	end
+	self.targets = {}
+end
+
+function FloorService.new()
+	return setmetatable({
+		_world = nil,
+		_activeFolder = nil,
+		_floorOrigin = Vector3.new(0, 0, 700),
+		lobby = nil,
+	}, FloorService)
+end
+
+function FloorService:BuildWorld()
+	local existing = workspace:FindFirstChild("LastStopWorld")
+	if existing then
+		existing:Destroy()
+	end
+	local world = Instance.new("Folder")
+	world.Name = "LastStopWorld"
+	world.Parent = workspace
+	self._world = world
+	self._activeFolder = Instance.new("Folder")
+	self._activeFolder.Name = "ActiveExpedition"
+	self._activeFolder.Parent = world
+	local lobby = Instance.new("Model")
+	lobby.Name = "Lobby"
+	lobby.Parent = world
+	part(lobby, "StationFloor", Vector3.new(120, 2, 90), CFrame.new(0, 0, 0), Color3.fromRGB(35, 39, 44), Enum.Material.Concrete)
+	part(lobby, "StationBack", Vector3.new(120, 24, 2), CFrame.new(0, 12, -44), Color3.fromRGB(25, 28, 32))
+	for _, x in ipairs({ -45, -20, 20, 45 }) do
+		addLight(lobby, Vector3.new(x, 18, -12), CYAN, 2)
+	end
+	local elevator = Instance.new("Model")
+	elevator.Name = "CentralElevator"
+	elevator.Parent = lobby
+	part(elevator, "CabinFloor", Vector3.new(22, 1, 18), CFrame.new(0, 1, 0), Color3.fromRGB(19, 22, 27))
+	part(elevator, "BackWall", Vector3.new(22, 16, 1), CFrame.new(0, 8, 8.5), Color3.fromRGB(46, 51, 58))
+	part(elevator, "LeftWall", Vector3.new(1, 16, 18), CFrame.new(-10.5, 8, 0), Color3.fromRGB(46, 51, 58))
+	part(elevator, "RightWall", Vector3.new(1, 16, 18), CFrame.new(10.5, 8, 0), Color3.fromRGB(46, 51, 58))
+	local leftDoor = part(elevator, "DoorLeft", Vector3.new(10, 12, 1), CFrame.new(-5, 7, -8.5), Color3.fromRGB(57, 64, 72))
+	local rightDoor = part(elevator, "DoorRight", Vector3.new(10, 12, 1), CFrame.new(5, 7, -8.5), Color3.fromRGB(57, 64, 72))
+	local sign = part(elevator, "FloorDisplay", Vector3.new(8, 2, 0.5), CFrame.new(0, 12, 8), CYAN, Enum.Material.Neon)
+	label(sign, "LAST STOP", sign.CFrame, Color3.fromRGB(15, 25, 29))
+	local queueConsole = part(lobby, "QueueConsole", Vector3.new(5, 4, 3), CFrame.new(28, 3, 10), CYAN, Enum.Material.Metal)
+	label(queueConsole, "PLAY", queueConsole.CFrame, CYAN)
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.ActionText = "Queue Expedition"
+	prompt.ObjectText = "Last Stop Terminal"
+	prompt.HoldDuration = 0
+	prompt.MaxActivationDistance = 12
+	prompt.Parent = queueConsole
+	self.lobby = {
+		Model = lobby,
+		QueuePrompt = prompt,
+		BoardCFrame = CFrame.new(0, 5, 0),
+		LobbySpawn = CFrame.new(0, 5, 25),
+		BoardRegionCFrame = CFrame.new(0, 6, 0),
+		BoardRegionSize = Vector3.new(20, 12, 16),
+		Doors = { Left = leftDoor, Right = rightDoor },
+		DoorOpen = { Left = CFrame.new(-14, 7, -8.5), Right = CFrame.new(14, 7, -8.5) },
+		DoorClosed = { Left = leftDoor.CFrame, Right = rightDoor.CFrame },
+		Display = sign,
+	}
+	self:_decorateLobby(lobby, elevator)
+	self:SetLobbyElevator(true, "LAST STOP")
+	return self.lobby
+end
+
+-- This is runtime-authored on purpose: FloorService owns LastStopWorld and
+-- safely clears/rebuilds it every server start. Handmade scene geometry would
+-- otherwise be deleted by the lifecycle cleanup.
+function FloorService:_decorateLobby(lobby, elevator)
+	local architecture = Instance.new("Model")
+	architecture.Name = "ArtDirectedConcourse"
+	architecture.Parent = lobby
+
+	-- Layered floor: inset steel panels, amber platform edge and a rail trench.
+	part(architecture, "ConcourseSurface", Vector3.new(116, 0.22, 84), CFrame.new(0, 1.1, 0), PALETTE.Concrete, Enum.Material.Concrete)
+	for x = -52, 52, 13 do
+		for z = -30, 34, 16 do
+			local panel = part(architecture, "FloorPlate", Vector3.new(11.4, 0.12, 13.6), CFrame.new(x, 1.28, z), Color3.fromRGB(41, 50, 56), Enum.Material.Metal)
+			panel.Reflectance = 0.03
+		end
+	end
+	part(architecture, "PlatformEdge", Vector3.new(112, 0.16, 1.2), CFrame.new(0, 1.35, -26), PALETTE.Amber, Enum.Material.Neon, { CanCollide = false })
+	part(architecture, "PlatformEdgeInset", Vector3.new(112, 0.16, 2.1), CFrame.new(0, 1.22, -28), Color3.fromRGB(30, 35, 39), Enum.Material.Metal)
+	for x = -54, 54, 6 do
+		part(architecture, "RailSleeper", Vector3.new(3.2, 0.45, 7.5), CFrame.new(x, 1.32, -35), Color3.fromRGB(48, 40, 34), Enum.Material.WoodPlanks)
+	end
+	for _, z in ipairs({ -33, -37 }) do
+		local rail = part(architecture, "Rail", Vector3.new(112, 0.26, 0.32), CFrame.new(0, 1.7, z), PALETTE.Steel, Enum.Material.Metal)
+		rail.Reflectance = 0.12
+	end
+	part(architecture, "TrackVoid", Vector3.new(116, 3.2, 13), CFrame.new(0, -0.15, -35), Color3.fromRGB(13, 18, 23), Enum.Material.Slate)
+
+	-- The concourse shell is deliberately multi-layered: primary walls, recessed
+	-- panels, ceiling coffers, beams, lamps, vents, pipes and cable trays.
+	part(architecture, "Ceiling", Vector3.new(120, 1.4, 90), CFrame.new(0, 23, 0), PALETTE.VoidNavy, Enum.Material.Metal)
+	for _, x in ipairs({ -55, -33, -11, 11, 33, 55 }) do
+		part(architecture, "CeilingBeam", Vector3.new(2.4, 2.2, 86), CFrame.new(x, 21.5, 0), Color3.fromRGB(36, 46, 53), Enum.Material.Metal)
+	end
+	for _, z in ipairs({ -38, -13, 12, 37 }) do
+		part(architecture, "CeilingRib", Vector3.new(112, 1.1, 1.2), CFrame.new(0, 21.8, z), Color3.fromRGB(35, 45, 52), Enum.Material.Metal)
+	end
+	for _, x in ipairs({ -50, -25, 0, 25, 50 }) do
+		industrialLamp(architecture, Vector3.new(x, 19.8, 16), PALETTE.OffWhite, 1.45, 19)
+		industrialLamp(architecture, Vector3.new(x, 19.8, -8), Color3.fromRGB(127, 202, 208), 1.1, 16)
+	end
+
+	part(architecture, "WestStructuralWall", Vector3.new(3, 22, 88), CFrame.new(-58, 11, 0), Color3.fromRGB(31, 40, 46), Enum.Material.Concrete)
+	part(architecture, "EastStructuralWall", Vector3.new(3, 22, 88), CFrame.new(58, 11, 0), Color3.fromRGB(31, 40, 46), Enum.Material.Concrete)
+	part(architecture, "RearStructuralWall", Vector3.new(116, 22, 3), CFrame.new(0, 11, -43), Color3.fromRGB(30, 38, 44), Enum.Material.Concrete)
+	for _, x in ipairs({ -50, -35, -20, 20, 35, 50 }) do
+		part(architecture, "SupportColumn", Vector3.new(3.2, 19, 3.2), CFrame.new(x, 10.5, -17), Color3.fromRGB(49, 59, 64), Enum.Material.Metal)
+		part(architecture, "ColumnBase", Vector3.new(4.4, 0.7, 4.4), CFrame.new(x, 1.65, -17), Color3.fromRGB(25, 31, 36), Enum.Material.Metal)
+		part(architecture, "ColumnBand", Vector3.new(3.45, 0.45, 3.45), CFrame.new(x, 11, -17), PALETTE.Amber, Enum.Material.Neon, { CanCollide = false })
+	end
+	for _, x in ipairs({ -43, -24, 24, 43 }) do
+		wallPanel(architecture, Vector3.new(x, 9, -41.35), 13, 12, CFrame.new(), x < 0 and "SERVICE / 07" or "NORTHBOUND")
+	end
+	for _, z in ipairs({ -26, -2, 22 }) do
+		wallPanel(architecture, Vector3.new(-56.35, 8, z), 13, 10, CFrame.Angles(0, math.rad(90), 0), nil)
+		wallPanel(architecture, Vector3.new(56.35, 8, z), 13, 10, CFrame.Angles(0, math.rad(-90), 0), nil)
+	end
+
+	-- Transit props: benches, gates, console bank, barriers, bins, service pipe,
+	-- ventilation and cable hardware all use controlled primitive geometry.
+	bench(architecture, Vector3.new(-37, 2.6, 25), CFrame.Angles(0, math.rad(180), 0))
+	bench(architecture, Vector3.new(37, 2.6, 25), CFrame.Angles(0, math.rad(180), 0))
+	bench(architecture, Vector3.new(-38, 2.6, -8), CFrame.new())
+	for _, x in ipairs({ -20, -14, 14, 20 }) do
+		local gate = part(architecture, "TicketGate", Vector3.new(2.3, 3, 2.6), CFrame.new(x, 2.55, 31), Color3.fromRGB(39, 53, 60), Enum.Material.Metal)
+		local reader = part(architecture, "GateReader", Vector3.new(0.7, 0.32, 0.65), CFrame.new(x, 4.1, 30.45), CYAN, Enum.Material.Neon, { CanCollide = false })
+		local gateLight = Instance.new("PointLight")
+		gateLight.Color = CYAN
+		gateLight.Range = 6
+		gateLight.Brightness = 0.45
+		gateLight.Parent = reader
+	end
+	for _, x in ipairs({ -47, 47 }) do
+		local bin = part(architecture, "WasteBin", Vector3.new(2.3, 3.4, 2.3), CFrame.new(x, 2.85, 12), Color3.fromRGB(35, 45, 49), Enum.Material.Metal)
+		part(architecture, "WasteBinLid", Vector3.new(2.6, 0.25, 2.6), bin.CFrame * CFrame.new(0, 1.82, 0), PALETTE.Steel, Enum.Material.Metal)
+	end
+	for _, x in ipairs({ -48, 48 }) do
+		local barrier = part(architecture, "MaintenanceBarrier", Vector3.new(9, 2.8, 0.35), CFrame.new(x, 2.6, -24), PALETTE.Amber, Enum.Material.Metal)
+		for stripe = -3, 3, 2 do
+			part(architecture, "BarrierStripe", Vector3.new(0.65, 2.65, 0.08), barrier.CFrame * CFrame.new(stripe, 0, -0.23) * CFrame.Angles(0, 0, math.rad(35)), PALETTE.VoidNavy, Enum.Material.SmoothPlastic, { CanCollide = false })
+		end
+	end
+	pipeRun(architecture, Vector3.new(-48, 18.5, 35), 66, "X", Color3.fromRGB(85, 98, 99))
+	pipeRun(architecture, Vector3.new(48, 18, -4), 53, "Z", Color3.fromRGB(69, 82, 89))
+	for _, x in ipairs({ -40, -8, 8, 40 }) do
+		local vent = part(architecture, "CeilingVent", Vector3.new(9, 0.28, 4), CFrame.new(x, 21.15, 35), Color3.fromRGB(31, 40, 45), Enum.Material.Metal)
+		for blade = -3, 3, 1.5 do
+			part(architecture, "VentSlat", Vector3.new(0.15, 0.18, 3.3), vent.CFrame * CFrame.new(blade, -0.22, 0), PALETTE.Steel, Enum.Material.Metal, { CanCollide = false })
+		end
+	end
+
+	-- The elevator gets a separate hero treatment: threshold, layered frame,
+	-- recessed ceiling, physical button pedestal, floor indicator and sign.
+	local frame = Instance.new("Model")
+	frame.Name = "ElevatorHeroDetail"
+	frame.Parent = elevator
+	part(frame, "Threshold", Vector3.new(25, 0.3, 2), CFrame.new(0, 1.32, -9.1), PALETTE.Steel, Enum.Material.Metal)
+	part(frame, "DoorHeader", Vector3.new(26, 2.1, 1.4), CFrame.new(0, 14.9, -8.9), Color3.fromRGB(34, 45, 52), Enum.Material.Metal)
+	part(frame, "OuterFrameLeft", Vector3.new(2.2, 15, 1.1), CFrame.new(-12, 8, -8.8), Color3.fromRGB(39, 51, 58), Enum.Material.Metal)
+	part(frame, "OuterFrameRight", Vector3.new(2.2, 15, 1.1), CFrame.new(12, 8, -8.8), Color3.fromRGB(39, 51, 58), Enum.Material.Metal)
+	part(frame, "CabinCeiling", Vector3.new(20, 0.65, 15), CFrame.new(0, 15.2, 0), Color3.fromRGB(24, 31, 37), Enum.Material.Metal)
+	for _, x in ipairs({ -6, 0, 6 }) do
+		industrialLamp(frame, Vector3.new(x, 14.7, 0), PALETTE.OffWhite, 1.0, 10)
+	end
+	for _, x in ipairs({ -8, -4, 4, 8 }) do
+		part(frame, "FloorInlay", Vector3.new(2.4, 0.11, 13), CFrame.new(x, 1.52, 0), Color3.fromRGB(30, 39, 44), Enum.Material.Metal, { CanCollide = false })
+	end
+	local displayHousing = part(frame, "FloorIndicatorHousing", Vector3.new(7.2, 2.7, 0.45), CFrame.new(0, 12.5, 8.05), Color3.fromRGB(20, 28, 33), Enum.Material.Metal)
+	surfaceText(displayHousing, Enum.NormalId.Back, "LAST\nSTOP", CYAN, 46)
+	local buttonPedestal = part(frame, "CallPanelHousing", Vector3.new(1.5, 4.6, 0.6), CFrame.new(8.8, 6, -6.9), Color3.fromRGB(43, 52, 57), Enum.Material.Metal)
+	local emergencyButton = part(frame, "EmergencyButton", Vector3.new(0.72, 0.72, 0.16), CFrame.new(8.8, 6.6, -7.28), RED, Enum.Material.Neon, { CanCollide = false })
+	local callButton = part(frame, "CallButton", Vector3.new(0.72, 0.72, 0.16), CFrame.new(8.8, 5.1, -7.28), CYAN, Enum.Material.Neon, { CanCollide = false })
+	surfaceText(buttonPedestal, Enum.NormalId.Front, "HELP\n  ◉\n  ◌", PALETTE.OffWhite, 20)
+	for _, side in ipairs({ -1, 1 }) do
+		local stripe = part(frame, "SafetyStripe", Vector3.new(0.7, 11.2, 0.12), CFrame.new(side * 10.25, 7, -9.08), PALETTE.Amber, Enum.Material.Neon, { CanCollide = false })
+		stripe.Transparency = 0.18
+	end
+
+	local routeSign = part(architecture, "RouteSign", Vector3.new(34, 3.8, 0.45), CFrame.new(0, 17, 24), Color3.fromRGB(20, 31, 37), Enum.Material.Metal)
+	surfaceText(routeSign, Enum.NormalId.Front, "LAST STOP  //  PLATFORM  01", PALETTE.OffWhite, 42)
+	local signLight = Instance.new("SurfaceLight")
+	signLight.Face = Enum.NormalId.Front
+	signLight.Color = CYAN
+	signLight.Range = 10
+	signLight.Brightness = 0.55
+	signLight.Parent = routeSign
+
+	-- These material tags are inert until ArtTheme contains verified Roblox
+	-- image IDs. PbrMaterialService resolves them into MaterialVariants after
+	-- BuildWorld, keeping the runtime geometry and asset pipeline reproducible.
+	local concreteSurfaces = {
+		ConcourseSurface = true,
+		WestStructuralWall = true,
+		EastStructuralWall = true,
+		RearStructuralWall = true,
+	}
+	local metalSurfaces = {
+		FloorPlate = true,
+		CabinFloor = true,
+		BackWall = true,
+		LeftWall = true,
+		RightWall = true,
+		DoorLeft = true,
+		DoorRight = true,
+		Threshold = true,
+		DoorHeader = true,
+		OuterFrameLeft = true,
+		OuterFrameRight = true,
+		CabinCeiling = true,
+		FloorInlay = true,
+	}
+	for _, descendant in ipairs(lobby:GetDescendants()) do
+		if descendant:IsA("BasePart") then
+			if concreteSurfaces[descendant.Name] then
+				descendant:SetAttribute("PbrMaterial", "ChippedConcrete")
+			elseif metalSurfaces[descendant.Name] then
+				descendant:SetAttribute("PbrMaterial", "MetalPlate")
+			end
+		end
+	end
+	architecture:SetAttribute("PropTypes", 22)
+end
+
+function FloorService:SetLobbyElevator(open, displayText)
+	if not self.lobby then return end
+	local target = open and self.lobby.DoorOpen or self.lobby.DoorClosed
+	for side, door in pairs(self.lobby.Doors) do
+		TweenService:Create(door, TweenInfo.new(0.65, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { CFrame = target[side] }):Play()
+	end
+	local sign = self.lobby.Display
+	local board = sign and sign:FindFirstChildOfClass("BillboardGui")
+	local text = board and board:FindFirstChildOfClass("TextLabel")
+	if text and displayText then
+		text.Text = displayText
+	end
+end
+
+function FloorService:CreateRoom(definition, seed)
+	return RoomRuntime.new(self, definition, seed)
+end
+
+return FloorService
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="18">
+        <Properties>
+          <string name="Name">InventoryService</string>
+          <string name="Source"><![CDATA[-- Minimal vertical-slice equipment: a real togglable flashlight and one server
+-- validated medkit per expedition. Broader equipment ships in Milestone B.
+local InventoryService = {}
+InventoryService.__index = InventoryService
+
+local function makeFlashlight()
+	local tool = Instance.new("Tool")
+	tool.Name = "LastStopFlashlight"
+	tool.ToolTip = "Flashlight"
+	tool.RequiresHandle = true
+	tool.CanBeDropped = false
+	local handle = Instance.new("Part")
+	handle.Name = "Handle"
+	handle.Size = Vector3.new(0.5, 0.5, 2)
+	handle.Color = Color3.fromRGB(45, 52, 58)
+	handle.Material = Enum.Material.Metal
+	handle.Parent = tool
+	local beam = Instance.new("SpotLight")
+	beam.Name = "Beam"
+	beam.Enabled = false
+	beam.Angle = 55
+	beam.Range = 45
+	beam.Brightness = 2
+	beam.Color = Color3.fromRGB(210, 245, 255)
+	beam.Face = Enum.NormalId.Front
+	beam.Parent = handle
+	tool.Activated:Connect(function()
+		beam.Enabled = not beam.Enabled
+	end)
+	return tool
+end
+
+function InventoryService.new()
+	return setmetatable({ _medkits = {} }, InventoryService)
+end
+
+function InventoryService:BeginRun(player)
+	self._medkits[player] = 1
+	player:SetAttribute("LastStopMedkits", 1)
+	local backpack = player:FindFirstChildOfClass("Backpack")
+	if backpack and not backpack:FindFirstChild("LastStopFlashlight") then
+		makeFlashlight().Parent = backpack
+	end
+end
+
+function InventoryService:UseMedkit(player, allowed)
+	if not allowed(player) then
+		return false, "Medkits can only be used during a floor."
+	end
+	if (self._medkits[player] or 0) <= 0 then
+		return false, "No medkits remaining."
+	end
+	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	if not humanoid or humanoid.Health <= 0 or humanoid.Health >= humanoid.MaxHealth then
+		return false, "You do not need a medkit yet."
+	end
+	self._medkits[player] -= 1
+	player:SetAttribute("LastStopMedkits", self._medkits[player])
+	humanoid.Health = math.min(humanoid.MaxHealth, humanoid.Health + 35)
+	return true, "Medkit used."
+end
+
+function InventoryService:EndRun(player)
+	self._medkits[player] = nil
+	player:SetAttribute("LastStopMedkits", nil)
+	for _, container in ipairs({ player:FindFirstChildOfClass("Backpack"), player.Character }) do
+		local tool = container and container:FindFirstChild("LastStopFlashlight")
+		if tool then
+			tool:Destroy()
+		end
+	end
+end
+
+return InventoryService
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="19">
+        <Properties>
+          <string name="Name">MatchmakingService</string>
+          <string name="Source"><![CDATA[-- Server-local matchmaking for the vertical slice. It supports solo starts and
+-- batches up to twelve queued players; cross-server queues belong in Milestone B.
+local MatchmakingService = {}
+MatchmakingService.__index = MatchmakingService
+
+function MatchmakingService.new(config, canQueue, onStart, onToast)
+	return setmetatable({
+		_config = config,
+		_canQueue = canQueue,
+		_onStart = onStart,
+		_onToast = onToast,
+		_queue = {},
+		_queued = {},
+		_countdown = nil,
+		_running = false,
+		_stopped = false,
+	}, MatchmakingService)
+end
+
+function MatchmakingService:IsQueued(player)
+	return self._queued[player] == true
+end
+
+function MatchmakingService:RequestJoin(player)
+	if self._running then
+		return false, "An expedition is already running in this server. Please wait."
+	end
+	if not self._canQueue(player) then
+		return false, "Your profile is still loading."
+	end
+	if self._queued[player] then
+		return true, "Already queued."
+	end
+	self._queued[player] = true
+	table.insert(self._queue, player)
+	if not self._countdown then
+		self._countdown = self._config.LobbyQueueCountdown
+	end
+	return true, "Queued for the next elevator."
+end
+
+function MatchmakingService:Remove(player)
+	self._queued[player] = nil
+	for index = #self._queue, 1, -1 do
+		if self._queue[index] == player then
+			table.remove(self._queue, index)
+		end
+	end
+	if #self._queue == 0 then
+		self._countdown = nil
+	end
+end
+
+function MatchmakingService:_startQueuedGroup()
+	if self._running or #self._queue == 0 then
+		return
+	end
+	local group = {}
+	while #group < self._config.MaxExpeditionPlayers and #self._queue > 0 do
+		local player = table.remove(self._queue, 1)
+		self._queued[player] = nil
+		if player.Parent and self._canQueue(player) then
+			table.insert(group, player)
+		end
+	end
+	self._countdown = #self._queue > 0 and self._config.LobbyQueueCountdown or nil
+	if #group > 0 then
+		self._running = true
+		self._onStart(group, function()
+			self._running = false
+		end)
+	end
+end
+
+function MatchmakingService:Start()
+	task.spawn(function()
+		while not self._stopped do
+			task.wait(1)
+			if not self._running and self._countdown then
+				self._countdown -= 1
+				for player in pairs(self._queued) do
+					self._onToast(player, "Elevator departs in " .. math.max(0, self._countdown) .. "s")
+				end
+				if self._countdown <= 0 then
+					self:_startQueuedGroup()
+				end
+			end
+		end
+	end)
+end
+
+function MatchmakingService:Destroy()
+	self._stopped = true
+end
+
+return MatchmakingService
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="20">
+        <Properties>
+          <string name="Name">PbrMaterialService</string>
+          <string name="Source"><![CDATA[-- Creates only verified, owner-uploaded PBR MaterialVariants. Empty entries in
+-- ArtTheme are intentionally ignored: an unverified texture ID must never
+-- become a production dependency.
+local MaterialService = game:GetService("MaterialService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local ArtTheme = require(ReplicatedStorage.Shared.ArtTheme)
+
+local PbrMaterialService = {}
+
+local function validContentId(value)
+	return typeof(value) == "string" and value ~= ""
+end
+
+local function isComplete(definition)
+	return definition
+		and validContentId(definition.ColorMap)
+		and validContentId(definition.NormalMap)
+		and validContentId(definition.RoughnessMap)
+		and validContentId(definition.MetalnessMap)
+end
+
+function PbrMaterialService:Configure()
+	local configured = {}
+	for name, definition in pairs(ArtTheme.Pbr) do
+		if isComplete(definition) then
+			local variant = MaterialService:FindFirstChild(name)
+			if variant and not variant:IsA("MaterialVariant") then
+				warn(("[LAST STOP] Cannot create PBR material %s: name is already occupied."):format(name))
+			elseif not variant then
+				variant = Instance.new("MaterialVariant")
+				variant.Name = name
+				variant.Parent = MaterialService
+			end
+
+			if variant then
+				variant.BaseMaterial = definition.BaseMaterial
+				variant.ColorMap = definition.ColorMap
+				variant.NormalMap = definition.NormalMap
+				variant.RoughnessMap = definition.RoughnessMap
+				variant.MetalnessMap = definition.MetalnessMap
+				configured[name] = true
+			end
+		end
+	end
+	return configured
+end
+
+function PbrMaterialService:Apply(root)
+	local configured = self:Configure()
+	if not next(configured) then
+		return false
+	end
+
+	for _, descendant in ipairs(root:GetDescendants()) do
+		if descendant:IsA("BasePart") then
+			local materialName = descendant:GetAttribute("PbrMaterial")
+			local definition = materialName and ArtTheme.Pbr[materialName]
+			if definition and configured[materialName] then
+				descendant.Material = definition.BaseMaterial
+				descendant.MaterialVariant = materialName
+			end
+		end
+	end
+
+	return true
+end
+
+return PbrMaterialService
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="21">
+        <Properties>
+          <string name="Name">ProfileService</string>
+          <string name="Source"><![CDATA[-- Persistent, server-owned player profile service. DataStore failures degrade to a
+-- session profile; no client-supplied balance is ever accepted.
+local DataStoreService = game:GetService("DataStoreService")
+
+local ProfileService = {}
+ProfileService.__index = ProfileService
+
+local function defaultProfile(config)
+	return {
+		Version = config.Version,
+		Coins = config.StarterCoins,
+		XP = config.StarterXP,
+		Level = 1,
+		Equipment = { Flashlight = true, Scanner = true, Medkit = 1 },
+		Stats = { Escapes = 0, BestDepth = 0, FirstEscapeClaimed = false },
+	}
+end
+
+local function normalise(saved, config)
+	local profile = defaultProfile(config)
+	if type(saved) ~= "table" then
+		return profile
+	end
+	profile.Version = math.max(tonumber(saved.Version) or 1, 1)
+	profile.Coins = math.max(0, math.floor(tonumber(saved.Coins) or 0))
+	profile.XP = math.max(0, math.floor(tonumber(saved.XP) or 0))
+	profile.Level = math.max(1, math.floor(tonumber(saved.Level) or 1))
+	if type(saved.Equipment) == "table" then
+		profile.Equipment = saved.Equipment
+	end
+	if type(saved.Stats) == "table" then
+		for key, value in pairs(saved.Stats) do
+			if type(value) == "boolean" or type(value) == "number" then
+				profile.Stats[key] = value
+			end
+		end
+	end
+	return profile
+end
+
+function ProfileService.new(config)
+	local store
+	local storeAvailable, storeError = pcall(function()
+		store = DataStoreService:GetDataStore(config.ProfileStoreName)
+	end)
+	if not storeAvailable then
+		warn("[ProfileService] DataStore unavailable; using session-only profiles:", storeError)
+	end
+	return setmetatable({
+		_config = config,
+		_store = store,
+		_storeAvailable = storeAvailable,
+		_profiles = {},
+		_dirty = {},
+	}, ProfileService)
+end
+
+function ProfileService:Load(player)
+	local key = "p_" .. player.UserId
+	local loaded
+	local ok, err = self._storeAvailable, "DataStore unavailable"
+	if self._storeAvailable then
+		ok, err = pcall(function()
+			loaded = self._store:GetAsync(key)
+		end)
+	end
+	if not ok then
+		warn("[ProfileService] load failed for", player.UserId, err)
+	end
+	local profile = normalise(loaded, self._config)
+	self._profiles[player] = profile
+	self._dirty[player] = not ok
+	return profile
+end
+
+function ProfileService:Get(player)
+	return self._profiles[player]
+end
+
+function ProfileService:Mutate(player, callback)
+	local profile = self._profiles[player]
+	if not profile then
+		return false, "Profile not loaded"
+	end
+	callback(profile)
+	self._dirty[player] = true
+	return true, profile
+end
+
+function ProfileService:Save(player)
+	local profile = self._profiles[player]
+	if not profile or not self._dirty[player] then
+		return true
+	end
+	if not self._storeAvailable then
+		return false, "DataStore unavailable"
+	end
+	local key = "p_" .. player.UserId
+	local snapshot = profile
+	local ok, err = pcall(function()
+		self._store:UpdateAsync(key, function()
+			return snapshot
+		end)
+	end)
+	if ok then
+		self._dirty[player] = false
+	else
+		warn("[ProfileService] save failed for", player.UserId, err)
+	end
+	return ok, err
+end
+
+function ProfileService:Release(player)
+	self:Save(player)
+	self._profiles[player] = nil
+	self._dirty[player] = nil
+end
+
+function ProfileService:SaveAll()
+	for player in pairs(self._profiles) do
+		self:Save(player)
+	end
+end
+
+return ProfileService
+]]></string>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Script" referent="22">
+      <Properties>
+        <string name="Name">TestRunner</string>
+        <token name="RunContext">0</token>
+        <string name="Source"><![CDATA[-- Runs pure deterministic smoke tests in Studio Play mode. It is deliberately
+-- skipped in published servers so it cannot affect live performance.
+local RunService = game:GetService("RunService")
+if not RunService:IsStudio() then
+	return
+end
+
+local spec = require(script.Parent.Tests.VerticalSliceSpec)
+local ok, err = pcall(spec)
+if not ok then
+	error("[LAST STOP] Vertical-slice tests failed: " .. tostring(err))
+end
+print("[LAST STOP] Vertical-slice pure logic tests passed.")
+]]></string>
+      </Properties>
+    </Item>
+    <Item class="Folder" referent="23">
+      <Properties>
+        <string name="Name">Tests</string>
+      </Properties>
+      <Item class="ModuleScript" referent="24">
+        <Properties>
+          <string name="Name">VerticalSliceSpec</string>
+          <string name="Source"><![CDATA[return function()
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	local EconomyService = require(script.Parent.Parent.Services.EconomyService)
+	local RateLimiter = require(ReplicatedStorage.Shared.Util.RateLimiter)
+
+	local fakeProfiles = {}
+	local economy = EconomyService.new(fakeProfiles, { FirstEscapeBonus = 50 })
+	local depthOneCoins, depthOneXP = economy:CalculateFloorReward(1, 3)
+	assert(depthOneCoins == 80, "Expected 80 coins at depth 1 with three objective steps")
+	assert(depthOneXP == 25, "Expected 25 XP at depth 1")
+	local depthTenCoins = select(1, economy:CalculateFloorReward(10, 3))
+	assert(depthTenCoins > depthOneCoins, "Depth multiplier must increase rewards")
+
+	local limiter = RateLimiter.new(2, 60)
+	assert(limiter:Allow("player"), "First request should pass")
+	assert(limiter:Allow("player"), "Second request should pass")
+	assert(not limiter:Allow("player"), "Third request must be blocked")
+	limiter:Forget("player")
+	assert(limiter:Allow("player"), "Forget must clear a player's bucket")
+end
+]]></string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="StarterPlayer" referent="25">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+    </Properties>
+    <Item class="StarterPlayerScripts" referent="26">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+      </Properties>
+      <Item class="LocalScript" referent="27">
+        <Properties>
+          <string name="Name">ClientBootstrap</string>
+          <string name="Source"><![CDATA[local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local RemoteNames = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"):WaitForChild("RemoteNames"))
+-- In PlayerScripts, sibling folders may replicate a frame after this
+-- LocalScript. Waiting prevents a client startup race in Studio and live play.
+local controllers = script.Parent:WaitForChild("Controllers")
+local HUDController = require(controllers:WaitForChild("HUDController"))
+local InputController = require(controllers:WaitForChild("InputController"))
+
+local player = Players.LocalPlayer
+local remoteFolder = ReplicatedStorage:WaitForChild("Remotes")
+local remotes = {}
+for key, name in pairs(RemoteNames) do
+	remotes[key] = remoteFolder:WaitForChild(name)
+end
+
+local hud = HUDController.new(player, {
+	queue = function()
+		remotes.RequestQueue:FireServer()
+	end,
+	decision = function(decision)
+		remotes.RequestDecision:FireServer(decision)
+	end,
+	medkit = function()
+		remotes.RequestMedkit:FireServer()
+	end,
+})
+
+local input = InputController.new(function()
+	remotes.RequestMedkit:FireServer()
+end)
+
+remotes.StateChanged.OnClientEvent:Connect(function(state)
+	if type(state) == "table" then
+		hud:ApplyState(state)
+	end
+end)
+
+remotes.Toast.OnClientEvent:Connect(function(message)
+	hud:ShowToast(message)
+end)
+
+-- Resources are intentionally retained for the lifetime of this player session.
+player.AncestryChanged:Connect(function(_, parent)
+	if not parent then
+		input:Destroy()
+		hud:Destroy()
+	end
+end)
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="28">
+        <Properties>
+          <string name="Name">Controllers</string>
+        </Properties>
+        <Item class="ModuleScript" referent="29">
+          <Properties>
+            <string name="Name">HUDController</string>
+            <string name="Source"><![CDATA[-- Responsive, code-built HUD: no external assets and no decorative controls.
+local TweenService = game:GetService("TweenService")
+
+local HUDController = {}
+HUDController.__index = HUDController
+
+local CYAN = Color3.fromRGB(73, 212, 210)
+local RED = Color3.fromRGB(220, 67, 67)
+local PANEL = Color3.fromRGB(18, 24, 31)
+
+local function rounded(instance, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius or 8)
+	corner.Parent = instance
+end
+
+local function makeLabel(parent, name, text, size, position, font, textSize)
+	local label = Instance.new("TextLabel")
+	label.Name = name
+	label.BackgroundTransparency = 1
+	label.Size = size
+	label.Position = position
+	label.Font = font or Enum.Font.Gotham
+	label.TextSize = textSize or 16
+	label.TextColor3 = Color3.fromRGB(230, 238, 242)
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextYAlignment = Enum.TextYAlignment.Center
+	label.TextWrapped = true
+	label.Text = text
+	label.Parent = parent
+	return label
+end
+
+local function makeButton(parent, name, text, color)
+	local button = Instance.new("TextButton")
+	button.Name = name
+	button.AutoButtonColor = true
+	button.BackgroundColor3 = color
+	button.BorderSizePixel = 0
+	button.Size = UDim2.fromOffset(140, 46)
+	button.Font = Enum.Font.GothamBold
+	button.TextSize = 16
+	button.TextColor3 = Color3.fromRGB(8, 14, 17)
+	button.Text = text
+	rounded(button, 8)
+	button.Parent = parent
+	return button
+end
+
+function HUDController.new(player, callbacks)
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "LastStopHUD"
+	gui.ResetOnSpawn = false
+	gui.IgnoreGuiInset = false
+	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	gui.Parent = player:WaitForChild("PlayerGui")
+	local self = setmetatable({ player = player, callbacks = callbacks, gui = gui, state = "Lobby", connections = {} }, HUDController)
+	self:_build()
+	self:_bindResponsiveScale()
+	self:_watchHealth()
+	return self
+end
+
+function HUDController:_build()
+	local safe = Instance.new("Frame")
+	safe.Name = "SafeArea"
+	safe.BackgroundTransparency = 1
+	safe.Size = UDim2.fromScale(1, 1)
+	safe.Parent = self.gui
+	local scale = Instance.new("UIScale")
+	scale.Scale = 1
+	scale.Parent = safe
+	self.scale = scale
+	self.safe = safe
+
+	local top = Instance.new("Frame")
+	top.Name = "RunPanel"
+	top.BackgroundColor3 = PANEL
+	top.BackgroundTransparency = 0.1
+	top.BorderSizePixel = 0
+	top.Position = UDim2.fromOffset(18, 18)
+	top.Size = UDim2.new(0.44, 0, 0, 130)
+	rounded(top, 10)
+	local topStroke = Instance.new("UIStroke")
+	topStroke.Color = Color3.fromRGB(81, 127, 135)
+	topStroke.Transparency = 0.5
+	topStroke.Thickness = 1
+	topStroke.Parent = top
+	top.Parent = safe
+	self.runPanel = top
+	self.title = makeLabel(top, "Title", "LAST STOP  •  LOBBY", UDim2.new(1, -24, 0, 28), UDim2.fromOffset(12, 8), Enum.Font.GothamBold, 17)
+	self.title.TextColor3 = CYAN
+	self.objective = makeLabel(top, "Objective", "Queue for an expedition.", UDim2.new(1, -24, 0, 46), UDim2.fromOffset(12, 38), Enum.Font.Gotham, 15)
+	self.coins = makeLabel(top, "Coins", "SECURED 0    AT RISK 0", UDim2.new(1, -24, 0, 24), UDim2.fromOffset(12, 92), Enum.Font.GothamBold, 14)
+	self.coins.TextColor3 = Color3.fromRGB(255, 211, 99)
+
+	local healthPanel = Instance.new("Frame")
+	healthPanel.Name = "HealthPanel"
+	healthPanel.BackgroundColor3 = PANEL
+	healthPanel.BackgroundTransparency = 0.1
+	healthPanel.BorderSizePixel = 0
+	healthPanel.AnchorPoint = Vector2.new(1, 0)
+	healthPanel.Position = UDim2.new(1, -18, 0, 18)
+	healthPanel.Size = UDim2.fromOffset(180, 46)
+	rounded(healthPanel, 10)
+	healthPanel.Parent = safe
+	self.health = makeLabel(healthPanel, "Health", "HEALTH 100 / 100", UDim2.new(1, -20, 1, 0), UDim2.fromOffset(10, 0), Enum.Font.GothamBold, 14)
+	self.health.TextColor3 = Color3.fromRGB(130, 255, 166)
+
+	local actions = Instance.new("Frame")
+	actions.Name = "Actions"
+	actions.BackgroundTransparency = 1
+	actions.AnchorPoint = Vector2.new(0.5, 1)
+	actions.Position = UDim2.new(0.5, 0, 1, -26)
+	actions.Size = UDim2.fromOffset(300, 58)
+	actions.Parent = safe
+	local actionLayout = Instance.new("UIListLayout")
+	actionLayout.FillDirection = Enum.FillDirection.Horizontal
+	actionLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	actionLayout.Padding = UDim.new(0, 10)
+	actionLayout.Parent = actions
+	self.playButton = makeButton(actions, "Play", "PLAY", CYAN)
+	self.medkitButton = makeButton(actions, "Medkit", "MEDKIT (1)", Color3.fromRGB(126, 238, 164))
+	self.medkitButton.Visible = false
+	self.playButton.Activated:Connect(function()
+		self.callbacks.queue()
+	end)
+	self.medkitButton.Activated:Connect(function()
+		self.callbacks.medkit()
+	end)
+
+	local decision = Instance.new("Frame")
+	decision.Name = "BankDecision"
+	decision.BackgroundColor3 = PANEL
+	decision.BorderSizePixel = 0
+	decision.AnchorPoint = Vector2.new(0.5, 0.5)
+	decision.Position = UDim2.fromScale(0.5, 0.52)
+	decision.Size = UDim2.fromOffset(440, 220)
+	decision.Visible = false
+	rounded(decision, 12)
+	local decisionStroke = Instance.new("UIStroke")
+	decisionStroke.Color = CYAN
+	decisionStroke.Transparency = 0.48
+	decisionStroke.Thickness = 1
+	decisionStroke.Parent = decision
+	decision.Parent = safe
+	self.decision = decision
+	local heading = makeLabel(decision, "Heading", "SECURE OR RISK?", UDim2.new(1, -30, 0, 34), UDim2.fromOffset(15, 16), Enum.Font.GothamBold, 22)
+	heading.TextColor3 = CYAN
+	local explain = makeLabel(decision, "Explain", "BANK secures all at-risk coins and returns you to the lobby. CONTINUE carries them into the next floor; death or a missed elevator loses them.", UDim2.new(1, -30, 0, 70), UDim2.fromOffset(15, 55), Enum.Font.Gotham, 15)
+	local bank = makeButton(decision, "Bank", "BANK", Color3.fromRGB(255, 211, 99))
+	bank.Position = UDim2.fromOffset(48, 148)
+	local continueButton = makeButton(decision, "Continue", "CONTINUE", CYAN)
+	continueButton.Position = UDim2.new(1, -188, 0, 148)
+	bank.Activated:Connect(function()
+		self.callbacks.decision("Bank")
+	end)
+	continueButton.Activated:Connect(function()
+		self.callbacks.decision("Continue")
+	end)
+
+	local toast = Instance.new("TextLabel")
+	toast.Name = "Toast"
+	toast.BackgroundColor3 = Color3.fromRGB(8, 12, 17)
+	toast.BackgroundTransparency = 0.15
+	toast.BorderSizePixel = 0
+	toast.AnchorPoint = Vector2.new(0.5, 0)
+	toast.Position = UDim2.new(0.5, 0, 0, 164)
+	toast.Size = UDim2.new(0.55, 0, 0, 42)
+	toast.Font = Enum.Font.GothamMedium
+	toast.TextSize = 15
+	toast.TextColor3 = Color3.fromRGB(235, 243, 246)
+	toast.TextWrapped = true
+	toast.Visible = false
+	rounded(toast, 8)
+	toast.Parent = safe
+	self.toast = toast
+
+	local tutorial = Instance.new("Frame")
+	tutorial.Name = "Tutorial"
+	tutorial.BackgroundColor3 = Color3.fromRGB(8, 12, 17)
+	tutorial.BackgroundTransparency = 0.1
+	tutorial.BorderSizePixel = 0
+	tutorial.AnchorPoint = Vector2.new(0.5, 0)
+	tutorial.Position = UDim2.new(0.5, 0, 0, 220)
+	tutorial.Size = UDim2.fromOffset(400, 78)
+	rounded(tutorial, 10)
+	tutorial.Parent = safe
+	self.tutorial = tutorial
+	self.tutorialText = makeLabel(tutorial, "Text", "1/4  Enter the elevator: press PLAY or use the terminal.", UDim2.new(1, -100, 1, 0), UDim2.fromOffset(14, 0), Enum.Font.GothamMedium, 14)
+	local skip = makeButton(tutorial, "Skip", "SKIP", Color3.fromRGB(117, 130, 143))
+	skip.AnchorPoint = Vector2.new(1, 0.5)
+	skip.Position = UDim2.new(1, -12, 0.5, 0)
+	skip.Size = UDim2.fromOffset(74, 34)
+	skip.TextSize = 12
+	skip.Activated:Connect(function()
+		tutorial.Visible = false
+	end)
+end
+
+function HUDController:_bindResponsiveScale()
+	local function apply()
+		local camera = workspace.CurrentCamera
+		if not camera then return end
+		local viewport = camera.ViewportSize
+		local scale = math.clamp(math.min(viewport.X / 1280, viewport.Y / 720), 0.62, 1.12)
+		self.scale.Scale = scale
+		self.runPanel.Size = viewport.X < 700 and UDim2.new(0.72, 0, 0, 130) or UDim2.new(0.44, 0, 0, 130)
+	end
+	local function watch(camera)
+		if camera then
+			table.insert(self.connections, camera:GetPropertyChangedSignal("ViewportSize"):Connect(apply))
+		end
+		apply()
+	end
+	watch(workspace.CurrentCamera)
+	table.insert(self.connections, workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+		watch(workspace.CurrentCamera)
+	end))
+end
+
+function HUDController:_watchHealth()
+	local function attach(character)
+		local humanoid = character:WaitForChild("Humanoid", 5)
+		if not humanoid then return end
+		local function update()
+			self.health.Text = string.format("HEALTH %d / %d", math.max(0, humanoid.Health), humanoid.MaxHealth)
+			self.health.TextColor3 = humanoid.Health < humanoid.MaxHealth * 0.35 and RED or Color3.fromRGB(130, 255, 166)
+		end
+		update()
+		table.insert(self.connections, humanoid.HealthChanged:Connect(update))
+	end
+	if self.player.Character then attach(self.player.Character) end
+	table.insert(self.connections, self.player.CharacterAdded:Connect(attach))
+	table.insert(self.connections, self.player:GetAttributeChangedSignal("LastStopMedkits"):Connect(function()
+		self.medkitButton.Text = "MEDKIT (" .. tostring(self.player:GetAttribute("LastStopMedkits") or 0) .. ")"
+	end))
+end
+
+function HUDController:ApplyState(data)
+	self.state = data.state or self.state
+	self.title.Text = "LAST STOP  •  " .. string.upper(self.state) .. (data.depth and data.depth > 0 and "  •  DEPTH " .. data.depth or "")
+	self.objective.Text = data.objective or ""
+	self.coins.Text = string.format("SECURED %d    AT RISK %d", data.banked or 0, data.unbanked or 0)
+	self.decision.Visible = self.state == "Decision"
+	self.playButton.Visible = self.state == "Lobby" or self.state == "Results" or self.state == "Ended"
+	self.medkitButton.Visible = self.state == "Floor" or self.state == "Escape"
+	if self.state == "Floor" and data.progress ~= nil then
+		self.objective.Text = string.format("%s  (%d/%d)", data.objective or "Objective", data.progress, data.target or 0)
+	end
+	local tutorialSteps = {
+		Lobby = "1/4  Enter the elevator: press PLAY or use the terminal.",
+		Floor = "2/4  Complete the glowing objective stations.",
+		Escape = "3/4  Return inside the marked elevator before its doors close.",
+		Decision = "4/4  BANK to secure coins, or CONTINUE to risk them for more.",
+	}
+	if self.tutorial.Visible and tutorialSteps[self.state] then
+		self.tutorialText.Text = tutorialSteps[self.state]
+	end
+	if data.message then self:ShowToast(data.message) end
+end
+
+function HUDController:ShowToast(message)
+	self.toast.Text = tostring(message)
+	self.toast.Visible = true
+	self.toast.TextTransparency = 0
+	local nonce = os.clock()
+	self._toastNonce = nonce
+	task.delay(3.2, function()
+		if self._toastNonce == nonce and self.toast.Parent then
+			TweenService:Create(self.toast, TweenInfo.new(0.35), { TextTransparency = 1, BackgroundTransparency = 1 }):Play()
+			task.wait(0.4)
+			if self._toastNonce == nonce then
+				self.toast.Visible = false
+				self.toast.BackgroundTransparency = 0.15
+			end
+		end
+	end)
+end
+
+function HUDController:Destroy()
+	for _, connection in ipairs(self.connections) do connection:Disconnect() end
+	self.gui:Destroy()
+end
+
+return HUDController
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="30">
+          <Properties>
+            <string name="Name">InputController</string>
+            <string name="Source"><![CDATA[local ContextActionService = game:GetService("ContextActionService")
+
+local InputController = {}
+InputController.__index = InputController
+
+function InputController.new(onMedkit)
+	local self = setmetatable({ _onMedkit = onMedkit }, InputController)
+	ContextActionService:BindAction("LastStopMedkit", function(_, inputState)
+		if inputState == Enum.UserInputState.Begin then
+			self._onMedkit()
+		end
+		return Enum.ContextActionResult.Sink
+	end, false, Enum.KeyCode.H, Enum.KeyCode.ButtonY)
+	return self
+end
+
+function InputController:Destroy()
+	ContextActionService:UnbindAction("LastStopMedkit")
+end
+
+return InputController
+]]></string>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+  </Item>
+</roblox>

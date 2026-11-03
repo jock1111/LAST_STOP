@@ -56,6 +56,7 @@ function HUDController.new(player, callbacks)
 	gui.Parent = player:WaitForChild("PlayerGui")
 	local self = setmetatable({ player = player, callbacks = callbacks, gui = gui, state = "Lobby", connections = {} }, HUDController)
 	self:_build()
+	self:_bindResponsiveScale()
 	self:_watchHealth()
 	return self
 end
@@ -69,6 +70,8 @@ function HUDController:_build()
 	local scale = Instance.new("UIScale")
 	scale.Scale = 1
 	scale.Parent = safe
+	self.scale = scale
+	self.safe = safe
 
 	local top = Instance.new("Frame")
 	top.Name = "RunPanel"
@@ -78,6 +81,11 @@ function HUDController:_build()
 	top.Position = UDim2.fromOffset(18, 18)
 	top.Size = UDim2.new(0.44, 0, 0, 130)
 	rounded(top, 10)
+	local topStroke = Instance.new("UIStroke")
+	topStroke.Color = Color3.fromRGB(81, 127, 135)
+	topStroke.Transparency = 0.5
+	topStroke.Thickness = 1
+	topStroke.Parent = top
 	top.Parent = safe
 	self.runPanel = top
 	self.title = makeLabel(top, "Title", "LAST STOP  •  LOBBY", UDim2.new(1, -24, 0, 28), UDim2.fromOffset(12, 8), Enum.Font.GothamBold, 17)
@@ -130,6 +138,11 @@ function HUDController:_build()
 	decision.Size = UDim2.fromOffset(440, 220)
 	decision.Visible = false
 	rounded(decision, 12)
+	local decisionStroke = Instance.new("UIStroke")
+	decisionStroke.Color = CYAN
+	decisionStroke.Transparency = 0.48
+	decisionStroke.Thickness = 1
+	decisionStroke.Parent = decision
 	decision.Parent = safe
 	self.decision = decision
 	local heading = makeLabel(decision, "Heading", "SECURE OR RISK?", UDim2.new(1, -30, 0, 34), UDim2.fromOffset(15, 16), Enum.Font.GothamBold, 22)
@@ -183,6 +196,27 @@ function HUDController:_build()
 	skip.Activated:Connect(function()
 		tutorial.Visible = false
 	end)
+end
+
+function HUDController:_bindResponsiveScale()
+	local function apply()
+		local camera = workspace.CurrentCamera
+		if not camera then return end
+		local viewport = camera.ViewportSize
+		local scale = math.clamp(math.min(viewport.X / 1280, viewport.Y / 720), 0.62, 1.12)
+		self.scale.Scale = scale
+		self.runPanel.Size = viewport.X < 700 and UDim2.new(0.72, 0, 0, 130) or UDim2.new(0.44, 0, 0, 130)
+	end
+	local function watch(camera)
+		if camera then
+			table.insert(self.connections, camera:GetPropertyChangedSignal("ViewportSize"):Connect(apply))
+		end
+		apply()
+	end
+	watch(workspace.CurrentCamera)
+	table.insert(self.connections, workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+		watch(workspace.CurrentCamera)
+	end))
 end
 
 function HUDController:_watchHealth()

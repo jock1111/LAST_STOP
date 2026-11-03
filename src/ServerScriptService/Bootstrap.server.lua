@@ -9,6 +9,7 @@ local RateLimiter = require(ReplicatedStorage.Shared.Util.RateLimiter)
 local ProfileService = require(script.Parent.Services.ProfileService)
 local EconomyService = require(script.Parent.Services.EconomyService)
 local FloorService = require(script.Parent.Services.FloorService)
+local PbrMaterialService = require(script.Parent.Services.PbrMaterialService)
 local EnemyService = require(script.Parent.Services.EnemyService)
 local InventoryService = require(script.Parent.Services.InventoryService)
 local MatchmakingService = require(script.Parent.Services.MatchmakingService)
@@ -42,6 +43,7 @@ local floors = FloorService.new()
 local enemyService = EnemyService.new()
 local inventory = InventoryService.new()
 local lobby = floors:BuildWorld()
+PbrMaterialService:Apply(lobby.Model)
 enemyService:Start()
 
 Lighting.Brightness = 1.4
@@ -49,6 +51,43 @@ Lighting.Ambient = Color3.fromRGB(38, 45, 54)
 Lighting.OutdoorAmbient = Color3.fromRGB(20, 25, 31)
 Lighting.FogColor = Color3.fromRGB(34, 43, 51)
 Lighting.FogEnd = 350
+Lighting.GlobalShadows = true
+Lighting.Technology = Enum.Technology.Future
+Lighting.EnvironmentDiffuseScale = 0.3
+Lighting.EnvironmentSpecularScale = 0.45
+
+local function effect(className, name, properties)
+	local instance = Lighting:FindFirstChild(name)
+	if not instance then
+		instance = Instance.new(className)
+		instance.Name = name
+		instance.Parent = Lighting
+	end
+	for property, value in pairs(properties) do
+		instance[property] = value
+	end
+	return instance
+end
+
+effect("Atmosphere", "LastStopAtmosphere", {
+	Density = 0.28,
+	Offset = 0.15,
+	Color = Color3.fromRGB(145, 169, 182),
+	Decay = Color3.fromRGB(38, 55, 65),
+	Glare = 0,
+	Haze = 1.15,
+})
+effect("ColorCorrectionEffect", "LastStopGrade", {
+	Brightness = -0.03,
+	Contrast = 0.12,
+	Saturation = -0.08,
+	TintColor = Color3.fromRGB(214, 235, 242),
+})
+effect("BloomEffect", "LastStopBloom", {
+	Intensity = 0.18,
+	Size = 28,
+	Threshold = 1.6,
+})
 
 local limiter = RateLimiter.new(GameConfig.RemoteRateLimit.Count, GameConfig.RemoteRateLimit.WindowSeconds)
 local currentExpedition = nil
