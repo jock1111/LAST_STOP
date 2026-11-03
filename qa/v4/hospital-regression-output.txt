@@ -1,0 +1,18 @@
+15:09:08.057 [LAST STOP] Prefab lifecycle PASS: two rounds, objective reset, source preservation, authored sibling preservation - Server - PrefabLifecycleSpec:47 
+15:09:08.057 [LAST STOP] Vertical-slice pure logic tests passed. - Server - TestRunner:16 
+15:10:15.056 V4_FINAL_HOSPITAL_QA 240 - Server 
+15:11:19.385 V4_READY_WIDE Hospital - Client 
+15:11:23.686 V4_NORMAL_INPUT Hospital Fuse carrying Power cell - Client 
+15:11:26.702 V4_ASSET_FETCH Hospital 116 0 - Client 
+15:11:26.769 V4_NORMAL_INPUT Hospital Power carrying nil - Client 
+15:11:27.304 V4_BONES 61 53 delta 0.15810567140579224 0.6266016960144043 0.1811007857322693 - Client 
+15:11:27.304 V4_MONSTER_AUDIO true true - Client 
+15:11:28.869 V4_NORMAL_INPUT Hospital ControlA carrying nil - Client 
+15:11:29.369 V4_PERFORMANCE Hospital 59.999897545378516 18.36629956960678 2678.98046875 1274, 677 - Client 
+15:11:30.969 V4_NORMAL_INPUT Hospital ControlB carrying nil - Client 
+15:11:34.068 V4_NORMAL_INPUT Hospital Sample carrying Sealed sample - Client 
+15:11:34.068 V4_READY_CARRY Hospital - Client 
+15:12:52.482 V4_FINAL_CARRY_SPEED 12 - Client 
+15:13:11.231 V4_NORMAL_INPUT Hospital Delivery carrying nil - Client 
+15:13:11.665 V4_READY_DECISION 1 - Client 
+15:13:33.681 V4_HOSPITAL_REGRESSION_PASS Five milestones through prompt input, extraction, BANK - Client 

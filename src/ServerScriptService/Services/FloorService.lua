@@ -5,7 +5,7 @@ local TweenService = game:GetService("TweenService")
 local Pbr = require(script.Parent.PbrMaterialService)
 local FloorService = {}
 FloorService.__index = FloorService
-local BUILD = "RECOVERY V3 / AUTHORED HOSPITAL"
+local BUILD = "V4 / CONTAINMENT"
 local function need(parent, name, class)
 	local child = parent:FindFirstChild(name)
 	assert(child and child:IsA(class), ("[LAST STOP] Missing %s %s.%s; run node tools/build-prefabs.mjs then rojo build default.project.json."):format(class,parent:GetFullName(),name))
@@ -38,6 +38,7 @@ function FloorService.new(options)
 end
 function FloorService:BuildWorld()
 	local lobby,elevator=clone(library(),"Lobby"),clone(library(),"Elevator")
+	require(script.Parent.EnvironmentService).UpgradeLobby(lobby)
 	local spawn,socket=marker(lobby,"EntranceSpawn"),marker(lobby,"ElevatorSocket")
 	marker(lobby,"RoomBounds")
 	elevator:PivotTo(socket.CFrame)
@@ -96,81 +97,8 @@ function FloorService:SetLobbyElevator(open,text)
 	end
 	if text then display(self.lobby.Display,text) end
 end
-local Room={}
-Room.__index=Room
-function Room:Initialize(context) self.context=context end
-function Room:Start()
-	assert(self.context,"Initialize the floor before Start")
-	assert(self.definition.Template=="Hospital","[LAST STOP] No prefab configured; recovery slice requires Template=Hospital")
-	local model=clone(need(library(),"Floors","Folder"),"Hospital")
-	model:PivotTo(CFrame.new(self._floorService._floorOrigin))
-	local spawn,zone=marker(model,"EntranceSpawn"),marker(model,"ElevatorReturnZone")
-	marker(model,"RoomBounds")
-	local enemy=marker(model,"EnemySpawn")
-	local sockets=need(model,"ObjectiveSockets","Folder")
-	local targets={}
-	for _, v in ipairs(sockets:GetDescendants()) do
-		if v:IsA("BasePart") and v:FindFirstChild("ObjectiveCaption") then table.insert(targets,v) end
-	end
-	table.sort(targets,function(a,b) return a.Name<b.Name end)
-	assert(#targets==self.definition.Target,"[LAST STOP] Hospital requires three record props in ObjectiveSockets")
-	self.model,self.targets,self.connections=model,{},{}
-	self.spawnCFrame,self.escapeCFrame,self.escapeSize=spawn.CFrame,zone.CFrame,zone.Size
-	local elevator=clone(library(),"Elevator")
-	elevator:PivotTo(marker(model,"ElevatorSocket").CFrame)
-	elevator.Name,elevator.Parent="ReturnElevator",model
-	for side,door in pairs(prepareDoors(elevator)) do door.CFrame*=CFrame.new(side=="Left" and -9.8 or 9.8,0,0) end
-	display(need(elevator,"FloorDisplay","BasePart"),"01 / CLINICAL ARCHIVE")
-	for index,target in ipairs(targets) do
-		local key=self.definition.Id.."_"..index
-		target:SetAttribute("ObjectiveKey",key);target:SetAttribute("Used",false)
-		self.targets[key]=target
-		local prompt=Instance.new("ProximityPrompt")
-		prompt.ActionText,prompt.ObjectText="Recover record",target.ObjectiveCaption.Value
-		prompt.HoldDuration,prompt.MaxActivationDistance,prompt.RequiresLineOfSight=.8,self.context.interactionDistance,true
-		prompt.KeyboardKeyCode,prompt.GamepadKeyCode,prompt.Parent=Enum.KeyCode.E,Enum.KeyCode.ButtonX,target
-		table.insert(self.connections,prompt.Triggered:Connect(function(player) self:_attemptInteraction(player,key) end))
-	end
-	local patrol=need(need(model,"Markers","Folder"),"PatrolPaths","Folder"):GetChildren()
-	table.sort(patrol,function(a,b) return a.Name<b.Name end)
-	self.patrolPoints={enemy.Position}
-	for _, point in ipairs(patrol) do assert(point:IsA("BasePart"));table.insert(self.patrolPoints,point.Position) end
-	model.Name,model.Parent="Hospital",self._floorService._activeFolder
-	model:SetAttribute("SourceTemplate","ServerStorage.LastStopAssets.Floors.Hospital")
-	Pbr:Apply(model)
-	return self
-end
-function Room:_attemptInteraction(player,key)
-	local target=self.targets[key]
-	if not target or target:GetAttribute("Used") or not self.context.isPlayerActive(player) then return end
-	local character=player.Character
-	local root=character and character:FindFirstChild("HumanoidRootPart")
-	if not root or (root.Position-target.Position).Magnitude>self.context.interactionDistance then return end
-	local params=RaycastParams.new()
-	params.FilterType,params.FilterDescendantsInstances=Enum.RaycastFilterType.Exclude,{character}
-	local hit=workspace:Raycast(root.Position,target.Position-root.Position,params)
-	if hit and hit.Instance~=target and not hit.Instance:IsDescendantOf(target.Parent) then return end
-	target:SetAttribute("Used",true)
-	local prompt=target:FindFirstChildOfClass("ProximityPrompt")
-	if prompt then prompt.Enabled=false end
-	target.Color=Color3.fromRGB(99,216,213)
-	TweenService:Create(target,TweenInfo.new(.25),{Transparency=.85,CFrame=target.CFrame*CFrame.new(0,.8,0)}):Play()
-	self.context.onObjectiveStep(player,key)
-end
-function Room:ObjectiveProgress()
-	local used=0
-	for _, target in pairs(self.targets) do if target:GetAttribute("Used") then used+=1 end end
-	return used,self.definition.Target
-end
-function Room:Complete() self.completed=true;if self.model then self.model:SetAttribute("Complete",true) end end
-function Room:Fail() if self.model then self.model:SetAttribute("Failed",true) end end
-function Room:Cleanup()
-	for _, c in ipairs(self.connections) do c:Disconnect() end
-	table.clear(self.connections)
-	if self.model then self.model:Destroy();self.model=nil end
-	self.targets={}
-end
-function FloorService:CreateRoom(definition,seed)
-	return setmetatable({_floorService=self,definition=definition,seed=seed,targets={},connections={}},Room)
+local ObjectiveRoom = require(script.Parent.ObjectiveRoom)
+function FloorService:CreateRoom(definition, seed)
+    return ObjectiveRoom.new(self, definition, seed)
 end
 return FloorService

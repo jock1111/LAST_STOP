@@ -137,6 +137,9 @@ matchmaking = MatchmakingService.new(GameConfig, canQueue, function(group, finis
 	expedition:Start(group)
 end, toast)
 
+require(script.Parent.Services.MovementService).Start(remotes.RequestSprint, function(player)
+    return currentExpedition and (currentExpedition.state == "Floor" or currentExpedition.state == "Escape") and currentExpedition.active[player] == true
+end)
 local function remotelyAllowed(remoteName, player)
 	if not limiter:Allow(remoteName .. ":" .. player.UserId) then
 		toast(player, "Too many requests. Please wait a moment.")

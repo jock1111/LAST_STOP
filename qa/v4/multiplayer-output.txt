@@ -1,0 +1,7 @@
+14:54:15.647 [LAST STOP] Prefab lifecycle PASS: two rounds, objective reset, source preservation, authored sibling preservation - Server - PrefabLifecycleSpec:47 
+14:54:15.647 [LAST STOP] Vertical-slice pure logic tests passed. - Server - TestRunner:16 
+14:59:51.374 V4_FINAL_TWO_PLAYER_COUNT 2 - Server 
+14:59:53.642 [V4 TWO PLAYER] Testing Archive active 2 - Server - TwoPlayerRecoverySpec:47 
+15:00:03.721 [V4 TWO PLAYER] Testing Pelagic active 1 - Server - TwoPlayerRecoverySpec:47 
+15:00:12.804 [V4 TWO PLAYER] Finished All surviving players banked their rewards. - Server - TwoPlayerRecoverySpec:28 
+15:00:12.804 [LAST STOP V4] TWO PLAYER PASS / both floors, reachable objectives, physics, damage, teamwork, solo fallback, case delivery, independent BANK/CONTINUE - Server - TwoPlayerRecoverySpec:120

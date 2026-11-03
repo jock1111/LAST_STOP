@@ -1,0 +1,16 @@
+{
+  "pass": true,
+  "scripts": 33,
+  "bones": 61,
+  "inventory": {
+    "Lobby": 537,
+    "Elevator": 116,
+    "Hospital": 805,
+    "Stalker": 40,
+    "Environment": 37,
+    "StalkerSkin": 285
+  },
+  "totalPrefabInstances": 1820,
+  "bytes": 2642261,
+  "sha256": "92559aeedeb679e3d5b16ad47a0297f8fd16d138fc05cf577b288dcaad1a9b44"
+}

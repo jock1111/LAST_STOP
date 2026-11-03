@@ -1,3 +1,7 @@
+Current acceptance is recorded in [v4/ACCEPTANCE.md](v4/ACCEPTANCE.md).
+
+The following report is archived V3 evidence.
+
 # Recovery V3 acceptance — 2026-11-03
 
 Canonical artifact: **LAST_STOP.rbxlx**. Build label: **RECOVERY V3 / AUTHORED HOSPITAL**. SHA-256: `3e492f78a34f43c543eab16bc5ad2587f781d8c8efb7da20d637869dd0701711`.

@@ -19,13 +19,23 @@ return function()
 			assert(lobby.SpawnLocation:IsA("SpawnLocation"),"Engine spawn must target the concourse")
 			assert(sentinel.Parent==world,"BuildWorld deleted authored sibling art")
 			local room=floors:CreateRoom(definition,run)
-			room:Initialize({interactionDistance=12,isPlayerActive=function() return false end,onObjectiveStep=function() error("No simulated players should interact") end})
+			room:Initialize({getActivePlayers=function() return {} end,interactionDistance=12,isPlayerActive=function() return false end,onObjectiveStep=function() error("No simulated players should interact") end})
 			room:Start()
 			assert(room.model~=assets.Floors.Hospital and room.model:GetAttribute("SourceTemplate"),"Hospital must clone the authored model")
 			assert(room.model.Rooms:FindFirstChild("PatientWard") and room.model.Rooms:FindFirstChild("Archive"),"Hospital spaces missing")
 			assert(#room.patrolPoints>=5 and room.escapeSize.X==18,"Hospital markers were not bound")
-			local progress,total=room:ObjectiveProgress()
-			assert(progress==0 and total==3,"A new round must reset objectives")
+            -- Both seeded power-cell positions must be clear of privacy curtains
+            -- for a player's head ray and the third-person prompt camera ray.
+            for _, x in {-29, -19} do
+                local target = room.model:GetPivot():PointToWorldSpace(Vector3.new(x, 3.1, -1))
+                for _, offset in {Vector3.new(0, 1.4, 3), Vector3.new(0, 1.5, 5)} do
+                    local hit = workspace:Raycast(target + offset, -offset)
+                    assert(not hit or hit.Instance:GetAttribute("ObjectiveKey") == "Fuse",
+                        "Power-cell approach obstructed at " .. x .. " by " .. (hit and hit.Instance.Name or "unknown"))
+                end
+            end
+            local progress,total=room:ObjectiveProgress()
+			assert(progress==0 and total==5,"A new round must reset objectives")
 			local clone=room.model
 			room:Cleanup()
 			assert(clone.Parent==nil and next(room.targets)==nil,"Round cleanup must remove only the active clone")

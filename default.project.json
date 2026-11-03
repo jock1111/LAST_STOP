@@ -26,6 +26,12 @@
           "Hospital": {
             "$path": "assets/prefabs/Hospital.rbxmx"
           }
+        },
+        "Environment": {
+          "$path": "assets/prefabs/Environment.rbxmx"
+        },
+        "StalkerSkin": {
+          "$path": "assets/prefabs/StalkerSkin.rbxmx"
         }
       }
     },

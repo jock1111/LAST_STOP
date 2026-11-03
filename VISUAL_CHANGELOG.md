@@ -1,3 +1,13 @@
+# V4 Containment
+
+V4 adds an imported environment mesh library, a skinned PBR Stalker with retargeted Idle/Walk/Run animation, and the Pelagic flooded laboratory. Both floors have five ordered milestones, paired controls, recoverable carrying objectives and periodic hazards. Server-controlled sprint and stamina add a noise-versus-speed decision during encounters.
+
+The interface now uses mission, wallet and vitals panels, explicit carrying/hazard feedback, independent checkpoint choices and separate touch controls. Six uploaded original audio tracks provide ambience, positional creature sounds and elevator/objective feedback. The existing profile/economy services remain in use.
+
+Studio testing found and repaired the continuation transfer into the persistent elevator, skinned-mesh pivot alignment, global-to-local bone retargeting, pickup line-of-sight obstructions and overlapping mobile controls. Current evidence is recorded in [qa/v4/ACCEPTANCE.md](qa/v4/ACCEPTANCE.md).
+
+## Archived V3 investigation
+
 # Recovery V3 investigation and changes
 
 Investigation began on branch visual-recovery-v3 at fddf7d476fb91978ff43e13a7bae15c2e562a16d. The only commit after the supplied baseline bbc0c34fc81ac41d4a2141d93e169bd394ab1efe was fddf7d4, “Add milestone 1 visual overhaul foundation.”

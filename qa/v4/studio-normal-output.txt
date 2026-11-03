@@ -1,0 +1,42 @@
+14:18:43.633 [LAST STOP] Prefab lifecycle PASS: two rounds, objective reset, source preservation, authored sibling preservation - Server - PrefabLifecycleSpec:37
+14:18:43.633 [LAST STOP] Vertical-slice pure logic tests passed. - Server - TestRunner:16
+14:18:43.652 [LAST STOP] V4 / CONTAINMENT loaded prefab Lobby + Elevator - Server - FloorService:69
+14:18:46.229 [LAST STOP V4] Audio loaded true true true true - Client - SoundscapeController:27
+14:19:36.985 [LAST STOP] Expedition seed 1794186007 players 1 - Server - ExpeditionService:209
+14:19:58.884 V4_FINAL_ASSETS Hospital 110 0 - Client
+14:20:21.047 [LAST STOP] Expedition ended: The expedition has no survivors. - Server - Bootstrap:133
+14:22:04.580 [LAST STOP] Expedition seed 1794380093 players 1 - Server - ExpeditionService:209
+14:22:26.112 V4_FINAL_ASSETS Hospital 110 0 - Client
+14:23:49.375 V4_FINAL_PERFORMANCE Hospital 59.9763626983955 17.949499189853668 1987.640625 1274, 677 - Client
+14:24:43.990 V4_SKIN_GROUND_CHECK 6.11836767, 4.63936996, 677.982666, 0.436588705, 2.67596922e-09, 0.899661303, -1.16298526e-08, 1, 2.66932987e-09, -0.899661303, -1.16283259e-08, 0.436588705 9.338467597961426, 9.378740310668945, 13.746933937072754 - Client
+14:26:04.587 V4_READY_WIDE Hospital - Client
+14:26:11.636 V4_ASSET_FETCH Hospital 114 0 - Client
+14:26:12.253 V4_BONES 61 52 delta 0.5656952261924744 0.5719716548919678 -0.30973732471466064 - Client
+14:26:12.253 V4_MONSTER_AUDIO true true - Client
+14:26:12.604 V4_READY_STALKER Hospital - Client
+14:26:14.588 V4_PERFORMANCE Hospital 59.998154892006255 18.174799159169197 2021.91796875 1274, 677 - Client
+14:26:18.887 V4_NORMAL_INPUT Hospital Fuse carrying Power cell - Client
+14:26:21.986 V4_NORMAL_INPUT Hospital Power carrying nil - Client
+14:26:24.086 V4_NORMAL_INPUT Hospital ControlA carrying nil - Client
+14:26:26.152 V4_NORMAL_INPUT Hospital ControlB carrying nil - Client
+14:26:29.252 V4_NORMAL_INPUT Hospital Sample carrying Sealed sample - Client
+14:26:29.253 V4_READY_CARRY Hospital - Client
+14:26:42.336 V4_NORMAL_INPUT Hospital Delivery carrying nil - Client
+14:26:42.785 V4_READY_DECISION 1 - Client
+14:27:06.167 V4_READY_WIDE FloodedLaboratory - Client
+14:27:13.483 V4_ASSET_FETCH FloodedLaboratory 161 0 - Client
+14:27:14.100 V4_BONES 61 21 delta -0.557775616645813 -0.6042183637619019 0.04888501390814781 - Client
+14:27:14.100 V4_MONSTER_AUDIO true true - Client
+14:27:14.184 V4_READY_STALKER FloodedLaboratory - Client
+14:27:16.167 V4_PERFORMANCE FloodedLaboratory 60.00473228009038 18.155500292778015 2032.97265625 1274, 677 - Client
+14:27:22.267 V4_NORMAL_INPUT FloodedLaboratory PumpB carrying nil - Client
+14:27:26.334 V4_NORMAL_INPUT FloodedLaboratory PumpA carrying nil - Client
+14:27:28.417 V4_NORMAL_INPUT FloodedLaboratory ControlA carrying nil - Client
+14:27:30.516 V4_NORMAL_INPUT FloodedLaboratory ControlB carrying nil - Client
+14:27:33.584 V4_NORMAL_INPUT FloodedLaboratory Sample carrying Sealed sample - Client
+14:27:33.584 V4_READY_CARRY FloodedLaboratory - Client
+14:27:37.232 V4_CAPTURE_LAB - Client
+14:27:46.665 V4_NORMAL_INPUT FloodedLaboratory Delivery carrying nil - Client
+14:27:47.132 V4_READY_DECISION 2 - Client
+14:28:02.148 V4_NORMAL_ENTRY_PASS Two full floors through prompt input, extraction, CONTINUE, BANK - Client
+14:28:02.275 [LAST STOP] Expedition ended: All surviving players banked their rewards. - Server - Bootstrap:133

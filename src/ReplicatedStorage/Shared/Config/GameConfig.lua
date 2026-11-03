@@ -19,6 +19,6 @@ return {
 	StarterCoins = 0,
 	StarterXP = 0,
 	FirstEscapeBonus = 50,
-	RecentFloorWindow = 2,
+	RecentFloorWindow = 1,
 	Debug = false,
 }

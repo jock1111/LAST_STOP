@@ -74,7 +74,7 @@ function ExpeditionService:_send(player, patch)
 		state = self.state,
 		depth = self.depth,
 		floorName = self.floorDefinition and self.floorDefinition.Name or "Lobby",
-		objective = self.floorDefinition and self.floorDefinition.Prompt or "Queue for an expedition.",
+		objective = self.floor and self.floor.objective or (self.floorDefinition and self.floorDefinition.Prompt or "Queue for an expedition."),
 		progress = self.floor and select(1, self.floor:ObjectiveProgress()) or 0,
 		target = self.floorDefinition and self.floorDefinition.Target or 0,
 		unbanked = self.unbanked[player] or 0,
@@ -118,6 +118,11 @@ function ExpeditionService:_movePlayer(player, cframe)
 		local root = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart", 5)
 		if root then
 			character:PivotTo(cframe)
+		local root = character:FindFirstChild("HumanoidRootPart")
+		if root then
+			root.AssemblyLinearVelocity = Vector3.zero
+			root.AssemblyAngularVelocity = Vector3.zero
+		end
 		end
 	end)
 end
@@ -274,6 +279,10 @@ function ExpeditionService:_beginNextFloor(token)
 	end
 	self.floor = self._floorService:CreateRoom(self.floorDefinition, self.seed + self.depth)
 	self.floor:Initialize({
+        getActivePlayers = function() return self:_activePlayers() end,
+        damagePlayer = function(player, amount, source) self:DamagePlayer(player, amount, source) end,
+        notify = function(player, message) self:_toast(player, message) end,
+        changed = function(message) self:_broadcast({message = message}) end,
 		interactionDistance = self._config.InteractionDistance,
 		isPlayerActive = function(player)
 			return self.state == "Floor" and self.active[player] == true
@@ -405,6 +414,11 @@ function ExpeditionService:_enterDecision(token)
 		return
 	end
 	if self.floor then
+		-- The elevator in the old room is about to be removed. Transfer survivors
+		-- to the persistent cabin before travel so gravity cannot kill continuers.
+		for index, player in ipairs(continuers) do
+			self:_movePlayer(player, self._floorService.lobby.BoardCFrame * CFrame.new((index - 1) * 2, 0, 0))
+		end
 		self.floor:Cleanup()
 		self.floor = nil
 	end

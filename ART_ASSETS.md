@@ -1,5 +1,7 @@
 # LAST STOP art manifest — Recovery V3
 
+This is the historical V3 manifest. The current imported meshes, skinned creature and audio are documented in [ART_ASSETS_V4.md](ART_ASSETS_V4.md). The material-map IDs below remain in use.
+
 The four original models are authored by tools/build-prefabs.mjs and saved under assets/prefabs/. No downloaded model, copied paid-game content, or Toolbox script is included. The models are local source assets and need no Roblox model upload IDs.
 
 | Prefab | Permanent Studio path | Instances | Source |

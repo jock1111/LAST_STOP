@@ -8,6 +8,7 @@ local controllers = script.Parent:WaitForChild("Controllers")
 local HUDController = require(controllers:WaitForChild("HUDController"))
 local InputController = require(controllers:WaitForChild("InputController"))
 
+local soundscape = require(controllers:WaitForChild("SoundscapeController")).new()
 local player = Players.LocalPlayer
 local remoteFolder = ReplicatedStorage:WaitForChild("Remotes")
 local remotes = {}
@@ -25,6 +26,9 @@ local hud = HUDController.new(player, {
 	medkit = function()
 		remotes.RequestMedkit:FireServer()
 	end,
+	sprint = function(pressed)
+		remotes.RequestSprint:FireServer(pressed)
+	end,
 })
 
 local input = InputController.new(function()
@@ -34,6 +38,7 @@ end)
 remotes.StateChanged.OnClientEvent:Connect(function(state)
 	if type(state) == "table" then
 		hud:ApplyState(state)
+        soundscape:ApplyState(state)
 	end
 end)
 
@@ -48,3 +53,7 @@ player.AncestryChanged:Connect(function(_, parent)
 		hud:Destroy()
 	end
 end)
+
+require(controllers:WaitForChild("CreatureController")).Start()
+
+pcall(function() game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Health, false) end)

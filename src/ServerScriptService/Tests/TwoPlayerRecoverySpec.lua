@@ -1,102 +1,127 @@
--- Explicit opt-in Studio test. Start a 2-player local server, then run from its
--- SERVER command bar: require(game.ServerScriptService.Tests.TwoPlayerRecoverySpec)()
--- Uses real local players and the real state machine; profiles are disposable
--- memory data, so this test never modifies a published player's saved balance.
+-- Explicit opt-in integration test. Run from a two-player Studio server.
+-- Uses isolated geometry and in-memory profiles. Restart Play after completion.
 return function()
-	assert(game:GetService("RunService"):IsStudio(),"Studio test only")
-	local players=game:GetService("Players"):GetPlayers()
-	assert(#players==2,"Start Server & Clients with exactly two players first")
-	table.sort(players,function(a,b) return a.UserId<b.UserId end)
-	local services=script.Parent.Parent.Services
-	local FloorService=require(services.FloorService)
-	local Expedition=require(services.ExpeditionService)
-	local Inventory=require(services.InventoryService)
-	local Enemy=require(services.EnemyService)
-	local Economy=require(services.EconomyService)
-	local config=table.clone(require(game.ReplicatedStorage.Shared.Config.GameConfig))
-	config.BoardingSeconds,config.TravelSeconds,config.EscapeSeconds,config.DecisionSeconds=1,1,12,10
-	local memory={data={}}
-	for _, player in ipairs(players) do memory.data[player]={Coins=0,XP=0,Level=1,Stats={Runs=0,Escapes=0,BestDepth=0,FirstEscapeClaimed=true}} end
-	function memory:Get(player) return self.data[player] end
-	function memory:Mutate(player,fn) fn(self.data[player]);return true end
-	function memory:Save() return true end
-	local floors=FloorService.new()
-	floors:BuildWorld()
-	local enemies=Enemy.new();enemies:Start()
-	local inventory=Inventory.new()
-	local economy=Economy.new(memory,config)
-	local remotes={}
-	for _, r in ipairs(game.ReplicatedStorage.Remotes:GetChildren()) do remotes[r.Name]=r end
-	local expedition=Expedition.new(config,floors,enemies,economy,memory,inventory,remotes,function() end)
-	local function waitFor(test,label,timeout)
-		local deadline=os.clock()+(timeout or 20)
-		repeat if test() then return end;task.wait(.1) until os.clock()>deadline
-		error("[V3 TWO PLAYER] Timed out: "..label.."; state="..expedition.state)
-	end
-	local verifiedEnemy=false
-	local function recoverRound(active)
-		waitFor(function() return expedition.state=="Floor" end,"floor start")
-		local room=expedition.floor
-		if not verifiedEnemy then
-			waitFor(function() return enemies._enemies[1] end,"Stalker spawn",10)
-			local stalker=enemies._enemies[1]
-			local initial=stalker.root.Position
-			waitFor(function() return (stalker.root.Position-initial).Magnitude>2 end,"Stalker physics movement",10)
-			local victim=active[1]
-			victim.Character:PivotTo(CFrame.new(stalker.root.Position+Vector3.new(0,0,3)))
-			local health=victim.Character.Humanoid.Health
-			waitFor(function() return victim.Character.Humanoid.Health<health end,"Stalker windup damage",8)
-			assert(health-victim.Character.Humanoid.Health==15,"Unexpected Stalker damage")
-			victim.Character.Humanoid.Health=100
-			victim.Character:PivotTo(room.spawnCFrame)
-			verifiedEnemy=true
-			print("[V3 TWO PLAYER] Stalker moved physically and dealt 15 damage after windup")
-		end
-		local keys={};for key in pairs(room.targets) do table.insert(keys,key) end;table.sort(keys)
-		-- Check real navigation, rather than accepting proximity-only teleports as
-		-- evidence that a wall/door layout is traversable.
-		for _, key in ipairs(keys) do
-			local target=room.targets[key]
-			local path=game:GetService("PathfindingService"):CreatePath({AgentRadius=1.8,AgentHeight=5,AgentCanJump=false})
-			for retry=1,5 do
-				path:ComputeAsync(room.spawnCFrame.Position,target.Position+Vector3.new(0,0,3))
-				if path.Status==Enum.PathStatus.Success then break end
-				task.wait(.3) -- allow navigation tiles to rebuild after the last room clone
-			end
-			assert(path.Status==Enum.PathStatus.Success,"Record route blocked: "..key);path:Destroy()
-		end
-		local player=active[1]
-		for index,key in ipairs(keys) do
-			local target=room.targets[key]
-			player.Character:PivotTo(CFrame.new(target.Position+Vector3.new(0,2,3)))
-			task.wait(.2)
-			if index==#keys then task.spawn(function() room:_attemptInteraction(player,key) end)
-			else room:_attemptInteraction(player,key);room:_attemptInteraction(player,key) end
-			waitFor(function() return target:GetAttribute("Used") end,"record accepted: "..key,2)
-		end
-		waitFor(function() return expedition.state=="Escape" end,"objective completion")
-		assert(select(1,room:ObjectiveProgress())==3,"Duplicate record interaction changed objective count")
-		for index,p in ipairs(active) do p.Character:PivotTo(room.escapeCFrame*CFrame.new((index-1)*3,0,0)) end
-		waitFor(function() return expedition.state=="Decision" end,"return elevator")
-		return room.model
-	end
-	local ok,err=xpcall(function()
-		expedition:Start(players)
-		local first=recoverRound(players)
-		assert(expedition:RequestDecision(players[1],"Bank"))
-		assert(expedition:RequestDecision(players[2],"Continue"))
-		waitFor(function() return expedition.depth==2 and expedition.state=="Floor" end,"second round")
-		assert(first.Parent==nil,"Previous hospital was not cleaned up")
-		assert(economy:GetBankedCoins(players[1])==80 and economy:GetBankedCoins(players[2])==0,"Independent Bank/Continue balance failed")
-		assert(expedition.unbanked[players[2]]==80,"Continuer lost at-risk reward")
-		assert(not expedition:RequestDecision(players[1],"Bank"),"Banker can claim the same reward twice")
-		local second=recoverRound({players[2]})
-		assert(expedition:RequestDecision(players[2],"Bank"))
-		waitFor(function() return not expedition:IsRunning() end,"final bank")
-		assert(economy:GetBankedCoins(players[2])>80 and economy:GetBankedCoins(players[1])==80,"Second round accounting failed")
-		assert(second.Parent==nil and game.ServerStorage.LastStopAssets.Floors.Hospital.Parent,"Source/clone lifecycle failed")
-		print("[V3 TWO PLAYER] PASS: two real players, three reachable records, duplicate rejection, escape region, independent BANK/CONTINUE, two floor clones, teardown; disposable profiles only")
-	end,debug.traceback)
-	expedition:Destroy();enemies:Destroy()
-	assert(ok,err)
+    assert(game:GetService("RunService"):IsStudio(), "Studio test only")
+    local players = game:GetService("Players"):GetPlayers()
+    assert(#players == 2, "Start exactly two local clients")
+    table.sort(players, function(a, b) return a.UserId < b.UserId end)
+    local services = script.Parent.Parent.Services
+    local config = table.clone(require(game.ReplicatedStorage.Shared.Config.GameConfig))
+    config.BoardingSeconds, config.TravelSeconds, config.EscapeSeconds, config.DecisionSeconds = 1, 1, 10, 12
+    local memory = {data = {}}
+    for _, player in players do
+        memory.data[player] = {Coins = 0, XP = 0, Level = 1, Stats = {Runs = 0, Escapes = 0, BestDepth = 0, FirstEscapeClaimed = true}}
+    end
+    function memory:Get(player) return self.data[player] end
+    function memory:Mutate(player, callback) callback(self.data[player]); return true end
+    function memory:Save() return true end
+    local floors = require(services.FloorService).new({WorldName = "LastStopV4TwoPlayerTest", FloorOrigin = Vector3.new(2200, 0, 700)})
+    floors:BuildWorld()
+    local enemies = require(services.EnemyService).new()
+    enemies:Start()
+    local inventory = require(services.InventoryService).new()
+    local economy = require(services.EconomyService).new(memory, config)
+    local firstReward = economy:CalculateFloorReward(1, 5)
+    local remotes = {}
+    for _, remote in game.ReplicatedStorage.Remotes:GetChildren() do remotes[remote.Name] = remote end
+    local expedition = require(services.ExpeditionService).new(config, floors, enemies, economy, memory, inventory, remotes, function(reason)
+        print("[V4 TWO PLAYER] Finished", reason)
+    end)
+    local function waitFor(predicate, message, timeout)
+        local deadline = os.clock() + (timeout or 20)
+        repeat
+            if predicate() then return end
+            task.wait(.1)
+        until os.clock() > deadline
+        error("[V4 TWO PLAYER] Timed out " .. message .. " / " .. expedition.state)
+    end
+    local function interact(room, player, key)
+        local entry = assert(room.targets[key], key)
+        player.Character:PivotTo(CFrame.new(entry.part.Position + Vector3.new(0, 0, 3)))
+        task.wait(.15)
+        assert(room:_attemptInteraction(player, key), "Interaction rejected " .. key)
+    end
+    local function recoverRound(active)
+        waitFor(function() return expedition.state == "Floor" end, "floor start")
+        local room = expedition.floor
+        print("[V4 TWO PLAYER] Testing", room.definition.Id, "active", #active)
+        waitFor(function() return #enemies._enemies == 1 end, "monster spawn", 10)
+        local stalker = enemies._enemies[1]
+        local initial = stalker.root.Position
+        waitFor(function() return (stalker.root.Position - initial).Magnitude > 2 end, "physical monster movement", 10)
+        local victim = active[1]
+        local humanoid = victim.Character:FindFirstChildOfClass("Humanoid")
+        humanoid.Health = 100
+        victim.Character:PivotTo(stalker.root.CFrame * CFrame.new(0, 0, -3))
+        waitFor(function() return humanoid.Health < 100 end, "telegraphed monster hit", 8)
+        assert(humanoid.Health <= 80, "Expected 20 damage")
+        humanoid.Health = 100
+        -- Keep the live enemy away while validating every objective and economy transition.
+        stalker.root.Anchored = true
+        stalker.root.CFrame = CFrame.new(floors._floorOrigin + Vector3.new(0, 8, -100))
+        local originalStart = room.startedAt
+        room.startedAt = os.clock() - (15 - room.seed % 7)
+        local exposure = room.definition.Template == "Hospital" and Vector3.new(0, 3, -12) or Vector3.new(20, .5, 20)
+        victim.Character:PivotTo(CFrame.new(floors._floorOrigin + exposure))
+        waitFor(function() return humanoid.Health < 100 end, "environmental hazard damage", 3)
+        assert(humanoid.Health == 92, "Hazard must deal a bounded 8 damage")
+        humanoid.Health = 100
+        room.startedAt = originalStart
+        for key, entry in room.targets do
+            local path = game:GetService("PathfindingService"):CreatePath({AgentRadius = 1.6, AgentHeight = 5, AgentCanJump = true})
+            path:ComputeAsync(room.spawnCFrame.Position, entry.part.Position + Vector3.new(0, 0, 3))
+            assert(path.Status == Enum.PathStatus.Success, "Objective route blocked " .. key)
+            path:Destroy()
+        end
+        local player = active[1]
+        assert(not room:_attemptInteraction(player, "Delivery"), "Accepted out-of-order delivery")
+        local first, second
+        for key, entry in room.targets do
+            if entry.stage == 1 then first = key end
+            if entry.stage == 2 then second = key end
+        end
+        interact(room, player, first)
+        assert(not room:_attemptInteraction(player, first), "Duplicate milestone accepted")
+        interact(room, player, second)
+        interact(room, player, "ControlA")
+        local teammate = active[2] or player
+        interact(room, teammate, "ControlB")
+        assert(room.progress == 3, "Paired controls failed")
+        interact(room, player, "Sample")
+        assert(player:GetAttribute("Carrying"), "Missing carried case")
+        local activeCheck = room.context.isPlayerActive
+        room.context.isPlayerActive = function(candidate) return candidate ~= player and activeCheck(candidate) end
+        waitFor(function() return room.stage == 4 end, "lost-carrier recovery", 2)
+        assert(room.progress == 3 and not player:GetAttribute("Carrying"), "Lost case did not reset safely")
+        room.context.isPlayerActive = activeCheck
+        interact(room, player, "Sample")
+        interact(room, player, "Delivery")
+        waitFor(function() return expedition.state == "Escape" end, "objective completion")
+        assert(room.progress == 5 and not player:GetAttribute("Carrying"), "Case cleanup/progress failed")
+        for index, member in active do member.Character:PivotTo(room.escapeCFrame * CFrame.new((index - 1) * 3, 0, 0)) end
+        waitFor(function() return expedition.state == "Decision" end, "extraction")
+        return room.model, room.definition.Id
+    end
+    local ok, err = xpcall(function()
+        expedition:Start(players)
+        local first, firstId = recoverRound(players)
+        assert(expedition:RequestDecision(players[1], "Bank"))
+        assert(expedition:RequestDecision(players[2], "Continue"))
+        waitFor(function() return expedition.depth == 2 and expedition.state == "Floor" end, "second floor")
+        assert(first.Parent == nil, "Old floor survived cleanup")
+        assert(expedition.floorDefinition.Id ~= firstId, "Repeated consecutive floor")
+        assert(economy:GetBankedCoins(players[1]) == firstReward and economy:GetBankedCoins(players[2]) == 0, "Independent banking failed")
+        assert(expedition.unbanked[players[2]] == firstReward, "At-risk coins changed")
+        assert(not expedition:RequestDecision(players[1], "Bank"), "Banker re-entered decision")
+        recoverRound({players[2]})
+        assert(expedition:RequestDecision(players[2], "Bank"))
+        waitFor(function() return not expedition:IsRunning() end, "final bank")
+        assert(economy:GetBankedCoins(players[2]) > firstReward and economy:GetBankedCoins(players[1]) == firstReward, "Second reward isolation failed")
+        print("[LAST STOP V4] TWO PLAYER PASS / both floors, reachable objectives, physics, damage, teamwork, solo fallback, case delivery, independent BANK/CONTINUE")
+    end, debug.traceback)
+    enemies:Destroy()
+    if expedition:IsRunning() then expedition:_end("QA cleanup") end
+    local world = workspace:FindFirstChild("LastStopV4TwoPlayerTest")
+    if world then world:Destroy() end
+    assert(ok, err)
 end

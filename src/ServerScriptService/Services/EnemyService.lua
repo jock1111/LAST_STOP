@@ -1,146 +1,216 @@
--- Original articulated Stalker prefab. Humanoid physics follows full paths;
--- the server owns targeting, windup, damage, gait and cleanup.
-local PathfindingService=game:GetService("PathfindingService")
-local RunService=game:GetService("RunService")
-local ServerStorage=game:GetService("ServerStorage")
-local Pbr=require(script.Parent.PbrMaterialService)
-local EnemyService={}
-EnemyService.__index=EnemyService
-local Stalker={}
-Stalker.__index=Stalker
+local PathfindingService = game:GetService("PathfindingService")
+local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
+local PhysicsService = game:GetService("PhysicsService")
+local EnemyService = {}
+EnemyService.__index = EnemyService
+local Stalker = {}
+Stalker.__index = Stalker
 
-function Stalker.new(parent,patrol,context)
-	local template=ServerStorage:WaitForChild("LastStopAssets"):FindFirstChild("Stalker")
-	assert(template and template:IsA("Model"),"[LAST STOP] Missing authored Stalker prefab; rebuild assets/prefabs")
-	local model=template:Clone()
-	model:PivotTo(CFrame.new(patrol[1]))
-	model.Parent=parent
-	local root=model:FindFirstChild("HumanoidRootPart")
-	local humanoid=model:FindFirstChildOfClass("Humanoid")
-	assert(root and humanoid,"[LAST STOP] Stalker rig requires HumanoidRootPart + Humanoid")
-	pcall(function() root:SetNetworkOwner(nil) end)
-	Pbr:Apply(model)
-	local self=setmetatable({model=model,root=root,humanoid=humanoid,patrolPoints=patrol,context=context,
-		state="Patrol",patrolIndex=2,connections={},motors={},lastPath=0,pathToken=0,attackAt=0,clock=0},Stalker)
-	for _, v in ipairs(model:GetDescendants()) do
-		if v:IsA("Motor6D") then self.motors[v]={base=v.C0,name=v.Name} end
-	end
-	table.insert(self.connections,humanoid.MoveToFinished:Connect(function(reached)
-		if self.destroyed then return end
-		if reached and self.waypoints then self.waypointIndex+=1;self:_nextWaypoint()
-		else self.lastPath=0 end
-	end))
-	return self
+function Stalker.new(parent, patrol, context)
+    local assets = ServerStorage.LastStopAssets
+    local model = assets.Stalker:Clone()
+    local root = model.HumanoidRootPart
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
+    for _, item in model:GetDescendants() do
+        if item:IsA("BasePart") then item.Transparency, item.CastShadow = 1, false end
+        if item:IsA("Light") or item:IsA("BillboardGui") then item:Destroy() end
+    end
+    local skin = assets.StalkerSkin:Clone()
+    skin.Name = "CreatureVisual"
+    local visualFrame, visualSize = skin:GetBoundingBox()
+    local desiredCenter = root.CFrame * CFrame.new(0, visualSize.Y / 2 - 5, 0)
+    skin:PivotTo(desiredCenter * visualFrame:Inverse() * skin:GetPivot())
+    skin.Parent = model
+    for _, part in skin:GetDescendants() do
+        if part:IsA("BasePart") then
+            part.Anchored, part.CanCollide, part.CanTouch, part.Massless = false, false, false, true
+            local weld = Instance.new("WeldConstraint")
+            weld.Part0, weld.Part1, weld.Parent = root, part, part
+        end
+    end
+    model:PivotTo(CFrame.new(patrol[1]))
+    model:SetAttribute("V4Stalker", true)
+    model:SetAttribute("AIState", "Patrol")
+    model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+    model.Parent = parent
+    humanoid.WalkSpeed, humanoid.DisplayDistanceType = 7, Enum.HumanoidDisplayDistanceType.None
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
+    for _, part in model:GetDescendants() do
+        if part:IsA("BasePart") then part.CollisionGroup = "LastStopEnemy" end
+    end
+    root:SetNetworkOwner(nil)
+    local self = setmetatable({model = model, root = root, humanoid = humanoid, context = context,
+        patrolPoints = patrol, patrolIndex = 2, lastPath = 0, generation = 0, attackAt = -10,
+        state = "Patrol", think = 0, memoryUntil = 0, lastPosition = root.Position, stuckTime = 0}, Stalker)
+    self.moveConnection = humanoid.MoveToFinished:Connect(function(reached)
+        if self.destroyed then return end
+        if reached and self.waypoints then self.waypointIndex += 1; self:_nextWaypoint()
+        else self.lastPath = 0 end
+    end)
+    return self
 end
+
 function Stalker:_setState(state)
-	self.state=state;self.model:SetAttribute("AIState",state)
+    if self.state == state then return end
+    self.state = state
+    self.model:SetAttribute("AIState", state)
+    self.model:SetAttribute("StateChangedAt", workspace:GetServerTimeNow())
 end
+
 function Stalker:_canSee(root)
-	local params=RaycastParams.new()
-	params.FilterType,params.FilterDescendantsInstances=Enum.RaycastFilterType.Exclude,{self.model}
-	local origin=self.root.Position+Vector3.new(0,1.5,0)
-	local hit=workspace:Raycast(origin,root.Position-origin,params)
-	return not hit or hit.Instance:IsDescendantOf(root.Parent)
+    local params = RaycastParams.new()
+    params.FilterType, params.FilterDescendantsInstances = Enum.RaycastFilterType.Exclude, {self.model}
+    local origin = self.root.Position + Vector3.new(0, 1, 0)
+    local hit = workspace:Raycast(origin, root.Position - origin, params)
+    return not hit or hit.Instance:IsDescendantOf(root.Parent)
 end
-function Stalker:_target()
-	local chosen,distance=nil,60
-	for _, player in ipairs(self.context.getActivePlayers()) do
-		local character=player.Character
-		local root=character and character:FindFirstChild("HumanoidRootPart")
-		local humanoid=character and character:FindFirstChildOfClass("Humanoid")
-		if root and humanoid and humanoid.Health>0 then
-			local d=(root.Position-self.root.Position).Magnitude
-			if d<distance and self:_canSee(root) then chosen,distance=player,d end
-		end
-	end
-	return chosen,distance
-end
+
 function Stalker:_nextWaypoint()
-	local waypoint=self.waypoints and self.waypoints[self.waypointIndex]
-	if not waypoint then return end
-	if waypoint.Action==Enum.PathWaypointAction.Jump then self.humanoid.Jump=true end
-	self.humanoid:MoveTo(waypoint.Position)
+    local point = self.waypoints and self.waypoints[self.waypointIndex]
+    if not point then return end
+    if point.Action == Enum.PathWaypointAction.Jump then self.humanoid.Jump = true end
+    self.humanoid:MoveTo(point.Position)
 end
+
 function Stalker:_pathTo(position)
-	if self.computing or os.clock()-self.lastPath<1.2 then return end
-	self.lastPath=os.clock();self.pathToken+=1
-	local token=self.pathToken
-	self.computing=true
-	task.spawn(function()
-		local path=PathfindingService:CreatePath({AgentRadius=1.6,AgentHeight=8,AgentCanJump=false,WaypointSpacing=5})
-		local ok=pcall(function() path:ComputeAsync(self.root.Position,position) end)
-		self.computing=false
-		if self.destroyed or token~=self.pathToken then path:Destroy();return end
-		if self.blockedConnection then self.blockedConnection:Disconnect();self.blockedConnection=nil end
-		if self.path then self.path:Destroy();self.path=nil end
-		if ok and path.Status==Enum.PathStatus.Success then
-			self.path=path;self.waypoints=path:GetWaypoints();self.waypointIndex=2
-			self.blockedConnection=path.Blocked:Connect(function(index)
-				if index>=self.waypointIndex then self.lastPath=0 end
-			end)
-			self:_nextWaypoint()
-		else
-			path:Destroy()
-			-- Physics/collision remains authoritative when no path exists.
-			self.waypoints=nil;self.humanoid:MoveTo(self.root.Position)
-		end
-	end)
+    if self.computing or os.clock() - self.lastPath < 1 then return end
+    self.lastPath = os.clock()
+    self.generation += 1
+    local generation = self.generation
+    self.computing = true
+    task.spawn(function()
+        local path = PathfindingService:CreatePath({AgentRadius = 1.6, AgentHeight = 8, AgentCanJump = true, WaypointSpacing = 5})
+        local ok = pcall(function() path:ComputeAsync(self.root.Position, position) end)
+        self.computing = false
+        if self.destroyed or generation ~= self.generation then path:Destroy(); return end
+        if self.blockedConnection then self.blockedConnection:Disconnect() end
+        if self.path then self.path:Destroy() end
+        self.path = path
+        if ok and path.Status == Enum.PathStatus.Success then
+            self.waypoints, self.waypointIndex = path:GetWaypoints(), 2
+            self.blockedConnection = path.Blocked:Connect(function(index)
+                if index >= self.waypointIndex then self.lastPath = 0 end
+            end)
+            self:_nextWaypoint()
+        else
+            self.waypoints = nil
+            self.humanoid:MoveTo(self.root.Position)
+        end
+    end)
 end
-function Stalker:Step(dt)
-	if self.destroyed or not self.root.Parent then return end
-	self.clock+=dt
-	local velocity=self.root.AssemblyLinearVelocity
-	local moving=Vector3.new(velocity.X,0,velocity.Z).Magnitude>1
-	local swing=moving and math.sin(self.clock*6)*.42 or math.sin(self.clock*1.5)*.025
-	for motor,info in pairs(self.motors) do
-		local angle=0
-		if info.name=="Left Hip" or info.name=="Right Shoulder" then angle=swing end
-		if info.name=="Right Hip" or info.name=="Left Shoulder" then angle=-swing end
-		if self.state=="Attack" and info.name=="Right Shoulder" then angle=-1.3 end
-		motor.C0=info.base*CFrame.Angles(angle,0,0)
-	end
-	self.think=(self.think or 0)+dt
-	if self.think<.15 then return end
-	self.think=0
-	if self.state=="Attack" then return end
-	local player,distance=self:_target()
-	if player then
-		local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-		if not root then return end
-		if distance<5 and os.clock()-self.attackAt>2.8 then
-			self.attackAt=os.clock();self:_setState("Attack")
-			self.humanoid:MoveTo(self.root.Position)
-			task.delay(.65,function()
-				if self.destroyed then return end
-				local target=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-				if target and (target.Position-self.root.Position).Magnitude<5.5 and self:_canSee(target) then self.context.damagePlayer(player,15,"Stalker") end
-				self:_setState("Chase");self.lastPath=0
-			end)
-		else
-			self:_setState("Chase");self.humanoid.WalkSpeed=12;self:_pathTo(root.Position)
-		end
-	else
-		self:_setState("Patrol");self.humanoid.WalkSpeed=8
-		local point=self.patrolPoints[self.patrolIndex] or self.patrolPoints[1]
-		local offset=self.root.Position-point
-		if Vector3.new(offset.X,0,offset.Z).Magnitude<4 then self.patrolIndex=self.patrolIndex%#self.patrolPoints+1;self.lastPath=0 end
-		self:_pathTo(self.patrolPoints[self.patrolIndex])
-	end
+
+function Stalker:_attack(player)
+    self.attackAt = os.clock()
+    self:_setState("Windup")
+    self.humanoid:MoveTo(self.root.Position)
+    self.humanoid.WalkSpeed = 0
+    task.delay(.85, function()
+        if self.destroyed then return end
+        local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if root and (root.Position - self.root.Position).Magnitude < 5.3 and self:_canSee(root) then
+            self.context.damagePlayer(player, 20, "Stalker")
+        end
+        self:_setState("Recovery")
+        task.delay(.65, function()
+            if not self.destroyed then self:_setState("Search"); self.lastPath = 0 end
+        end)
+    end)
 end
+
+function Stalker:Update(dt)
+    if self.destroyed or not self.root.Parent then return end
+    self.think += dt
+    if self.think < .2 then return end
+    local elapsed = self.think
+    self.think = 0
+    if self.state == "Windup" or self.state == "Recovery" then return end
+    local player, target, distance = nil, nil, 66
+    local noisePosition
+    for _, candidate in self.context.getActivePlayers() do
+        local character = candidate.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        local health = character and character:FindFirstChildOfClass("Humanoid")
+        if root and health and health.Health > 0 then
+            local range = (root.Position - self.root.Position).Magnitude
+            local direction = root.Position - self.root.Position
+            local inCone = range < 15 or direction.Unit:Dot(self.root.CFrame.LookVector) > -.25
+            if range < distance and inCone and self:_canSee(root) then
+                player, target, distance = candidate, root, range
+            elseif range < 38 and (candidate:GetAttribute("NoiseUntil") or 0) > workspace:GetServerTimeNow() then
+                noisePosition = root.Position
+            end
+        end
+    end
+    if target then
+        self.lastSeen, self.memoryUntil = target.Position, os.clock() + 7
+        if distance < 5.2 and os.clock() - self.attackAt > 2.8 then self:_attack(player); return end
+        self:_setState("Chase")
+        self.humanoid.WalkSpeed = 13
+        self.waypoints = nil
+        self.humanoid:MoveTo(target.Position)
+    elseif self.lastSeen and os.clock() < self.memoryUntil then
+        self:_setState("Search")
+        self.humanoid.WalkSpeed = 10
+        self:_pathTo(self.lastSeen)
+    elseif noisePosition then
+        self:_setState("Investigate")
+        self.humanoid.WalkSpeed = 9
+        self.lastSeen, self.memoryUntil = noisePosition, os.clock() + 4
+        self:_pathTo(noisePosition)
+    else
+        self:_setState("Patrol")
+        self.humanoid.WalkSpeed = 7
+        local point = self.patrolPoints[self.patrolIndex] or self.patrolPoints[1]
+        if (self.root.Position - point).Magnitude < 6 then
+            self.patrolIndex = self.patrolIndex % #self.patrolPoints + 1
+            self.lastPath = 0
+        end
+        self:_pathTo(self.patrolPoints[self.patrolIndex])
+    end
+    if (not target or distance > 5.3) and (self.root.Position - self.lastPosition).Magnitude < .15 then
+        self.stuckTime += elapsed
+    else
+        self.stuckTime = 0
+    end
+    self.lastPosition = self.root.Position
+    if self.stuckTime > 2 then
+        self.humanoid.Jump = true
+        self.lastPath, self.stuckTime = 0, 0
+        self.patrolIndex = self.patrolIndex % #self.patrolPoints + 1
+    end
+end
+
 function Stalker:Destroy()
-	self.destroyed=true;self.pathToken+=1
-	for _, c in ipairs(self.connections) do c:Disconnect() end
-	if self.blockedConnection then self.blockedConnection:Disconnect() end
-	if self.path then self.path:Destroy() end
-	self.model:Destroy()
+    self.destroyed, self.generation = true, self.generation + 1
+    self.moveConnection:Disconnect()
+    if self.blockedConnection then self.blockedConnection:Disconnect() end
+    if self.path then self.path:Destroy() end
+    self.model:Destroy()
 end
-function EnemyService.new() return setmetatable({_enemies={}},EnemyService) end
-function EnemyService:SpawnStalker(parent,patrol,context)
-	local enemy=Stalker.new(parent,patrol,context);table.insert(self._enemies,enemy);return enemy
+function EnemyService.new()
+    for _, name in {"LastStopPlayers", "LastStopEnemy"} do
+        if not PhysicsService:IsCollisionGroupRegistered(name) then PhysicsService:RegisterCollisionGroup(name) end
+    end
+    PhysicsService:CollisionGroupSetCollidable("LastStopPlayers", "LastStopEnemy", false)
+    return setmetatable({_enemies = {}}, EnemyService)
+end
+function EnemyService:SpawnStalker(parent, patrol, context)
+    local enemy = Stalker.new(parent, patrol, context)
+    table.insert(self._enemies, enemy)
+    return enemy
 end
 function EnemyService:Start()
-	self._connection=RunService.Heartbeat:Connect(function(dt) for _, enemy in ipairs(self._enemies) do enemy:Step(dt) end end)
+    self._connection = RunService.Heartbeat:Connect(function(dt)
+        for _, enemy in self._enemies do enemy:Update(dt) end
+    end)
 end
-function EnemyService:Clear() for _, enemy in ipairs(self._enemies) do enemy:Destroy() end;table.clear(self._enemies) end
-function EnemyService:Destroy() self:Clear();if self._connection then self._connection:Disconnect() end end
+function EnemyService:Clear()
+    for _, enemy in self._enemies do enemy:Destroy() end
+    table.clear(self._enemies)
+end
+function EnemyService:Destroy()
+    self:Clear()
+    if self._connection then self._connection:Disconnect() end
+end
 return EnemyService
