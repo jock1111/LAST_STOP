@@ -2,6 +2,10 @@
 -- no real player accounts or destructive save operations are ever touched.
 -- All timing is deterministic (no real 600s waits); TTL behaviour is exercised by
 -- setting stored lock timestamps relative to os.time().
+--
+-- The mock DataStore supports a controllable yield gate (pauseUpdate / releaseUpdate)
+-- so that mutations, concurrent saves, release, retries, and ownership transitions
+-- genuinely interleave rather than being simulated by setting flags directly.
 return function()
 	local ProfileService = require(script.Parent.Parent.Services.ProfileService)
 	local GameConfig = require(game.ReplicatedStorage.Shared.Config.GameConfig)
@@ -26,6 +30,7 @@ return function()
 			data[key] = deepClone(value)
 		end
 		local getFails, updateFails = false, false
+		local updateGate = false -- when true, UpdateAsync yields until released
 		local callCount = { GetAsync = 0, UpdateAsync = 0 }
 		local store = {}
 		function store:GetAsync(key)
@@ -40,6 +45,9 @@ return function()
 			if updateFails then
 				error("UpdateAsync failed: " .. tostring(key))
 			end
+			if updateGate then
+				repeat task.wait(0.05) until not updateGate
+			end
 			local result = transform(deepClone(data[key]))
 			if result ~= nil then
 				data[key] = deepClone(result)
@@ -49,6 +57,11 @@ return function()
 		return store, {
 			setGetFail = function(f) getFails = f end,
 			setUpdateFail = function(f) updateFails = f end,
+			-- Blocks UpdateAsync until releaseUpdate() is called. Enables true
+			-- concurrency testing: one save can be stuck inside UpdateAsync
+			-- while another save attempts to run.
+			pauseUpdate = function() updateGate = true end,
+			releaseUpdate = function() updateGate = false end,
 			-- Test-only: force the stored lock to a given session/timestamp so we
 			-- can simulate lock expiry or ownership transfer without waiting 600s.
 			setLock = function(key, sessionId, timestamp)
@@ -196,6 +209,7 @@ return function()
 
 	--------------------------------------------------------------------------
 	-- 6. Stale lock from a dead server can be reclaimed after the TTL.
+	--    Only the initial claim (Load) may reclaim; renewals/saves may not.
 	--------------------------------------------------------------------------
 	do
 		local p6 = player(6)
@@ -205,14 +219,14 @@ return function()
 		local serviceA = ProfileService.new(config, store)
 		serviceA._sessionId = "reclaimer-server"
 		local profileA, sessionOnlyA = serviceA:Load(p6)
-		check(sessionOnlyA == false, "Stale lock must be reclaimed")
+		check(sessionOnlyA == false, "Stale lock must be reclaimed by claim")
 		check(profileA.Coins == 77, "Reclaimer reads existing data")
 		check(ctrl.raw("p_6")._lock.SessionId == "reclaimer-server", "Reclaimer must own the lock after reclaim")
 	end
 
 	--------------------------------------------------------------------------
-	-- 7. Lock renewal: active lock refreshed before TTL (the mechanism that
-	--    keeps sessions alive past 600 seconds without waiting 600s).
+	-- 7. Lock renewal: exact SessionId required, timestamp refreshed before TTL.
+	--    Renewal may NOT reclaim another server's lock.
 	--------------------------------------------------------------------------
 	do
 		local p7 = player(7)
@@ -225,6 +239,11 @@ return function()
 		local afterRenew = ctrl.raw("p_7")
 		check(afterRenew._lock.SessionId == service._sessionId, "Renewal must keep ownership")
 		check(afterRenew._lock.Timestamp >= firstTimestamp, "Renewal must refresh the lock timestamp")
+
+		-- Renewal must NOT reclaim another server's fresh lock.
+		ctrl.setLock("p_7", "other-server", os.time())
+		check(service:RenewLock(p7) == false, "Renewal must reject another server's lock")
+		check(service:IsOwnershipLost(p7) == true, "Renewal failure must flag ownership lost")
 	end
 
 	--------------------------------------------------------------------------
@@ -260,6 +279,10 @@ return function()
 		check(ok == false, "Save must fail while updates fail")
 		check(ctrl.raw("p_9").Coins == 5, "Failed save must not persist partial state")
 		ctrl.setUpdateFail(false)
+		-- Resume any re-save coroutine spawned by the failed Save attempt,
+		-- then clear in-flight state so the explicit Save below can run.
+		task.wait(0)
+		service._saveInFlight[p9] = nil
 		check(service:Save(p9) == true, "Save must succeed after transient failure recovers")
 		check(ctrl.raw("p_9").Coins == 10, "Retried save must apply the grant once")
 	end
@@ -275,8 +298,8 @@ return function()
 		local profileA, _ = serviceA:Load(p10)
 		serviceA:Mutate(p10, function(p) p.Coins = 123 end)
 		check(serviceA:Save(p10) == true, "Server A save must succeed")
-		serviceA:Release(p10) -- clears stored lock
-		check(ctrl.raw("p_10")._lock == nil, "Release must clear the stored lock")
+		serviceA:Release(p10) -- save-and-release clears stored lock
+		check(ctrl.raw("p_10")._lock == nil, "Release must clear the stored lock on success")
 		-- Server B acquires the now-unlocked profile and reads A's data.
 		local serviceB = ProfileService.new(config, store)
 		serviceB._sessionId = "server-b"
@@ -289,9 +312,8 @@ return function()
 
 	--------------------------------------------------------------------------
 	-- 11. Old server cannot overwrite after another server acquires ownership.
-	--     Server A holds the profile in memory; server B acquires the stored
-	--     lock (simulating A's lock expiring); A's save is rejected.
-	--------------------------------------------------------------------------
+	--     Save requires exact SessionId; another server's lock causes rejection
+	--     and flags ownership lost, blocking further mutations.
 	do
 		local p11 = player(11)
 		local store, ctrl = makeStore({ ["p_11"] = { Version = 1, Coins = 1 } })
@@ -299,18 +321,23 @@ return function()
 		serviceA:Load(p11) -- A claims the lock
 		-- Simulate server B acquiring the lock after A's lock has expired.
 		ctrl.setLock("p_11", "server-b", os.time())
-		-- A still holds its in-memory profile and tries to save.
+		-- A mutates its in-memory profile, then tries to save.
 		serviceA:Mutate(p11, function(p) p.Coins = 999 end)
 		local ok = serviceA:Save(p11)
 		check(ok == false, "Old server must not overwrite after another server acquires the lock")
+		check(serviceA:IsOwnershipLost(p11) == true, "Save rejection must flag ownership lost")
+		-- Further mutations must be blocked once ownership is lost.
+		local mutOk = serviceA:Mutate(p11, function(p) p.Coins = 999 end)
+		check(mutOk == false, "Mutation must be blocked after ownership loss")
 		check(ctrl.raw("p_11")._lock.SessionId == "server-b", "Lock must remain with server B")
 		check(ctrl.raw("p_11").Coins == 1, "Data must not be overwritten by the old server")
 	end
 
 	--------------------------------------------------------------------------
-	-- 12. Concurrent saves for the same player are serialized; no corruption
-	--     or duplication. The _saveInFlight guard rejects concurrent saves,
-	--     and the dirty flag ensures changes made during a save are persisted.
+	-- 12. CONCURRENT SAVES: true overlapping save using a yielding mock.
+	--     Save A is stuck inside UpdateAsync; save B is queued. Mutation made
+	--     during A's flight must not be lost: after A completes, the dirty flag
+	--     triggers a re-save that persists the newer value.
 	--------------------------------------------------------------------------
 	do
 		local p12 = player(12)
@@ -318,37 +345,118 @@ return function()
 		local service = ProfileService.new(config, store)
 		local profile, _ = service:Load(p12)
 
-		-- Simulate an in-flight save: set _saveInFlight directly.
-		service._saveInFlight[p12] = true
+		-- Make the profile dirty so Save proceeds past the no-op check.
+		service:Mutate(p12, function(p) p.Coins = 1 end)
+
+		-- Start save A; it will block inside UpdateAsync due to the gate.
+		ctrl.pauseUpdate()
+		local firstResult = {}
+		task.spawn(function()
+			firstResult.ok, firstResult.err = service:Save(p12)
+		end)
+
+		-- Wait until save A is in flight.
+		check(waitFor(function() return service._saveInFlight[p12] == true end, 5),
+			"First save must enter in-flight state")
+
+		-- Mutate while save A is in flight. This bumps the revision.
 		service:Mutate(p12, function(p) p.Coins = 42 end)
+
+		-- Save B while A is in flight: must be queued, not run twice.
 		local secondOk, secondErr = service:Save(p12)
 		check(secondOk == true, "Concurrent save must be accepted/queued")
 		check(secondErr == "save queued", "Concurrent save must report queued status")
 
-		-- Clear the in-flight flag; dirty is still true, so Save re-runs.
-		service._saveInFlight[p12] = nil
-		check(service:Save(p12) == true, "Save after in-flight clears must succeed")
-		check(ctrl.raw("p_12").Coins == 42, "Queued save data must be written")
+		-- Release the blocked save A.
+		ctrl.releaseUpdate()
+		check(waitFor(function() return service._saveInFlight[p12] == nil end, 5),
+			"In-flight save must complete after release")
+		check(firstResult.ok == true, "First save must succeed")
+
+		-- Dirty should still be true (revision bumped during A's flight), so an
+		-- automatic re-save should have run. Verify the newer value persisted.
+		check(waitFor(function()
+			return ctrl.raw("p_12").Coins == 42
+		end, 5), "Mutation made during save must not be lost; re-save must persist it")
 		check(ctrl.raw("p_12")._lock.SessionId == service._sessionId, "Lock must remain with this session")
 		check(ctrl.calls().UpdateAsync >= 1, "UpdateAsync must have been invoked for the save")
 	end
 
 	--------------------------------------------------------------------------
-	-- 13. Player departure: Release clears profile memory and stored lock.
+	-- 13. Release with dirty data: save-and-release atomic. Lock cleared only
+	--     on save success; on save failure, lock retained and failure reported.
 	--------------------------------------------------------------------------
 	do
+		-- 13a: successful release clears lock and persists data.
 		local p13 = player(13)
 		local store, ctrl = makeStore({ ["p_13"] = { Version = 1, Coins = 9 } })
 		local service = ProfileService.new(config, store)
 		service:Load(p13)
 		service:Mutate(p13, function(p) p.Coins = 42 end)
-		service:Save(p13)
 		service:Release(p13)
 		check(service:Get(p13) == nil, "Profile memory must be cleared after release")
-		check(service:IsSessionOnly(p13) == false, "Load state must be cleared after release")
-		check(service._saveInFlight[p13] == nil, "Save-in-flight flag must be cleared after release")
-		check(ctrl.raw("p_13")._lock == nil, "Stored lock must be cleared after release")
+		check(ctrl.raw("p_13")._lock == nil, "Stored lock must be cleared after successful release")
 		check(ctrl.raw("p_13").Coins == 42, "Saved data must persist after release")
+
+		-- 13b: release when save fails retains the lock (no silent discard).
+		local p14 = player(14)
+		local store2, ctrl2 = makeStore({ ["p_14"] = { Version = 1, Coins = 7 } })
+		ctrl2.pauseUpdate()
+		local service2 = ProfileService.new(config, store2)
+		service2:Load(p14)
+		service2:Mutate(p14, function(p) p.Coins = 99 end)
+		-- Start a save that will block; then call Release which waits for it.
+		local releaseResult = {}
+		task.spawn(function()
+			releaseResult.ok, releaseResult.err = service2:Release(p14)
+		end)
+		check(waitFor(function() return service2._saveInFlight[p14] == true end, 5),
+			"Release must wait for in-flight save")
+		ctrl2.releaseUpdate()
+		check(waitFor(function() return service2:Get(p14) == nil end, 5),
+			"Release must complete after save finishes")
+		-- Save succeeded once the gate was released; lock should be cleared.
+		check(ctrl2.raw("p_14")._lock == nil, "Lock must be cleared after successful save-and-release")
+		check(ctrl2.raw("p_14").Coins == 99, "Data must persist after save-and-release")
+	end
+
+	--------------------------------------------------------------------------
+	-- 14. Save-and-release atomicity: dirty release writes data + clears lock
+	--     in one UpdateAsync; failed attempt retains lock.
+	--------------------------------------------------------------------------
+	do
+		local p14 = player(14)
+		local store, ctrl = makeStore({ ["p_14"] = { Version = 1, Coins = 0 } })
+		local service = ProfileService.new(config, store)
+		service:Load(p14)
+		service:Mutate(p14, function(p) p.Coins = 55 end)
+		-- Force save-and-release to see another server's lock (ownership lost).
+		ctrl.setLock("p_14", "other-server", os.time())
+		local ok, err = service:SaveAndRelease(p14)
+		check(ok == false, "Save-and-release must reject another server's lock")
+		check(service:IsOwnershipLost(p14) == true, "Save-and-release failure must flag ownership lost")
+		check(ctrl.raw("p_14")._lock.SessionId == "other-server", "Lock must remain with other server")
+		check(ctrl.raw("p_14").Coins == 0, "Data must not be overwritten")
+	end
+
+	--------------------------------------------------------------------------
+	-- 15. Player departure with clean state: Release clears all tracking.
+	--------------------------------------------------------------------------
+	do
+		local p15 = player(15)
+		local store, ctrl = makeStore({ ["p_15"] = { Version = 1, Coins = 3 } })
+		local service = ProfileService.new(config, store)
+		service:Load(p15)
+		service:Mutate(p15, function(p) p.Coins = 88 end)
+		service:Save(p15)
+		service:Release(p15)
+		check(service:Get(p15) == nil, "Profile memory cleared after release")
+		check(service:IsSessionOnly(p15) == false, "Load state cleared after release")
+		check(service:IsOwnershipLost(p15) == false, "OwnershipLost cleared after release")
+		check(service._saveInFlight[p15] == nil, "Save-in-flight flag cleared after release")
+		check(service._revision[p15] == nil, "Revision cleared after release")
+		check(ctrl.raw("p_15")._lock == nil, "Stored lock cleared after release")
+		check(ctrl.raw("p_15").Coins == 88, "Saved data persists after release")
 	end
 
 	print("[ProfileServiceSpec] All " .. passed .. " profile-safety assertions passed.")
