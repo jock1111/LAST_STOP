@@ -234,7 +234,7 @@ game:BindToClose(function()
 	if currentExpedition then
 		currentExpedition:Destroy()
 	end
-	profiles:SaveAll()
+	profiles:Shutdown()
 end)
 
 matchmaking:Start()
