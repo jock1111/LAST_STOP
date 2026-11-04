@@ -198,6 +198,35 @@ function HUD:ApplyState(data)
         self.objective.Text = data.message or "Board another expedition when you are ready."
     end
     if data.message then self:ShowToast(data.message) end
+
+    -- Frame the lobby camera when the player is back at the concourse so the
+    -- Results / lobby screen always shows the environment rather than a blank
+    -- viewport during the character reload that follows a bank or death.
+    local camera = workspace.CurrentCamera
+    if camera then
+        if data.state == "Results" or data.state == "Lobby" or data.state == "Ended" then
+            task.defer(function() self:FrameLobby() end)
+        elseif data.state == "Floor" or data.state == "Escape" or data.state == "Decision" or data.state == "Boarding" or data.state == "Travel" then
+            camera.CameraType = Enum.CameraType.Custom
+        end
+    end
+end
+function HUD:FrameLobby()
+	local camera = workspace.CurrentCamera
+	if not camera then return end
+	local target = nil
+	local world = workspace:FindFirstChild("LastStopWorld")
+	if world then
+		local lobby = world:FindFirstChild("Lobby")
+		if lobby then
+			target = lobby:FindFirstChild("LobbySpawnPoint") or lobby:FindFirstChild("ElevatorSocket")
+		end
+	end
+	local root = self.player.Character and self.player.Character:FindFirstChild("HumanoidRootPart")
+	local lookAt = (target and target.Position) or (root and root.Position)
+	if not lookAt then return end
+	camera.CameraType = Enum.CameraType.Scriptable
+	camera.CFrame = CFrame.lookAt(lookAt + Vector3.new(14, 11, 14), lookAt)
 end
 function HUD:ShowToast(message)
     self.toastText.Text, self.toast.Visible = tostring(message), true

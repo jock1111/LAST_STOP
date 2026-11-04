@@ -8,6 +8,7 @@ end
 local spec = require(script.Parent.Tests.VerticalSliceSpec)
 local ok, err = pcall(function()
 	spec()
+	require(script.Parent.Tests.ProfileServiceSpec)()
 	require(script.Parent.Tests.SubwayCycleSpec)()
 	require(script.Parent.Tests.RouteVariantSpec)()
 	require(script.Parent.Tests.InteractionOcclusionSpec)()

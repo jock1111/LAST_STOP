@@ -45,6 +45,7 @@ function ExpeditionService.new(config, floorService, enemyService, economyServic
 		votes = {},
 		recentFloorIds = {},
 		connections = {},
+		_banked = {},
 		depth = 0,
 		floor = nil,
 		floorDefinition = nil,
@@ -201,8 +202,9 @@ function ExpeditionService:Start(players)
 	self.allPlayers = {}
 	self.unbanked = {}
 	self.pendingXP = {}
-	self.votes = {}
-	self.recentFloorIds = {}
+		self.votes = {}
+		self._banked = {}
+		self.recentFloorIds = {}
 	self.floor = nil
 	self.floorDefinition = nil
 	for _, player in ipairs(players) do
@@ -475,6 +477,10 @@ function ExpeditionService:_bankAndReturn(player)
 	if not self.active[player] then
 		return
 	end
+	if self._banked[player] then
+		return
+	end
+	self._banked[player] = true
 	local atRisk = self.unbanked[player] or 0
 	local secured = self._economyService:Bank(player, atRisk, self.pendingXP[player] or 0, self.depth)
 	self.active[player] = nil

@@ -232,6 +232,15 @@ const hm=folder(hospital,'Markers');
 marker(hm,'EntranceSpawn',[0,4,28]);marker(hm,'ElevatorSocket',[0,0,43],[1,1,1],180);marker(hm,'ElevatorReturnZone',[0,5,43],[18,10,14]);
 marker(hm,'EnemySpawn',[0,5,-25]);marker(hm,'RoomBounds',[0,7,3],[74,16,100]);
 const patrol=folder(hm,'PatrolPaths');for(const [i,p] of [[0,[0,1,-25]],[1,[0,1,12]],[2,[21,1,9]],[3,[21,1,-24]],[4,[0,1,-31]]])marker(patrol,String(i+1),p);
+// Medical equipment detail for the treatment and ward rooms (additive world props).
+function medCab(x,z,yaw){
+ const y=1.3;
+ part(rooms,'MedCabinet',[1.4,2.6,.9],[x,y,z],C.white,272,{yaw});
+ part(rooms,'MedTop',[1.6,.25,1.1],[x,y+1.3,z+0.06],C.white,1088,{yaw});
+ part(rooms,'MedTray',[1.2,.15,.7],[x,y+1.45,z+0.32],C.white,288,{detail:true});
+ part(rooms,'MedBin',[.35,.35,.35],[x+0.55,y+1.45,z+0.42],C.red,272,{detail:true});
+}
+for(const p of [[10,8,0],[32,8,180],[10,20,0],[32,20,180],[-32,4,90],[-6,4,-90],[-32,-10,90],[-6,-10,-90]])medCab(p[0],p[1],p[2]);
 write('Hospital',hospital);
 
 // An original articulated containment subject. Art details are welded onto

@@ -198,8 +198,11 @@ lobby.QueuePrompt.Triggered:Connect(function(player)
 end)
 
 local function onPlayerAdded(player)
-	profiles:Load(player)
+	local profile, sessionOnly = profiles:Load(player)
 	player:SetAttribute("LastStopProfileLoaded", true)
+	if sessionOnly then
+		toast(player, "Your profile could not be loaded from the cloud. This session's progress will not be saved.")
+	end
 	moveToLobby(player)
 	toast(player, "Welcome to LAST STOP. Queue at the terminal or press PLAY.")
 end

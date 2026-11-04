@@ -1,0 +1,20 @@
+{
+  // Kilo Code MCP configuration for LAST STOP.
+  // Connects Kilo to Roblox Studio's official Studio MCP server via the
+  // Roblox-installed mcp.bat launcher, which resolves the current StudioMCP.exe.
+  // Requires Roblox Studio to be running with a place open and "Enable Studio as
+  // MCP server" turned on (Assistant > Manage MCP Servers). Kilo must be reloaded
+  // after this file is saved before the server is picked up.
+  "mcp": {
+    "Roblox_Studio": {
+      "type": "local",
+      "command": [
+        "cmd.exe",
+        "/c",
+        "%LOCALAPPDATA%\\Roblox\\mcp.bat"
+      ],
+      "enabled": true,
+      "timeout": 15000
+    }
+  }
+}
