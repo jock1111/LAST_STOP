@@ -157,7 +157,8 @@ function Stalker:Update(dt)
         if self.state ~= "Chase" then
             if self.state ~= "Alert" then
                 self:_setState("Alert")
-                self.alertUntil = os.clock() + .7
+                -- Long enough to read: a clear, visible turn before the chase commits.
+                self.alertUntil = os.clock() + 1.2
                 self.waypoints = nil
                 self.humanoid:MoveTo(self.root.Position)
             end

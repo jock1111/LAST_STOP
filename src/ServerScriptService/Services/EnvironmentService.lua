@@ -157,6 +157,24 @@ function Environment.UpgradeHospital(model)
         strip:SetAttribute("HazardIndicator", true)
     end
     Environment.Sign(art, "DISCHARGE ZONE  /  USE SIDE WARDS DURING ALARM", origin:PointToWorldSpace(Vector3.new(0, 8, -4)), Vector3.new(12, 1.2, .1), amber)
+    -- Clinical atmosphere: tiled wainscot, ceiling light fittings the power flicker
+    -- drives (tagged FlickerLight), a crash cart and an oxygen cart for medical detail.
+    local tile = Color3.fromRGB(176, 186, 184)
+    for _, x in {-17.8, 17.8} do
+        local wainscot = Environment.Part(art, "TiledWainscot", Vector3.new(.2, 3.2, 58), origin * CFrame.new(x, 2.4, 0), tile, Enum.Material.Marble)
+        wainscot.CanCollide = false
+    end
+    for _, z in {-26, -6, 14} do
+        for _, x in {-8, 8} do
+            local fitting = Environment.Part(art, "CeilingLight", Vector3.new(2.4, .3, 4), origin * CFrame.new(x, 9.6, z), Color3.fromRGB(230, 236, 230), Enum.Material.Neon)
+            fitting.CanCollide = false
+            fitting:SetAttribute("FlickerLight", true)
+        end
+    end
+    local crash = Environment.Part(art, "CrashCart", Vector3.new(2.2, 3, 1.4), origin * CFrame.new(26, 1.5, 3), Color3.fromRGB(190, 40, 40), Enum.Material.Metal)
+    crash.CanCollide = false
+    local oxygen = Environment.Part(art, "OxygenCart", Vector3.new(1.2, 3.4, 1.2), origin * CFrame.new(-26, 1.7, -22), Color3.fromRGB(50, 110, 70), Enum.Material.Metal)
+    oxygen.CanCollide = false
     return model
 end
 
@@ -200,10 +218,16 @@ function Environment.BuildSubway()
     end
     -- Stopped train car in the north tunnel. Its doors are solid, so the hazard
     -- is the rolling pass, not the geometry.
-    local car = Environment.Part(model, "TrainCar", Vector3.new(11, 8, 40), CFrame.new(0, 1.5, -86), Color3.fromRGB(70, 96, 74), Enum.Material.Metal)
-    car.MaterialVariant = "PaintedSteel"
+    -- The train is a model the server moves with PivotTo. Its position drives
+    -- the warning, the visible motion and the damage lane from one value.
+    local train = Instance.new("Model")
+    train.Name, train.Parent = "Train", model
+    local car = Environment.Part(train, "TrainCar", Vector3.new(11, 8, 40), CFrame.new(0, 1.5, -86), Color3.fromRGB(70, 96, 74), Enum.Material.Metal)
     car.CanCollide = false
     car:SetAttribute("HazardIndicator", true)
+    local headlight = Environment.Part(train, "Headlight", Vector3.new(2, 2, .4), CFrame.new(0, 3, -106.2), Color3.fromRGB(255, 244, 210), Enum.Material.Neon)
+    headlight.CanCollide = false
+    train.PrimaryPart = car
     local markers = Instance.new("Folder")
     markers.Name, markers.Parent = "Markers", model
     local function marker(name, position, size)

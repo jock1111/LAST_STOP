@@ -174,7 +174,7 @@ function Room:Start()
         self:_target("Power", Vector3.new(-22, 3.4, 40), "Install relay", "SOUTH SIGNAL BOX", 2, 2)
         self:_target("ControlA", Vector3.new(-24, 3.4, 8), "Hold signal", "PLATFORM / CONTROL A", 3, 1)
         self:_target("ControlB", Vector3.new(24, 3.4, -8), "Hold signal", "EAST / CONTROL B", 3, 1)
-        self:_target("Sample", Vector3.new(22, 3.4, -86), "Recover relay case", "STRANDED CAR", 4, 2)
+        self:_target("Sample", Vector3.new(18, 3.4, -86), "Recover relay case", "STRANDED CAR", 4, 2)
         self:_target("Delivery", Vector3.new(4, 3, 56), "Deliver relay", "ELEVATOR RECEIVER", 5, 2)
     elseif laboratory then
         local westFirst = self.seed % 2 == 0
@@ -186,16 +186,21 @@ function Room:Start()
         self:_target("PumpB", Vector3.new(37, 3, 38), "Restart pump", "EAST / PUMP B", westFirst and 2 or 1, 3)
         self:_target("ControlA", Vector3.new(-9, 3, 0), "Hold signal", "CONTROL A", 3, 1)
         self:_target("ControlB", Vector3.new(9, 3, 0), "Hold signal", "CONTROL B", 3, 1)
-        self:_target("Sample", Vector3.new(0, 4.8, -43), "Secure specimen", "SEALED SPECIMEN", 4, 2)
+        -- Route variant: the seed also picks which north terminal holds the specimen.
+        local specimenX = self.seed % 2 == 0 and -12 or 12
+        self:_target("Sample", Vector3.new(specimenX, 4.8, -43), "Secure specimen", "SEALED SPECIMEN", 4, 2)
         self:_target("Delivery", Vector3.new(4, 3, 46), "Deliver specimen", "ELEVATOR RECEIVER", 5, 2)
     else
         local old = self.model:FindFirstChild("ObjectiveSockets")
         if old then old:Destroy() end
-        self.instructions = {"Find the emergency power cell in the west ward.", "Carry the power cell to the imaging distribution panel.",
+        -- Route variant: the seed chooses the ward route (west) or the service corridor (east).
+        -- Both lead to the same imaging panel, so the objective count is unchanged.
+        local serviceRoute = self.seed % 2 == 1
+        self.instructions = {serviceRoute and "Take the emergency power cell from the east service corridor." or "Find the emergency power cell in the west ward.",
+            "Carry the power cell to the imaging distribution panel.",
             "Synchronize ward and imaging controls. Use separate operators in a team.",
             "Recover the quarantined archive case.", "Carry the archive case back to the elevator receiver."}
-        local random = Random.new(self.seed)
-        self:_target("Fuse", Vector3.new(random:NextInteger(0, 1) == 0 and -29 or -19, 3.1, -1), "Take power cell", "EMERGENCY POWER", 1)
+        self:_target("Fuse", serviceRoute and Vector3.new(19, 3.1, -1) or Vector3.new(-29, 3.1, -1), serviceRoute and "Take power cell" or "Take power cell", serviceRoute and "SERVICE CORRIDOR / POWER" or "WEST WARD / POWER", 1)
         self:_target("Power", Vector3.new(29, 4.2, 17), "Install power cell", "IMAGING / POWER", 2, 2)
         self:_target("ControlA", Vector3.new(-13, 3, 5), "Hold signal", "WARD / CONTROL A", 3, 1)
         self:_target("ControlB", Vector3.new(13, 3, 9), "Hold signal", "IMAGING / CONTROL B", 3, 1)
@@ -244,10 +249,18 @@ function Room:_hazards(mode)
         end
         self.model:SetAttribute("HazardPhase", phase)
         -- Random event: a seed-timed power flicker (lighting only, never damage).
-        local flicker = (math.floor(elapsed) + self.seed) % 37 == 0 and phase == "Safe"
+        -- It holds for 1.6 s so clients can see it, not just a single tick.
+        local flickerSlot = math.floor(elapsed / 1.6)
+        local flicker = (flickerSlot + self.seed) % 37 == 0 and phase == "Safe"
         self.model:SetAttribute("PowerFlicker", flicker)
-        if subway then
-            self.model:SetAttribute("TrainZ", SubwayCycle.TrainZ(cycle, phase))
+        local train = subway and self.model:FindFirstChild("Train")
+        if train then
+            -- Move the visible train on the same tick that sets its warning and damage lane.
+            -- Pivot relative to its authored home so the offset never compounds.
+            local trainZ = SubwayCycle.TrainZ(cycle, phase)
+            self.model:SetAttribute("TrainZ", trainZ)
+            self.trainHome = self.trainHome or train:GetPivot()
+            train:PivotTo(self.trainHome * CFrame.new(0, 0, trainZ - (-86)))
         end
         local water = self.model:FindFirstChild("FloodWater")
         if water then

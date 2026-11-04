@@ -168,7 +168,12 @@ function HUD.new(player, callbacks)
         local folder = runtime and runtime:FindFirstChild("ActiveExpedition")
         local floor = folder and folder:FindFirstChildOfClass("Model")
         local phase = floor and floor:GetAttribute("HazardPhase")
-        self.hazard.Text = self.state == "Floor" and phase == "Warning" and "⚠  DISCHARGE INCOMING — REACH A SAFE ROUTE" or self.state == "Floor" and phase == "Active" and "⚠  DISCHARGE ACTIVE — STAY CLEAR" or ""
+        local subway = floor and floor:GetAttribute("FloorTheme") == "Subway"
+        local flicker = floor and floor:GetAttribute("PowerFlicker") == true
+        self.hazard.Text = self.state == "Floor" and phase == "Warning" and (subway and "⚠  TRAIN APPROACHING — CLEAR THE TRACK" or "⚠  DISCHARGE INCOMING — REACH A SAFE ROUTE")
+            or self.state == "Floor" and phase == "Active" and (subway and "⚠  TRAIN PASSING — STAY OFF THE TRACK" or "⚠  DISCHARGE ACTIVE — STAY CLEAR")
+            or self.state == "Floor" and flicker and "⚡  POWER FLICKER — LIGHTS FAILING"
+            or ""
     end))
     return self
 end
