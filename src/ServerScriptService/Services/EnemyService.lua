@@ -2,6 +2,7 @@ local PathfindingService = game:GetService("PathfindingService")
 local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
 local PhysicsService = game:GetService("PhysicsService")
+local SubwayCycle = require(game:GetService("ReplicatedStorage").Shared.Util.SubwayCycle)
 local EnemyService = {}
 EnemyService.__index = EnemyService
 local Stalker = {}
@@ -42,7 +43,8 @@ function Stalker.new(parent, patrol, context)
     root:SetNetworkOwner(nil)
     local self = setmetatable({model = model, root = root, humanoid = humanoid, context = context,
         patrolPoints = patrol, patrolIndex = 2, lastPath = 0, generation = 0, attackAt = -10,
-        state = "Patrol", think = 0, memoryUntil = 0, lastPosition = root.Position, stuckTime = 0}, Stalker)
+        state = "Patrol", think = 0, memoryUntil = 0, lastPosition = root.Position, stuckTime = 0,
+        random = Random.new(), alertUntil = 0, lurkUntil = 0}, Stalker)
     self.moveConnection = humanoid.MoveToFinished:Connect(function(reached)
         if self.destroyed then return end
         if reached and self.waypoints then self.waypointIndex += 1; self:_nextWaypoint()
@@ -64,6 +66,11 @@ function Stalker:_canSee(root)
     local origin = self.root.Position + Vector3.new(0, 1, 0)
     local hit = workspace:Raycast(origin, root.Position - origin, params)
     return not hit or hit.Instance:IsDescendantOf(root.Parent)
+end
+
+function Stalker:_pickPatrolIndex()
+    -- Random next point that is never the one just reached, so routes vary per run.
+    return SubwayCycle.PickPatrolIndex(self.random, #self.patrolPoints, self.patrolIndex)
 end
 
 function Stalker:_nextWaypoint()
@@ -145,6 +152,17 @@ function Stalker:Update(dt)
     if target then
         self.lastSeen, self.memoryUntil = target.Position, os.clock() + 7
         if distance < 5.2 and os.clock() - self.attackAt > 2.8 then self:_attack(player); return end
+        -- Fair counterplay: a sighting first shows a short, visible Alert (the stalker
+        -- stops and turns) before it commits to the chase.
+        if self.state ~= "Chase" then
+            if self.state ~= "Alert" then
+                self:_setState("Alert")
+                self.alertUntil = os.clock() + .7
+                self.waypoints = nil
+                self.humanoid:MoveTo(self.root.Position)
+            end
+            if os.clock() < self.alertUntil then return end
+        end
         self:_setState("Chase")
         self.humanoid.WalkSpeed = 13
         self.waypoints = nil
@@ -159,14 +177,22 @@ function Stalker:Update(dt)
         self.lastSeen, self.memoryUntil = noisePosition, os.clock() + 4
         self:_pathTo(noisePosition)
     else
-        self:_setState("Patrol")
-        self.humanoid.WalkSpeed = 7
         local point = self.patrolPoints[self.patrolIndex] or self.patrolPoints[1]
         if (self.root.Position - point).Magnitude < 6 then
-            self.patrolIndex = self.patrolIndex % #self.patrolPoints + 1
+            self.patrolIndex = self:_pickPatrolIndex()
             self.lastPath = 0
+            -- Sometimes the stalker stops and listens for a few seconds before moving on.
+            if self.random:NextNumber() < .35 then self.lurkUntil = os.clock() + self.random:NextNumber(2, 4) end
         end
-        self:_pathTo(self.patrolPoints[self.patrolIndex])
+        if os.clock() < self.lurkUntil then
+            self:_setState("Lurk")
+            self.humanoid.WalkSpeed = 0
+            self.humanoid:MoveTo(self.root.Position)
+        else
+            self:_setState("Patrol")
+            self.humanoid.WalkSpeed = 7
+            self:_pathTo(self.patrolPoints[self.patrolIndex])
+        end
     end
     if (not target or distance > 5.3) and (self.root.Position - self.lastPosition).Magnitude < .15 then
         self.stuckTime += elapsed

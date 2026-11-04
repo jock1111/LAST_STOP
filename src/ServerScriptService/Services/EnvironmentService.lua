@@ -115,7 +115,7 @@ function Environment.UpgradeHospital(model)
             local cframe = CFrame.new(part.Position) * CFrame.Angles(0, yaw, 0) * CFrame.new(offset, 0, 0)
             local mesh = Environment.Mesh(art, "wall", cframe, Vector3.new(width / count, part.Size.Y, .8))
             mesh.CanCollide = false
-            mesh.Color = Color3.fromRGB(175, 191, 185)
+            mesh.Color = Color3.fromRGB(150, 164, 158)
         end
         part.Transparency = 1
     end
@@ -127,6 +127,21 @@ function Environment.UpgradeHospital(model)
     for _, entry in props do
         Environment.Mesh(art, entry[1], origin * CFrame.new(entry[2], entry[3], entry[4]))
     end
+    -- Abandoned clinic dressing: overturned gurneys, a toppled IV stand, a dark
+    -- nurses' station and peeling paint bands so the ward reads as left behind.
+    local grime = Color3.fromRGB(96, 104, 92)
+    for index, z in {-16, 14} do
+        local gurney = Environment.Part(art, "GurneyFrame", Vector3.new(2.2, .4, 6.2), origin * CFrame.new(-14 + index * 3, 1.1, z) * CFrame.Angles(0, 0, math.rad(index == 1 and 78 or -64)), Color3.fromRGB(120, 128, 126), Enum.Material.Metal)
+        gurney.CanCollide = false
+    end
+    local stand = Environment.Part(art, "IVStand", Vector3.new(.3, 6, .3), origin * CFrame.new(-6, 3, 14) * CFrame.Angles(0, 0, math.rad(82)), Color3.fromRGB(190, 190, 186), Enum.Material.Metal)
+    stand.CanCollide = false
+    Environment.Part(art, "NursesStation", Vector3.new(10, 3, 3), origin * CFrame.new(24, 1.5, -14), Color3.fromRGB(70, 58, 50), Enum.Material.Wood)
+    for _, z in {-30, -10, 10, 30} do
+        local band = Environment.Part(art, "PeelingPaint", Vector3.new(.2, 2.4, 6), origin * CFrame.new(-17.8, 6.2, z), grime, Enum.Material.Concrete)
+        band.CanCollide = false
+        band.Transparency = .35
+    end
     for _, x in {-29, -19} do
         Environment.Mesh(art, "container", origin * CFrame.new(x, 1.2, -1), Vector3.new(3, 2.4, 2.4))
     end
@@ -135,12 +150,80 @@ function Environment.UpgradeHospital(model)
         mesh.CanCollide = false
     end
     Environment.Sign(art, "SAINT ORIN   /   CONTAINMENT WARD", origin:PointToWorldSpace(Vector3.new(0, 9, -35)), Vector3.new(13, 1.4, .1))
+    Environment.Sign(art, "CLOSED  -  NO ADMISSIONS", origin:PointToWorldSpace(Vector3.new(-25, 7, 33)), Vector3.new(9, 1.2, .1), Color3.fromRGB(182, 74, 64))
     for _, x in {-5.5, 5.5} do
         local strip = Environment.Part(art, "DischargeBoundary", Vector3.new(.15, .1, 24), origin * CFrame.new(x, .15, -12), amber, Enum.Material.Neon)
         strip.CanCollide = false
         strip:SetAttribute("HazardIndicator", true)
     end
     Environment.Sign(art, "DISCHARGE ZONE  /  USE SIDE WARDS DURING ALARM", origin:PointToWorldSpace(Vector3.new(0, 8, -4)), Vector3.new(12, 1.2, .1), amber)
+    return model
+end
+
+-- Abandoned subway: a long platform hall flanking a single track. A stopped
+-- train sits in the tunnel to the north and periodically rolls through the
+-- track bed, so the central rail is a lethal lane during its pass.
+function Environment.BuildSubway()
+    local model = Instance.new("Model")
+    model.Name = "AbandonedSubway"
+    local origin = Environment.Part(model, "Origin", Vector3.one * .1, CFrame.new(), dark)
+    origin.Transparency, origin.CanCollide, origin.CanQuery = 1, false, false
+    model.PrimaryPart = origin
+    local architecture = Instance.new("Folder")
+    architecture.Name, architecture.Parent = "ImportedArchitecture", model
+    local tile = Color3.fromRGB(84, 92, 86)
+    local grime = Color3.fromRGB(42, 46, 44)
+    -- Track bed in the centre, platforms on either side, raised 4 studs.
+    Environment.Part(model, "TrackBed", Vector3.new(12, 1, 110), CFrame.new(0, -3.5, 0), Color3.fromRGB(28, 30, 30), Enum.Material.Concrete)
+    for _, x in {-22, 22} do
+        Environment.Part(model, "Platform", Vector3.new(16, 1, 110), CFrame.new(x, -.5, 0), tile, Enum.Material.Concrete)
+        Environment.Part(model, "PlatformEdge", Vector3.new(.8, 1.2, 110), CFrame.new(x + (x > 0 and -7.6 or 7.6), .1, 0), Color3.fromRGB(214, 176, 62), Enum.Material.Metal)
+    end
+    Environment.Part(model, "Floor", Vector3.new(60, 1, 120), CFrame.new(0, -4.5, 0), grime, Enum.Material.Concrete)
+    -- Tunnel walls and a vaulted ceiling line.
+    for _, x in {-30, 30} do
+        Environment.Part(model, "TunnelWall", Vector3.new(2, 18, 120), CFrame.new(x, 4, 0), grime, Enum.Material.Concrete)
+    end
+    Environment.Part(model, "Ceiling", Vector3.new(60, 1, 120), CFrame.new(0, 13, 0), grime, Enum.Material.Concrete)
+    for z = -54, 54, 18 do
+        for _, x in {-16, 16} do
+            Environment.Mesh(architecture, "container-tall", CFrame.new(x, 5, z), Vector3.new(4, 12, 4))
+        end
+    end
+    -- Ticket hall and stair north/south. Stairs are walkable ramps for the stalker.
+    Environment.Part(model, "EntranceStairs", Vector3.new(14, 1, 12), CFrame.new(0, -2, -58), tile, Enum.Material.Concrete)
+    Environment.Sign(architecture, "LAST TRAIN   /   NORTHBOUND  -  NOT IN SERVICE", Vector3.new(0, 10, -55), Vector3.new(20, 2, .15), amber)
+    Environment.Sign(architecture, "SIGNAL RELAY  /  AUTHORIZED STAFF ONLY", Vector3.new(0, 10, 55), Vector3.new(18, 2, .15), cyan)
+    for z = -48, 48, 16 do
+        Environment.Light(model, Vector3.new(-22, 11, z), Color3.fromRGB(230, 214, 176), 24)
+        Environment.Light(model, Vector3.new(22, 11, z), Color3.fromRGB(230, 214, 176), 24)
+    end
+    -- Stopped train car in the north tunnel. Its doors are solid, so the hazard
+    -- is the rolling pass, not the geometry.
+    local car = Environment.Part(model, "TrainCar", Vector3.new(11, 8, 40), CFrame.new(0, 1.5, -86), Color3.fromRGB(70, 96, 74), Enum.Material.Metal)
+    car.MaterialVariant = "PaintedSteel"
+    car.CanCollide = false
+    car:SetAttribute("HazardIndicator", true)
+    local markers = Instance.new("Folder")
+    markers.Name, markers.Parent = "Markers", model
+    local function marker(name, position, size)
+        local part = Environment.Part(markers, name, size or Vector3.one, CFrame.new(position))
+        part.Transparency, part.CanCollide, part.CanQuery = 1, false, false
+        return part
+    end
+    marker("EntranceSpawn", Vector3.new(0, 4, 46))
+    marker("ElevatorSocket", Vector3.new(0, 0, 62))
+    marker("ElevatorReturnZone", Vector3.new(0, 5, 62), Vector3.new(18, 10, 16))
+    marker("EnemySpawn", Vector3.new(-22, 4, -40))
+    marker("RoomBounds", Vector3.new(0, 5, 0), Vector3.new(60, 20, 130))
+    local paths = Instance.new("Folder")
+    paths.Name, paths.Parent = "PatrolPaths", markers
+    for index, position in {Vector3.new(-22, 4, -20), Vector3.new(22, 4, 0), Vector3.new(-22, 4, 20), Vector3.new(22, 4, 40)} do
+        local point = Environment.Part(paths, tostring(index), Vector3.one, CFrame.new(position))
+        point.Transparency, point.CanCollide, point.CanQuery = 1, false, false
+    end
+    -- Return bridge from the platform edge to the elevator socket.
+    Environment.Part(model, "ElevatorBridge", Vector3.new(18, 1, 16), CFrame.new(0, -.5, 56), dark)
     return model
 end
 

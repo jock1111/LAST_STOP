@@ -64,7 +64,7 @@ function verifySources(directory) {
   }
 }
 verifySources('src');
-assert(place.includes('V4 CONTAINMENT'));
+assert(place.includes('V5 DEVELOPMENT'));
 assert.equal(project.tree.ServerStorage.LastStopAssets.Environment.$path, 'assets/prefabs/Environment.rbxmx');
 assert.equal(project.tree.ServerStorage.LastStopAssets.StalkerSkin.$path, 'assets/prefabs/StalkerSkin.rbxmx');
 assert(/FloorTimeLimitSeconds\s*=\s*240\s*,/.test(fs.readFileSync('src/ReplicatedStorage/Shared/Config/GameConfig.lua', 'utf8')), 'Release floor timing must be 240 seconds');

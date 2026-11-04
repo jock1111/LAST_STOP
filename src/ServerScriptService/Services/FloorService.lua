@@ -5,7 +5,7 @@ local TweenService = game:GetService("TweenService")
 local Pbr = require(script.Parent.PbrMaterialService)
 local FloorService = {}
 FloorService.__index = FloorService
-local BUILD = "V4 / CONTAINMENT"
+local BUILD = "V5 / DEVELOPMENT"
 local function need(parent, name, class)
 	local child = parent:FindFirstChild(name)
 	assert(child and child:IsA(class), ("[LAST STOP] Missing %s %s.%s; run node tools/build-prefabs.mjs then rojo build default.project.json."):format(class,parent:GetFullName(),name))

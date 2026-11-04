@@ -5,6 +5,9 @@ local FloorConfig = require(game:GetService("ReplicatedStorage").Shared.Config.F
 local ExpeditionService = {}
 ExpeditionService.__index = ExpeditionService
 
+-- Fixed reward for the optional hidden stash in each floor (server-owned).
+local HIDDEN_LOOT_COINS = 35
+
 local function inBox(position, cframe, size)
 	local localPosition = cframe:PointToObjectSpace(position)
 	local half = size * 0.5
@@ -290,6 +293,9 @@ function ExpeditionService:_beginNextFloor(token)
 		onObjectiveStep = function(player, key)
 			self:_onObjectiveStep(player, key)
 		end,
+		onHiddenLoot = function(player)
+			self:_onHiddenLoot(player)
+		end,
 	})
 	self.floor:Start()
 	for index, player in ipairs(self:_activePlayers()) do
@@ -323,6 +329,17 @@ function ExpeditionService:_onObjectiveStep(player, key)
 			self:_completeCurrentFloor()
 		end)
 	end
+end
+
+function ExpeditionService:_onHiddenLoot(player)
+	if self.state ~= "Floor" or not self.floor or self.unbanked[player] == nil then
+		return
+	end
+	-- Fixed server-side reward; the client only reports the touch, never the amount.
+	local reward = HIDDEN_LOOT_COINS
+	self.unbanked[player] += reward
+	self:_toast(player, "Hidden stash found: +" .. reward .. " unbanked coins.")
+	self:_broadcast({ message = player.DisplayName .. " found a hidden stash." })
 end
 
 function ExpeditionService:_completeCurrentFloor()

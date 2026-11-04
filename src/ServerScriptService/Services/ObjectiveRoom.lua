@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local Environment = require(script.Parent.EnvironmentService)
+local SubwayCycle = require(game:GetService("ReplicatedStorage").Shared.Util.SubwayCycle)
 local Room = {}
 Room.__index = Room
 
@@ -113,7 +114,7 @@ function Room:_attemptInteraction(player, key)
         end
         self:_advance(player, "SynchronizedControls")
     elseif key == "Fuse" or key == "Sample" then
-        local kind = self.definition.Template == "Hospital" and "Archive case" or "Sealed sample"
+        local kind = self.definition.Template == "Hospital" and "Archive case" or self.definition.Template == "AbandonedSubway" and "Relay case" or "Sealed sample"
         self:_carry(player, key == "Fuse" and "Power cell" or kind)
         self:_advance(player, key)
     elseif key == "Power" or key == "Delivery" then
@@ -132,11 +133,18 @@ end
 function Room:Start()
     local assets = game:GetService("ServerStorage").LastStopAssets
     local laboratory = self.definition.Template == "FloodedLaboratory"
-    self.model = laboratory and Environment.BuildLaboratory() or Environment.UpgradeHospital(assets.Floors.Hospital:Clone())
+    local subway = self.definition.Template == "AbandonedSubway"
+    if subway then
+        self.model = Environment.BuildSubway()
+    elseif laboratory then
+        self.model = Environment.BuildLaboratory()
+    else
+        self.model = Environment.UpgradeHospital(assets.Floors.Hospital:Clone())
+    end
     self.model:PivotTo(CFrame.new(self._floorService._floorOrigin))
     self.model.Name = self.definition.Template
     self.model:SetAttribute("SourceTemplate", "ServerStorage.LastStopAssets / " .. self.definition.Template)
-    self.model:SetAttribute("FloorTheme", laboratory and "Laboratory" or "Hospital")
+    self.model:SetAttribute("FloorTheme", subway and "Subway" or laboratory and "Laboratory" or "Hospital")
     self.model:SetAttribute("HazardPhase", "Safe")
     self.model.Parent = self._floorService._activeFolder
     local markers = self.model.Markers
@@ -154,9 +162,21 @@ function Room:Start()
         end
     end
     self.patrolPoints = {markers.EnemySpawn.Position}
+    self.hazardMode = subway and "Train" or laboratory and "Flood" or "Discharge"
     for _, point in markers.PatrolPaths:GetChildren() do table.insert(self.patrolPoints, point.Position) end
     self.controls = {}
-    if laboratory then
+    if subway then
+        self.instructions = {"Take the signal relay from the north platform console.",
+            "Install the relay at the south signal box. Watch the track: the last train passes on a timer.",
+            "Synchronize signal controls A + B. Two players have 10 seconds. Solo has 22 seconds.",
+            "Recover the relay case from the stranded car.", "Carry the case to the elevator receiver. Stay off the track during a train pass."}
+        self:_target("Fuse", Vector3.new(-22, 3.4, -52), "Take relay", "NORTH PLATFORM / RELAY", 1)
+        self:_target("Power", Vector3.new(-22, 3.4, 40), "Install relay", "SOUTH SIGNAL BOX", 2, 2)
+        self:_target("ControlA", Vector3.new(-24, 3.4, 8), "Hold signal", "PLATFORM / CONTROL A", 3, 1)
+        self:_target("ControlB", Vector3.new(24, 3.4, -8), "Hold signal", "EAST / CONTROL B", 3, 1)
+        self:_target("Sample", Vector3.new(22, 3.4, -86), "Recover relay case", "STRANDED CAR", 4, 2)
+        self:_target("Delivery", Vector3.new(4, 3, 56), "Deliver relay", "ELEVATOR RECEIVER", 5, 2)
+    elseif laboratory then
         local westFirst = self.seed % 2 == 0
         self.instructions = {westFirst and "Restart pump A on the west catwalk." or "Restart pump B on the east catwalk.",
             westFirst and "Restart pump B on the east catwalk." or "Restart pump A on the west catwalk.",
@@ -183,18 +203,52 @@ function Room:Start()
         self:_target("Delivery", Vector3.new(4, 3, 28), "Deliver archive", "ELEVATOR RECEIVER", 5, 2)
     end
     for _, entry in self.targets do entry.prompt.Enabled = entry.stage == self.stage end
+    -- Hidden loot: one seed-placed side stash per run. It is server-side only and
+    -- adds a small bonus to the unbanked pot (never client-supplied).
+    local stashRandom = Random.new(self.seed + 977)
+    local stashPositions = {Vector3.new(-30, 3, 20), Vector3.new(30, 3, -20), Vector3.new(0, 3, 34), Vector3.new(-34, 3, -34)}
+    self.stashPosition = stashPositions[stashRandom:NextInteger(1, #stashPositions)]
+    self.stashFound = false
+    local stash = Instance.new("Part")
+    stash.Name, stash.Anchored, stash.CanCollide = "HiddenStash", true, false
+    stash.Size, stash.Position, stash.Transparency = Vector3.new(2, 1.2, 2), self.stashPosition, 1
+    stash.Parent = self.model
+    local stashPrompt = Instance.new("ProximityPrompt")
+    stashPrompt.ActionText, stashPrompt.ObjectText = "Search stash", "Hidden stash"
+    stashPrompt.HoldDuration, stashPrompt.MaxActivationDistance = 1, 10
+    stashPrompt.Parent = stash
+    stashPrompt.Triggered:Connect(function(player)
+        if self.destroyed or self.completed or self.stashFound or not self.context.isPlayerActive(player) then return end
+        self.stashFound = true
+        stash:Destroy()
+        self.context.onHiddenLoot(player)
+    end)
     self:_setObjective(self.instructions[1])
     self.startedAt = os.clock()
-    task.spawn(function() self:_hazards(laboratory) end)
+    task.spawn(function() self:_hazards(self.hazardMode) end)
 end
 
-function Room:_hazards(laboratory)
+function Room:_hazards(mode)
     local lastDamage = {}
+    local laboratory = mode == "Flood"
+    local subway = mode == "Train"
     while not self.destroyed and self.model and not self.completed do
         local elapsed = os.clock() - self.startedAt
-        local cycle = (elapsed + self.seed % 7) % 18
-        local phase = cycle > 14 and "Active" or cycle > 10 and "Warning" or "Safe"
+        -- The train pass runs on its own, shorter cycle than the discharge cycle.
+        local phase, cycle
+        if subway then
+            phase, cycle = SubwayCycle.Phase(elapsed, self.seed % 7)
+        else
+            cycle = (elapsed + self.seed % 7) % 18
+            phase = cycle > 14 and "Active" or cycle > 10 and "Warning" or "Safe"
+        end
         self.model:SetAttribute("HazardPhase", phase)
+        -- Random event: a seed-timed power flicker (lighting only, never damage).
+        local flicker = (math.floor(elapsed) + self.seed) % 37 == 0 and phase == "Safe"
+        self.model:SetAttribute("PowerFlicker", flicker)
+        if subway then
+            self.model:SetAttribute("TrainZ", SubwayCycle.TrainZ(cycle, phase))
+        end
         local water = self.model:FindFirstChild("FloodWater")
         if water then
             water.Color = phase == "Active" and Color3.fromRGB(48, 110, 122) or Color3.fromRGB(32, 87, 95)
@@ -212,11 +266,20 @@ function Room:_hazards(laboratory)
             end
             if root and phase == "Active" and os.clock() - (lastDamage[player] or 0) > 1.2 then
                 local localPosition = self.model:GetPivot():PointToObjectSpace(root.Position)
-                local exposed = laboratory and localPosition.Y < 1.8
-                    or not laboratory and math.abs(localPosition.X) < 5 and localPosition.Z < 0 and localPosition.Z > -24
+                local exposed
+                if laboratory then
+                    exposed = localPosition.Y < 1.8
+                elseif subway then
+                    -- The train occupies the track lane only while Active, and
+                    -- is in the track bed behind the centre line.
+                    exposed = SubwayCycle.Exposed(localPosition, self.model:GetAttribute("TrainZ") or -200)
+                else
+                    exposed = math.abs(localPosition.X) < 5 and localPosition.Z < 0 and localPosition.Z > -24
+                end
                 if exposed then
                     lastDamage[player] = os.clock()
-                    self.context.damagePlayer(player, 8, laboratory and "Electrified floodwater" or "Containment discharge")
+                    local source = laboratory and "Electrified floodwater" or subway and "Passing train" or "Containment discharge"
+                    self.context.damagePlayer(player, subway and 30 or 8, source)
                 end
             end
         end

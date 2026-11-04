@@ -60,11 +60,14 @@ return function()
         stalker.root.Anchored = true
         stalker.root.CFrame = CFrame.new(floors._floorOrigin + Vector3.new(0, 8, -100))
         local originalStart = room.startedAt
-        room.startedAt = os.clock() - (15 - room.seed % 7)
-        local exposure = room.definition.Template == "Hospital" and Vector3.new(0, 3, -12) or Vector3.new(20, .5, 20)
+        local subway = room.definition.Template == "AbandonedSubway"
+        -- Subway: the train is Active from cycle 12 of 16 and stays in the track lane.
+        room.startedAt = os.clock() - ((subway and 13 or 15) - room.seed % 7)
+        local exposure = room.definition.Template == "Hospital" and Vector3.new(0, 3, -12)
+            or subway and Vector3.new(0, .5, -32) or Vector3.new(20, .5, 20)
         victim.Character:PivotTo(CFrame.new(floors._floorOrigin + exposure))
         waitFor(function() return humanoid.Health < 100 end, "environmental hazard damage", 3)
-        assert(humanoid.Health == 92, "Hazard must deal a bounded 8 damage")
+        assert(humanoid.Health == (subway and 70 or 92), "Hazard must deal a bounded 30 (train) or 8 damage")
         humanoid.Health = 100
         room.startedAt = originalStart
         for key, entry in room.targets do
