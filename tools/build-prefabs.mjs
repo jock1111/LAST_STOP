@@ -102,38 +102,56 @@ function write(name,n){fs.writeFileSync(path.join(out,name+'.rbxmx'),`<roblox ve
 
 const lobby=model('Lobby');
 const shell=folder(lobby,'StationArchitecture');
-floor(shell,[5,-.5,0],[70,1,72]);
-floor(shell,[-34,-1.5,0],[14,1,72],'ChippedConcrete',C.navy);
-wall(shell,[40,9,0],[1.5,18,72]);wall(shell,[-42,9,0],[1.5,18,72],C.dark);
-wall(shell,[0,9,-36],[84,18,1.5]);wall(shell,[0,9,36],[84,18,1.5]);
+const concFloor=floor(shell,[5,-.5,0],[70,1,72]);
+const serviceFloor=floor(shell,[-34,-1.5,0],[14,1,72],'ChippedConcrete',C.navy);
+// Structural columns at concourse quarters with plinths, webs, flanges and capitals.
+for(const x of [-24,28])for(const z of [-25,-1,23]){
+ part(shell,'ColumnPlinth',[3.7,.65,3.7],[x,.4,z],C.steel);
+ part(shell,'ColumnWeb',[1.1,16,1.1],[x,8.5,z],C.steel,1088,{pbr:'MetalPlate'});
+ for(const side of [-1,1])part(shell,'ColumnFlange',[2.7,16,.32],[x,8.5,z+side*.65],C.steel,1088,{pbr:'MetalPlate'});
+ part(shell,'ColumnCapital',[4,1,4],[x,16.2,z],C.steel);
+ sign(shell,'ColumnNumber',z===23?'01':'07',[1.2,2,.08],[x,6,z+.85],C.white);
+}
+// Painted plaster wall bands and a recessed wainscot band replace raw steel.
+for(const side of [-1,1]){
+ part(shell,'WallPlaster',[1.2,12,72],[side*40,6,0],[200,206,198],816);
+ part(shell,'WallWainscot',[1.2,2.2,72],[side*40,1.7,0],[150,158,150],816,{detail:true});
+ part(shell,'WallCap',[1.2,.4,72],[side*40,3.1,0],[130,138,132],816,{detail:true});
+}
+part(shell,'WallPlaster',[82,12,1.4],[0,6,-36.5],[200,206,198],816);
+part(shell,'WallPlaster',[82,12,1.4],[0,6,36.5],[200,206,198],816);
+part(shell,'WallWainscot',[82,2.2,1.4],[0,1.7,-36.5],[150,158,150],816,{detail:true});
+part(shell,'WallWainscot',[82,2.2,1.4],[0,1.7,36.5],[150,158,150],816,{detail:true});
+part(shell,'WallCap',[82,.4,1.4],[0,3.1,-36.5],[130,138,132],816,{detail:true});
+part(shell,'WallCap',[82,.4,1.4],[0,3.1,36.5],[130,138,132],816,{detail:true});
 part(shell,'CofferedCeiling',[84,.6,72],[0,18.5,0],C.dark);
 for(const z of [-30,-18,-6,6,18,30]){
  part(shell,'RivetedCeilingBeam',[82,1.1,.7],[0,17.5,z],C.steel);
  for(const x of [-20,4,28])lamp(shell,[x,16.7,z],C.white,23,1.65);
 }
-for(const x of [-24,28])for(const z of [-25,-1,23]){
- part(shell,'ColumnPlinth',[3.7,.65,3.7],[x,.4,z],C.steel);
- part(shell,'ColumnWeb',[1.1,16,1.1],[x,8.5,z],C.green,1088,{pbr:'MetalPlate'});
- for(const side of [-1,1])part(shell,'ColumnFlange',[2.7,16,.32],[x,8.5,z+side*.65],C.green,1088,{pbr:'MetalPlate'});
- part(shell,'ColumnCapital',[4,1,4],[x,16.2,z],C.steel);
- sign(shell,'ColumnNumber',z===23?'01':'07',[1.2,2,.08],[x,6,z+.85],C.white);
-}
-for(let z=-32;z<=32;z+=4){part(shell,'RailSleeper',[11,.3,1.2],[-34,-.65,z],[62,49,40],512);}
+// Amplified rear service wall with practical lighting, pipes and cable trays.
 for(const x of [-31,-37])part(shell,'Rail',[.25,.55,70],[x,-.3,0],C.steel,1088,{pbr:'MetalPlate'});
-for(let z=-32;z<34;z+=3){part(shell,'TactilePaver',[1.5,.09,2.8],[-26,.06,z],C.amber,272);for(const dx of [-.4,0,.4])part(shell,'TactileRidge',[.08,.11,2.3],[-26+dx,.13,z],C.dark,272,{detail:true});}
+for(let z=-32;z<=32;z+=4){part(shell,'RailSleeper',[11,.3,1.2],[-34,-.65,z],[62,49,40],512);}
 for(const z of [-24,-8,8,24]){
  panel(shell,[39,7,z],[.5,9,10]);
  vent(shell,-41,10,z);
+ // Rear service pipes alternate above the service wall.
+ pipe(shell,[36,10,z],26,'Z');
 }
-// A side service gallery and shallow maintenance recesses break up the shell.
 for(const z of [-22,-6,10]){
  wall(shell,[34,7,z],[.8,14,7],C.dark);
  part(shell,'GalleryLintel',[8,1,1],[36,14,z+4],C.steel);
  part(shell,'GalleryRail',[.15,.15,10],[31,3,z],C.steel);
  for(const dz of [-4,0,4])part(shell,'RailPost',[.18,3,.18],[31,1.5,z+dz],C.steel);
 }
+for(const x of [-20,0,20]){pipe(shell,[x,16.8,0],65,'Z');}
+for(let z=-30;z<=30;z+=8){part(shell,'CableTray',[7,.25,1],[21,16.4,z],C.dark);for(const x of [18,20,22,24])part(shell,'Cable',[.14,.14,7],[x,16.65,z],C.rubber,272,{detail:true});}
+// Tactile warning strip along the platform edge for navigation clarity.
+for(let z=-32;z<34;z+=3){part(shell,'TactilePaver',[1.5,.09,2.8],[-26,.06,z],C.amber,272);for(const dx of [-.4,0,.4])part(shell,'TactileRidge',[.08,.11,2.3],[-26+dx,.13,z],C.dark,272,{detail:true});}
+// Benches flank the central queue path.
 for(const z of [-20,0,20]){bench(lobby,-18,z,90);}
 bench(lobby,20,23,180);
+// Ticket/check-in barriers with readers and status LEDs.
 for(const x of [-18,-10,10,18]){
  const g=folder(lobby,'TicketBarrier');
  part(g,'SteelPedestal',[1.8,3.3,4],[x,1.7,14],C.steel,1088,{pbr:'MetalPlate'});
@@ -141,13 +159,13 @@ for(const x of [-18,-10,10,18]){
  part(g,'StatusLED',[.55,.06,.6],[x,3.66,13],C.cyan,288,{detail:true});
  part(g,'TurnstileArm',[3.2,.18,.18],[x+1.6,2.4,14],C.steel,1088,{detail:true});
 }
-for(const x of [-20,0,20]){pipe(shell,[x,16.8,0],65,'Z');}
-for(let z=-30;z<=30;z+=8){part(shell,'CableTray',[7,.25,1],[21,16.4,z],C.dark);for(const x of [18,20,22,24])part(shell,'Cable',[.14,.14,7],[x,16.65,z],C.rubber,272,{detail:true});}
-sign(lobby,'MainStationSign','LAST STOP\nRESEARCH TRANSIT  /  TERMINUS',[23,4,.35],[0,13.2,-14],C.white);
-sign(lobby,'BoardingWayfinding','↓  DEEP ACCESS  /  ELEVATOR  ↓',[18,1.6,.25],[0,9.7,-14],C.cyan);
+// Signage hierarchy: station identifier, wayfinding, posters.
+sign(lobby,'MainStationSign','SAINT ORIN\nRESEARCH TRANSIT  /  TERMINUS',[26,4,.35],[0,13.2,-14],C.white);
+sign(lobby,'BoardingWayfinding','↓  DEEP ACCESS  /  ELEVATOR  ↓',[20,1.6,.25],[0,9.7,-14],C.cyan);
 sign(lobby,'PlatformSign','01  /  NORTHBOUND\nSERVICE SUSPENDED',[.35,4,12],[-40.9,7,-8],C.amber,-90);
 sign(lobby,'OriginalPoster','DO NOT WAIT\nFOR THE LAST TRAIN\nTRANSIT AUTHORITY  1986',[5,7,.1],[38.9,7,24],C.white,-90,[40,79,85]);
 sign(lobby,'SafetyPoster','IF THE LIGHTS FAIL\nFOLLOW THE AMBER LINE',[5,7,.1],[38.9,7,9],C.amber,-90,C.navy);
+// Queue console (preserved boarding anchor) with illuminated screen and keys.
 const consolePart=part(lobby,'QueueConsole',[3.5,3.7,2],[14,1.9,-10],C.dark,1088,{pbr:'MetalPlate'});
 sign(lobby,'QueueScreen','EXPEDITION\nPRESS E TO BOARD',[3,1.5,.1],[14,3,-8.94],C.cyan);
 for(const x of [13.2,14,14.8])part(lobby,'ConsoleKey',[.45,.15,.45],[x,3.85,-9.6],C.amber,272,{detail:true});
@@ -161,28 +179,48 @@ write('Lobby',lobby);
 const lift=model('Elevator');
 floor(lift,[0,.1,0],[20,.5,17],'MetalPlate',C.steel);
 part(lift,'RubberFloorInset',[17,.12,13],[0,.42,0],C.rubber,272);
+// Cabin shell: side walls, rear wall and ceiling.
 for(const x of [-9.8,9.8])part(lift,'CabinWall',[.5,13.5,17],[x,7,0],C.dark,1088,{pbr:'MetalPlate'});
 part(lift,'BackWall',[20,13.5,.5],[0,7,-8.3],C.dark,1088,{pbr:'MetalPlate'});
-for(const x of [-7.5,-3.75,0,3.75,7.5]){part(lift,'BackPanel',[3.5,10,.16],[x,6.6,-7.95],C.steel,1088,{pbr:'MetalPlate'});for(const y of [2,11])part(lift,'PanelBolt',[.13,.13,.08],[x-1.4,y,-7.8],C.dark,1088,{shape:0,detail:true});}
-for(const x of [-9.35,9.35]){part(lift,'Handrail',[.2,.22,12],[x,4,0],C.steel);part(lift,'WallKickplate',[.12,1.3,15],[x,.95,0],C.steel,1088,{pbr:'MetalPlate'});}
+for(const x of [-7.5,-3.75,0,3.75,7.5]){
+ part(lift,'BackPanel',[3.5,10,.16],[x,6.6,-7.95],C.steel,1088,{pbr:'MetalPlate'});
+ for(const y of [2,11])part(lift,'PanelBolt',[.13,.13,.08],[x-1.4,y,-7.8],C.dark,1088,{shape:0,detail:true});
+}
 part(lift,'CabinCeiling',[20,.5,17],[0,14,0],C.navy);
+// Ceiling practicals: two long fluorescents plus louvre array.
 lamp(lift,[-4,13.5,0],C.white,20,2);lamp(lift,[4,13.5,0],C.white,20,2);
 for(let z=-5;z<=5;z+=1)part(lift,'CeilingLouvre',[5,.15,.1],[0,13.5,z],C.steel,1088,{detail:true});
-for(const x of [-10.5,10.5]){part(lift,'OuterJamb',[1.2,14.8,1.5],[x,7.4,8.4],C.steel,1088,{pbr:'MetalPlate'});part(lift,'DoorSeal',[.18,12.8,.3],[x*.91,6.8,8.7],C.rubber,272);}
+// Handrails and kickplates inside the cabin.
+for(const x of [-9.35,9.35]){
+ part(lift,'Handrail',[.2,.22,12],[x,4,0],C.steel);
+ part(lift,'WallKickplate',[.12,1.3,15],[x,.95,0],C.steel,1088,{pbr:'MetalPlate'});
+}
+// Door framing: outer jambs, header, seals and threshold.
+for(const x of [-10.5,10.5]){
+ part(lift,'OuterJamb',[1.2,14.8,1.5],[x,7.4,8.4],C.steel,1088,{pbr:'MetalPlate'});
+ part(lift,'DoorSeal',[.18,12.8,.3],[x*.91,6.8,8.7],C.rubber,272);
+}
 part(lift,'MechanicalHeader',[23,2,2],[0,14.5,8.4],C.dark);
 part(lift,'Threshold',[22,.3,2.2],[0,.4,8.6],C.steel,1088,{pbr:'MetalPlate'});
 for(const z of [8,8.5,9])part(lift,'ThresholdGroove',[19,.04,.06],[0,.57,z],C.rubber,272,{detail:true});
+// Moving doors: each leaf carries an inset panel and a door jamb side-stripe.
+// Children are welded by FloorService before door tweening; markers on the
+// door leaves are preserved for the boarding/exit logic.
 for(const side of [-1,1]){
  const d=part(lift,side===-1?'DoorLeft':'DoorRight',[9.5,12.8,.45],[side*4.78,6.95,8.55],C.steel,1088,{pbr:'MetalPlate'});
- // Moving details are children and welded by FloorService before door tweening.
  part(d,'DoorInset',[8.7,10.5,.08],[side*4.78,6.9,8.82],C.dark,1088,{pbr:'MetalPlate',detail:true});
- for(let y=1.5;y<13;y+=1.4)part(lift,'JambHazardStripe',[.55,.7,.12],[side*10, y,9.21],C.amber,272,{roll:25,detail:true});
+ part(d,'DoorEdgeSeal',[.06,12.8,.35],[side*4.75,6.9,8.55],C.rubber,272,{detail:true});
+ for(let y=1.5;y<13;y+=1.4)part(lift,'JambHazardStripe',[.55,.7,.12],[side*10,y,9.21],C.amber,272,{roll:25,detail:true});
 }
-sign(lift,'FloorDisplay','B0  /  CONCOURSE',[6.8,1.15,.12],[0,14.4,9.48],C.cyan);
+// Cabin instruction and control panel.
 sign(lift,'CabinInstruction','MAX 12\nBANK TO SURVIVE',[5,1.8,.1],[0,10.9,-7.79],C.white);
 part(lift,'ControlPanel',[1.5,4,.25],[8,5.5,-7.8],C.dark);
 for(let i=0;i<4;i++){part(lift,'TactileButton',[.5,.5,.15],[8,4.2+i*.75,-7.57],i===3?C.red:C.amber,272,{shape:2,detail:true});}
 sign(lift,'EtchedPanelLabel','01\n02\n03\nSOS',[.5,3,.03],[8.55,5.3,-7.6],C.white);
+// Animated floor indicator above the door.
+sign(lift,'FloorDisplay','B0  /  CONCOURSE',[6.8,1.15,.12],[0,14.4,9.48],C.cyan);
+part(lift,'IndicatorBezel',[7.4,1.75,.16],[0,14.42,9.48],C.dark,1088,{detail:true});
+for(let i=0;i<3;i++)part(lift,'IndicatorDot',[.3,.3,.02],[i-1,14.45,9.49],i===0?C.amber:C.dark,288,{detail:true});
 const liftMarkers=folder(lift,'Markers');marker(liftMarkers,'EntranceSpawn',[0,4,0]);marker(liftMarkers,'ElevatorReturnZone',[0,5,0],[18,10,14]);
 write('Elevator',lift);
 
@@ -195,7 +233,13 @@ for(const [name,x,z,w,d] of roomSpecs){
  for(let tz=z-d/2+4;tz<z+d/2;tz+=10)lamp(r,[x,11.8,tz],name==='Archive'?[180,202,186]:C.white,19,2);
 }
 // Corridor walls have authored door openings; there is no enclosing box fallback.
+// A painted plaster wainscot band runs along the corridor so the ward reads as
+// clinical rather than industrial.
 for(const [x,z,len] of [[-7,-28,14],[-7,-10,6],[-7,17,14],[7,-30,10],[7,-8,12],[7,23,8]])wall(rooms,[x,6,z],[.65,12,len],[167,183,171]);
+for(const [x,z,len] of [[-7,-28,14],[-7,-10,6],[-7,17,14],[7,-30,10],[7,-8,12],[7,23,8]]){
+ part(rooms,'WardWainscot',[len-.6,2.4,.2],[x,2.4,z],[150,158,150],816,{detail:true});
+ part(rooms,'WardCap',[len-.6,.3,.2],[x,3.7,z],[130,138,132],816,{detail:true});
+}
 for(const x of [-35,35])wall(rooms,[x,6,-3],[.8,12,66],[173,186,174]);
 for(const [x,z,w] of [[-21,-17,28],[-21,13,28],[21,23,28],[21,-37,28],[-13,34,4],[13,34,4]])wall(rooms,[x,6,z],[w,12,.8],[173,186,174]);
 // Open east-loop doorway between treatment and archive.
@@ -217,6 +261,47 @@ for(const x of [14.5,19.5])part(rooms,'ScannerSupport',[1,7,1],[x,4,7],C.white);
 part(rooms,'ScannerArch',[6,1.2,3],[17,7.5,7],C.white);
 sign(rooms,'ScannerLabel','ORIN // IMAGING\nDO NOT ENTER WHEN LIT',[4,.9,.1],[17,7.5,8.6],C.cyan);
 monitor(rooms,15,4,19);
+// Nurses' station at the arrival foyer: counter, monitor, chart tray and a
+// toppled tray so the ward reads as hurriedly evacuated.
+const ns=folder(rooms,'NursesStation');
+part(ns,'NursesCounter',[6,.3,2.4],[0,2.9,-24],C.white,1088,{pbr:'ChippedConcrete'});
+part(ns,'NursesTop',[6.2,.1,2.6],[0,3.2,-24],C.white,1088,{detail:true});
+part(ns,'StationMonitor',[2.3,1.7,.35],[1.5,4,-24],C.dark);
+part(ns,'MonitorStand',[.3,1,.4],[1.5,2.6,-24],C.steel);
+part(ns,'ChartTray',[1.2,.2,1.6],[-1.5,3.2,-24],C.white,272,{detail:true});
+part(ns,'SpillPuddle',[1.4,.08,1.4],[2,0.1,-25],C.rubber,1312,{alpha:.4,detail:true});
+// Additional ward beds with privacy curtains and abandoned personal effects.
+for(const z of [-20,-6,8]){
+ part(rooms,'WardBed',[3.45,.8,6.8],[-14,2,z],C.white,272);
+ part(rooms,'BedBlanket',[3.5,.16,3.3],[-14,2.49,z+1.6],C.green,1312);
+ part(rooms,'BedPillow',[2.6,.3,1.3],[-14,2.5,z-2.3],C.white,1312);
+ part(rooms,'IVPole',[.12,6,.12],[-16.9,3.5,z-1.4],C.steel);
+ part(rooms,'IVBag',[.8,1.3,.35],[-16.5,5.5,z-1.4],C.white,1568,{alpha:.3,detail:true});
+ part(rooms,'BedsideCabinet',[2,2.8,2],[-10.5,1.8,z-2],C.white);
+ part(rooms,'CurtainTrack',[10,.15,.15],[-17,10,z+4],C.steel);
+ for(let x=-22;x<-6;x+=1.6)part(rooms,'FadedCurtainFold',[.5,6,.3],[x,7,z+4],C.green,1312,{detail:true});
+ part(rooms,'DroppedClipboard',[.4,.3,.2],[-11,0.15,z-1.5],C.white,272,{detail:true});
+ part(rooms,'SpilledPills',[.6,.15,.6],[-10.2,0.14,z-1],C.rubber,1312,{detail:true});
+}
+// Treatment room carts: crash cart and a treatment trolley with supplies.
+const tc=folder(rooms,'TreatmentCarts');
+part(tc,'CrashCart',[2.2,3,1.4],[24,1.5,3],C.rubber,1088,{pbr:'MetalPlate'});
+part(tc,'CrashCartDrawer',[1.9,.5,1.2],[24,3.1,2.6],C.rubber,272,{detail:true});
+part(tc,'TreatmentTrolley',[1.8,.9,1.2],[26,1.5,10],C.steel,1088,{pbr:'MetalPlate'});
+part(tc,'Tray',[1.4,.08,1],[26,2.4,11.2],C.white,272,{detail:true});
+part(tc,'Tray',[1.4,.08,1],[26,2.4,11.6],C.white,272,{detail:true});
+part(tc,'Tray',[1.4,.08,1],[26,2.4,12],C.white,272,{detail:true});
+// Deterioration: containment-breach tape and peeling paint bands so damage
+// tells a story of hurried evacuation rather than generic decay.
+const tape=C.amber;
+for(const z of [-29,-19,-9,1]){
+ part(rooms,'BreachTape',[.12,.1,12],[30,4,z],tape);
+ part(rooms,'BreachTape',[.12,.1,12],[30,5.6,z],tape);
+}
+for(const x of [-21,-11,-1]){
+ part(rooms,'PeelingPaint',[.2,2.4,6],[x,6.2,-22],[96,104,92],816,{alpha:.35,detail:true});
+ part(rooms,'PeelingPaint',[.2,2.4,6],[x,6.2,14],[96,104,92],816,{alpha:.35,detail:true});
+}
 for(const x of [13,21,29]){
  part(rooms,'ArchiveShelf',[5,8,2],[x,4,-33],C.steel);
  for(const y of [1.4,3.4,5.4,7.4]){part(rooms,'ShelfBoard',[5.2,.15,2.2],[x,y,-32.8],C.dark);for(let dx=-1.8;dx<=1.8;dx+=.6)part(rooms,'RecordBinder',[.48,1.5,1.5],[x+dx,y+.85,-32.8],dx>0?C.green:C.rubber,272,{detail:true});}
