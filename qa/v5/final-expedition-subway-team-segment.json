@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"Trace\":\"[{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   03\\\",\\\"t\\\":0,\\\"event\\\":\\\"waiting for floor\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   03\\\",\\\"t\\\":0.5,\\\"event\\\":\\\"entered AbandonedSubway\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   03\\\",\\\"t\\\":23.5,\\\"event\\\":\\\"walking to ControlB\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   03\\\",\\\"t\\\":31.6,\\\"event\\\":\\\"hold ControlB\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   03\\\",\\\"t\\\":33.3,\\\"event\\\":\\\"after ControlB / Recover the relay case from the north east platform.\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   03\\\",\\\"t\\\":150.3,\\\"event\\\":\\\"FAIL AssistantCommand:179: Extraction did not open\\\\nAssistantCommand:179\\\\nAssistantCommand:134\\\\n\\\",\\\"health\\\":100}]\",\"Pass\":false,\"Error\":\"AssistantCommand:179: Extraction did not open\\nAssistantCommand:179\\nAssistantCommand:134\\n\"}"
+    }
+  ],
+  "isError": false
+}

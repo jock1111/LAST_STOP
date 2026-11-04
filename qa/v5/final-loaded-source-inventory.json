@@ -1,0 +1,422 @@
+[
+  {
+    "hash": 1941910863,
+    "path": "ServerScriptService.Bootstrap",
+    "length": 7600
+  },
+  {
+    "hash": 1579756144,
+    "path": "ServerScriptService.Services.EconomyService",
+    "length": 1649
+  },
+  {
+    "hash": 49336819,
+    "path": "ServerScriptService.Services.EnemyService",
+    "length": 11616
+  },
+  {
+    "hash": 1666324765,
+    "path": "ServerScriptService.Services.EnvironmentService",
+    "length": 21791
+  },
+  {
+    "hash": 1756219649,
+    "path": "ServerScriptService.Services.ExpeditionService",
+    "length": 18169
+  },
+  {
+    "hash": 1486245579,
+    "path": "ServerScriptService.Services.FloorService",
+    "length": 5160
+  },
+  {
+    "hash": 714195881,
+    "path": "ServerScriptService.Services.InventoryService",
+    "length": 2352
+  },
+  {
+    "hash": 549669229,
+    "path": "ServerScriptService.Services.MatchmakingService",
+    "length": 2466
+  },
+  {
+    "hash": 1684391285,
+    "path": "ServerScriptService.Services.MovementService",
+    "length": 3114
+  },
+  {
+    "hash": 1182301326,
+    "path": "ServerScriptService.Services.ObjectiveRoom",
+    "length": 19242
+  },
+  {
+    "hash": 888875854,
+    "path": "ServerScriptService.Services.PbrMaterialService",
+    "length": 1912
+  },
+  {
+    "hash": 1844567825,
+    "path": "ServerScriptService.Services.ProfileService",
+    "length": 3262
+  },
+  {
+    "hash": 521045208,
+    "path": "ServerScriptService.TestRunner",
+    "length": 753
+  },
+  {
+    "hash": 653123922,
+    "path": "ServerScriptService.Tests.FloorTimerSpec",
+    "length": 1439
+  },
+  {
+    "hash": 208364596,
+    "path": "ServerScriptService.Tests.GameplayRecoverySpec",
+    "length": 6014
+  },
+  {
+    "hash": 98877223,
+    "path": "ServerScriptService.Tests.InteractionOcclusionSpec",
+    "length": 1745
+  },
+  {
+    "hash": 735025606,
+    "path": "ServerScriptService.Tests.PrefabLifecycleSpec",
+    "length": 3219
+  },
+  {
+    "hash": 973998401,
+    "path": "ServerScriptService.Tests.RouteVariantSpec",
+    "length": 2050
+  },
+  {
+    "hash": 172241751,
+    "path": "ServerScriptService.Tests.SubwayCycleSpec",
+    "length": 2376
+  },
+  {
+    "hash": 1430253399,
+    "path": "ServerScriptService.Tests.TrainHazardSpec",
+    "length": 2560
+  },
+  {
+    "hash": 1906283682,
+    "path": "ServerScriptService.Tests.TwoPlayerRecoverySpec",
+    "length": 8313
+  },
+  {
+    "hash": 719857622,
+    "path": "ServerScriptService.Tests.VerticalSliceSpec",
+    "length": 1037
+  },
+  {
+    "hash": 2009501250,
+    "path": "ReplicatedStorage.Shared.ArtTheme",
+    "length": 1445
+  },
+  {
+    "hash": 1255057111,
+    "path": "ReplicatedStorage.Shared.Config.EconomyConfig",
+    "length": 260
+  },
+  {
+    "hash": 1919636273,
+    "path": "ReplicatedStorage.Shared.Config.FloorConfig",
+    "length": 983
+  },
+  {
+    "hash": 1268357084,
+    "path": "ReplicatedStorage.Shared.Config.GameConfig",
+    "length": 838
+  },
+  {
+    "hash": 629620584,
+    "path": "ReplicatedStorage.Shared.Config.RemoteNames",
+    "length": 268
+  },
+  {
+    "hash": 513718410,
+    "path": "ReplicatedStorage.Shared.SoundAssets",
+    "length": 323
+  },
+  {
+    "hash": 1518382821,
+    "path": "ReplicatedStorage.Shared.StalkerClips.Idle",
+    "length": 193439
+  },
+  {
+    "hash": 1008078086,
+    "path": "ReplicatedStorage.Shared.StalkerClips.Run",
+    "length": 91879
+  },
+  {
+    "hash": 2046405580,
+    "path": "ReplicatedStorage.Shared.StalkerClips.Walk",
+    "length": 99699
+  },
+  {
+    "hash": 54612589,
+    "path": "ReplicatedStorage.Shared.StalkerMotion",
+    "length": 168
+  },
+  {
+    "hash": 799108900,
+    "path": "ReplicatedStorage.Shared.Util.Maid",
+    "length": 600
+  },
+  {
+    "hash": 1233975696,
+    "path": "ReplicatedStorage.Shared.Util.RateLimiter",
+    "length": 621
+  },
+  {
+    "hash": 1945979825,
+    "path": "ReplicatedStorage.Shared.Util.SubwayCycle",
+    "length": 1530
+  },
+  {
+    "hash": 318466573,
+    "path": "StarterPlayer.StarterPlayerScripts.ClientBootstrap",
+    "length": 2182
+  },
+  {
+    "hash": 1721594583,
+    "path": "StarterPlayer.StarterPlayerScripts.Controllers.CreatureController",
+    "length": 3089
+  },
+  {
+    "hash": 551784898,
+    "path": "StarterPlayer.StarterPlayerScripts.Controllers.HUDController",
+    "length": 14388
+  },
+  {
+    "hash": 1265623848,
+    "path": "StarterPlayer.StarterPlayerScripts.Controllers.InputController",
+    "length": 1158
+  },
+  {
+    "hash": 55996193,
+    "path": "StarterPlayer.StarterPlayerScripts.Controllers.SoundscapeController",
+    "length": 5379
+  },
+  {
+    "hash": 1533364306,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule",
+    "length": 793
+  },
+  {
+    "hash": 893148504,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule",
+    "length": 25338
+  },
+  {
+    "hash": 1876321650,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.MouseLockController",
+    "length": 7109
+  },
+  {
+    "hash": 100326920,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.ClassicCamera",
+    "length": 8368
+  },
+  {
+    "hash": 242373842,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.OrbitalCamera",
+    "length": 12814
+  },
+  {
+    "hash": 1935038038,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.CameraUtils",
+    "length": 9012
+  },
+  {
+    "hash": 1284078529,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.CameraInput",
+    "length": 17552
+  },
+  {
+    "hash": 10617780,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.CameraUI",
+    "length": 747
+  },
+  {
+    "hash": 225173520,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.VehicleCamera",
+    "length": 7001
+  },
+  {
+    "hash": 3442489,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.VehicleCamera.VehicleCameraConfig",
+    "length": 1860
+  },
+  {
+    "hash": 1660883655,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.VehicleCamera.VehicleCameraCore",
+    "length": 4678
+  },
+  {
+    "hash": 617161003,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.BaseCamera",
+    "length": 24180
+  },
+  {
+    "hash": 2101058748,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.LegacyCamera",
+    "length": 3858
+  },
+  {
+    "hash": 567179989,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.BaseOcclusion",
+    "length": 1408
+  },
+  {
+    "hash": 1401730730,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.VRBaseCamera",
+    "length": 11744
+  },
+  {
+    "hash": 355128800,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.CameraToggleStateController",
+    "length": 2487
+  },
+  {
+    "hash": 2088157126,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.Invisicam",
+    "length": 22534
+  },
+  {
+    "hash": 1449823871,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.Poppercam",
+    "length": 3487
+  },
+  {
+    "hash": 140976599,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.TransparencyController",
+    "length": 6715
+  },
+  {
+    "hash": 525235655,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.VRCamera",
+    "length": 18875
+  },
+  {
+    "hash": 30617311,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.VRCameraTeleportDetector",
+    "length": 2031
+  },
+  {
+    "hash": 1610568959,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.VRVehicleCamera",
+    "length": 11145
+  },
+  {
+    "hash": 2058395296,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.ZoomController",
+    "length": 3598
+  },
+  {
+    "hash": 1774030063,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CameraModule.ZoomController.Popper",
+    "length": 13497
+  },
+  {
+    "hash": 1372600965,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CommonUtils.CharacterUtil",
+    "length": 5367
+  },
+  {
+    "hash": 623599969,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CommonUtils.CameraWrapper",
+    "length": 2917
+  },
+  {
+    "hash": 395283909,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CommonUtils.ConnectionUtil",
+    "length": 1804
+  },
+  {
+    "hash": 1527958382,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.CommonUtils.FlagUtil",
+    "length": 545
+  },
+  {
+    "hash": 906219781,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.ControlModule",
+    "length": 24195
+  },
+  {
+    "hash": 256375216,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.ControlModule.PathDisplay",
+    "length": 4010
+  },
+  {
+    "hash": 189440912,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.ControlModule.AvatarAbilitiesInterface",
+    "length": 2154
+  },
+  {
+    "hash": 303272269,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.ControlModule.BaseCharacterController",
+    "length": 2040
+  },
+  {
+    "hash": 1489179045,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.ControlModule.ClickToMoveController",
+    "length": 38016
+  },
+  {
+    "hash": 1084981993,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.ControlModule.ClickToMoveDisplay",
+    "length": 17784
+  },
+  {
+    "hash": 1344836989,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.ControlModule.DynamicThumbstick",
+    "length": 22216
+  },
+  {
+    "hash": 1663468069,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.ControlModule.Gamepad",
+    "length": 8635
+  },
+  {
+    "hash": 756208625,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.ControlModule.Keyboard",
+    "length": 5858
+  },
+  {
+    "hash": 831633760,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.ControlModule.TouchJump",
+    "length": 9237
+  },
+  {
+    "hash": 874507033,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.ControlModule.TouchThumbstick",
+    "length": 8962
+  },
+  {
+    "hash": 2112184252,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.ControlModule.VehicleController",
+    "length": 6320
+  },
+  {
+    "hash": 851932910,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerModule.ControlModule.VRNavigation",
+    "length": 14122
+  },
+  {
+    "hash": 15141022,
+    "path": "StarterPlayer.StarterPlayerScripts.PlayerScriptsLoader",
+    "length": 193
+  },
+  {
+    "hash": 1621626585,
+    "path": "StarterPlayer.StarterPlayerScripts.RbxCharacterSounds",
+    "length": 13029
+  },
+  {
+    "hash": 818377008,
+    "path": "StarterPlayer.StarterPlayerScripts.RbxCharacterSounds.AtomicBinding",
+    "length": 7469
+  }
+]

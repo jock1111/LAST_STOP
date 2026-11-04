@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "[LAST STOP] V5 / DEVELOPMENT loaded prefab Lobby + Elevator\n[LAST STOP] V5 / DEVELOPMENT loaded prefab Lobby + Elevator\n[LAST STOP] Prefab lifecycle PASS: two rounds, objective reset, source preservation, authored sibling preservation\n[LAST STOP] Vertical-slice pure logic tests passed.\n[ProfileService] DataStore unavailable; using session-only profiles: You must publish this place to the web to access DataStore.\n[LAST STOP] V5 / DEVELOPMENT loaded prefab Lobby + Elevator\n[ProfileService] load failed for -1 DataStore unavailable\n[ProfileService] load failed for -2 DataStore unavailable\n[LAST STOP] V5 / DEVELOPMENT loaded prefab Lobby + Elevator\n[LAST STOP] Expedition seed 1794137259 players 2\n[V4 TWO PLAYER] Testing Archive active 2\n[V4 TWO PLAYER] Testing Pelagic active 1\n[V4 TWO PLAYER] Finished All surviving players banked their rewards.\n[LAST STOP V4] TWO PLAYER PASS / both floors, reachable objectives, physics, damage, teamwork, solo fallback, case delivery, independent BANK/CONTINUE"
+    }
+  ],
+  "isError": false
+}

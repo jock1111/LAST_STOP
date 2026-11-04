@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "[ProfileService] DataStore unavailable; using session-only profiles: You must publish this place to the web to access DataStore.\n[LAST STOP] V5 / DEVELOPMENT loaded prefab Lobby + Elevator\n[LAST STOP] V5 / DEVELOPMENT loaded prefab Lobby + Elevator\n[LAST STOP] V5 / DEVELOPMENT loaded prefab Lobby + Elevator\n[LAST STOP] Prefab lifecycle PASS: two rounds, objective reset, source preservation, authored sibling preservation\n[LAST STOP] Vertical-slice pure logic tests passed.\nContentId: rbxassethash://5b8dff33c4af87155e5a0bc8153f5b10 failed due to: Invalid place ID\nContentId: rbxassethash://2b75d9366e28f7ea14abd9caba416ee1 failed due to: Invalid place ID\nContentId: rbxassethash://0eb81b18384aa4c467a65d2a6c92d2ce failed due to: Invalid place ID\n[ProfileService] load failed for 3497522625 DataStore unavailable\n[LAST STOP V4] Audio loaded true true true true\n[LAST STOP] Expedition seed 1794007282 players 1\n[LAST STOP] Expedition ended: The expedition has no survivors.\n[LAST STOP] V5 / DEVELOPMENT loaded prefab Lobby + Elevator\n[LAST STOP] V5 / DEVELOPMENT loaded prefab Lobby + Elevator\n[LAST STOP] Expedition seed 1794105615 players 1\n[LAST STOP] Expedition ended: The expedition has no survivors.\nHumanoid is not a valid member of Model \"Workspace.gakez007\"\nStack Begin\nScript 'AssistantCommand', Line 9\nStack End"
+    }
+  ],
+  "isError": false
+}

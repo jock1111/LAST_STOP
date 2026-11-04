@@ -1,0 +1,94 @@
+[
+  {
+    "key": "Fuse",
+    "moved": {
+      "enabled": true,
+      "objective": "Take the signal relay from the north platform console.",
+      "key": "Fuse",
+      "standing": "-18, 3, 648"
+    },
+    "held": {
+      "enabled": false,
+      "key": "Fuse",
+      "carrying": "Power cell",
+      "objective": "Install the relay at the south signal box. Watch the track: the last train passes on a timer.",
+      "health": 100
+    }
+  },
+  {
+    "key": "Power",
+    "moved": {
+      "enabled": true,
+      "objective": "Install the relay at the south signal box. Watch the track: the last train passes on a timer.",
+      "key": "Power",
+      "standing": "-18, 3, 740"
+    },
+    "held": {
+      "enabled": false,
+      "health": 100,
+      "objective": "Synchronize signal controls A + B. Two players have 10 seconds. Solo has 22 seconds.",
+      "key": "Power"
+    }
+  },
+  {
+    "key": "ControlA",
+    "moved": {
+      "enabled": true,
+      "objective": "Synchronize signal controls A + B. Two players have 10 seconds. Solo has 22 seconds.",
+      "key": "ControlA",
+      "standing": "-20, 3, 708"
+    },
+    "held": {
+      "enabled": true,
+      "health": 100,
+      "objective": "Synchronize signal controls A + B. Two players have 10 seconds. Solo has 22 seconds.",
+      "key": "ControlA"
+    }
+  },
+  {
+    "key": "ControlB",
+    "moved": {
+      "enabled": true,
+      "objective": "Synchronize signal controls A + B. Two players have 10 seconds. Solo has 22 seconds.",
+      "key": "ControlB",
+      "standing": "28, 3, 692"
+    },
+    "held": {
+      "enabled": false,
+      "health": 100,
+      "objective": "Recover the relay case from the north east platform.",
+      "key": "ControlB"
+    }
+  },
+  {
+    "key": "Sample",
+    "moved": {
+      "enabled": true,
+      "objective": "Recover the relay case from the north east platform.",
+      "key": "Sample",
+      "standing": "26, 3, 660"
+    },
+    "held": {
+      "enabled": false,
+      "key": "Sample",
+      "carrying": "Relay case",
+      "objective": "Carry the case to the elevator receiver. Stay off the track during a train pass.",
+      "health": 100
+    }
+  },
+  {
+    "key": "Delivery",
+    "moved": {
+      "enabled": true,
+      "objective": "Carry the case to the elevator receiver. Stay off the track during a train pass.",
+      "key": "Delivery",
+      "standing": "8, 3.4800000190734863, 756"
+    },
+    "held": {
+      "enabled": false,
+      "health": 100,
+      "objective": "Return to the elevator. Stay together.",
+      "key": "Delivery"
+    }
+  }
+]

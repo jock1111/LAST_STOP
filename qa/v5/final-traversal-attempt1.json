@@ -1,0 +1,20 @@
+{
+  "c1": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"snapshot\":\"{\\\"objective\\\":\\\"Take the emergency power cell from the east service corridor.\\\",\\\"progress\\\":0,\\\"lost\\\":0,\\\"activePlayers\\\":1,\\\"floorName\\\":\\\"Saint Orin / Containment Ward\\\",\\\"state\\\":\\\"Results\\\",\\\"message\\\":\\\"You were overwhelmed.\\\",\\\"seed\\\":1794721722,\\\"unbanked\\\":0,\\\"target\\\":5,\\\"depth\\\":1,\\\"result\\\":\\\"LOST\\\",\\\"banked\\\":0}\",\"trace\":{\"Trace\":\"[{\\\"state\\\":\\\"LAST STOP   /   LOBBY\\\",\\\"t\\\":0.1,\\\"event\\\":\\\"waiting for floor\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   01\\\",\\\"t\\\":39.2,\\\"event\\\":\\\"entered Hospital\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   01\\\",\\\"t\\\":47.8,\\\"event\\\":\\\"FAIL AssistantCommand:55: Movement stuck at 19.68145179748535, 6.931281566619873, 700.0076293945312\\\\nAssistantCommand:55 function walk\\\\nAssistantCommand:96 function interact\\\\nAssistantCommand:152\\\\nAssistantCommand:123\\\\n\\\",\\\"health\\\":100}]\",\"Pass\":false,\"Error\":\"AssistantCommand:55: Movement stuck at 19.68145179748535, 6.931281566619873, 700.0076293945312\\nAssistantCommand:55 function walk\\nAssistantCommand:96 function interact\\nAssistantCommand:152\\nAssistantCommand:123\\n\"}}"
+      }
+    ],
+    "isError": false
+  },
+  "c2": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"snapshot\":\"{\\\"objective\\\":\\\"Take the emergency power cell from the east service corridor.\\\",\\\"progress\\\":0,\\\"floorName\\\":\\\"Saint Orin / Containment Ward\\\",\\\"state\\\":\\\"Floor\\\",\\\"message\\\":\\\"Something is moving in the dark.\\\",\\\"seed\\\":1794721722,\\\"unbanked\\\":0,\\\"target\\\":5,\\\"depth\\\":1,\\\"activePlayers\\\":2,\\\"banked\\\":0}\",\"trace\":{\"Trace\":\"[{\\\"state\\\":\\\"LAST STOP   /   LOBBY\\\",\\\"t\\\":0,\\\"event\\\":\\\"waiting for floor\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   01\\\",\\\"t\\\":39.2,\\\"event\\\":\\\"entered Hospital\\\",\\\"health\\\":100}]\"}}"
+      }
+    ],
+    "isError": false
+  }
+}

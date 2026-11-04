@@ -1,0 +1,29 @@
+{
+  "s": {
+    "content": [
+      {
+        "type": "text",
+        "text": "[ProfileService] DataStore unavailable; using session-only profiles: You must publish this place to the web to access DataStore.\n[LAST STOP] V5 / DEVELOPMENT loaded prefab Lobby + Elevator\n[LAST STOP] V5 / DEVELOPMENT loaded prefab Lobby + Elevator\n[LAST STOP] V5 / DEVELOPMENT loaded prefab Lobby + Elevator\n[LAST STOP] Prefab lifecycle PASS: two rounds, objective reset, source preservation, authored sibling preservation\n[LAST STOP] Vertical-slice pure logic tests passed.\n[ProfileService] load failed for -1 DataStore unavailable\n[ProfileService] load failed for -2 DataStore unavailable\n[LAST STOP] Expedition seed 1794301326 players 2\n[LAST STOP] Expedition ended: The floor sealed before the objective was completed.\n[LAST STOP] Expedition seed 1793998692 players 2\n[LAST STOP] Expedition ended: The expedition has no survivors.\n[LAST STOP] Expedition seed 1794307930 players 2\n[LAST STOP] Expedition ended: The expedition has no survivors.\n[LAST STOP] Expedition seed 1794429979 players 2\n[LAST STOP] Expedition ended: The expedition has no survivors.\n[LAST STOP] Expedition seed 1794696668 players 2\n[LAST STOP] Expedition ended: The expedition has no survivors.\n[LAST STOP] Expedition seed 1794401914 players 2\n[LAST STOP] Expedition ended: All surviving players banked their rewards."
+      }
+    ],
+    "isError": false
+  },
+  "c1": {
+    "content": [
+      {
+        "type": "text",
+        "text": "[LAST STOP V4] Audio loaded true true true true\nIs3dRenderingEnabled is not a valid member of RunService \"Run Service\"\nStack Begin\nScript 'AssistantCommand', Line 1\nStack End"
+      }
+    ],
+    "isError": false
+  },
+  "c2": {
+    "content": [
+      {
+        "type": "text",
+        "text": "[LAST STOP V4] Audio loaded true true true true"
+      }
+    ],
+    "isError": false
+  }
+}

@@ -1,0 +1,16 @@
+FILE 0.745.462.7451125_20261104T034731Z_Studio_35AFA_last.log
+FILE 0.745.462.7451125_20261104T002038Z_Studio_BFFDB_last.log
+2026-11-04T03:46:19.424Z,12341.424805,1940,6,Info [FLog::StudioApplicationState] AboutToQuit
+2026-11-04T03:46:19.458Z,12341.458984,1940,6,Info [FLog::StudioMain] End of main. Return value 0. Has entered application scope: true
+FILE 0.745.462.7451125_20261104T032419Z_Studio_F2634_last.log
+2026-11-04T03:46:14.397Z,1314.397949,8c30,6,Info [FLog::StudioApplicationState] AboutToQuit
+2026-11-04T03:46:14.769Z,1314.769531,8c30,6,Info [FLog::StudioMain] End of main. Return value 0. Has entered application scope: true
+FILE 0.745.462.7451125_20261104T022126Z_Studio_D4355_last.log
+2026-11-04T03:46:14.645Z,5088.645996,9c0c,6,Info [FLog::StudioApplicationState] AboutToQuit
+2026-11-04T03:46:15.011Z,5089.011719,9c0c,6,Info [FLog::StudioMain] End of main. Return value 0. Has entered application scope: true
+FILE 0.745.462.7451125_20261104T025017Z_Studio_3EB10_last.log
+2026-11-04T03:46:13.632Z,3356.632568,7a78,6,Info [FLog::StudioApplicationState] AboutToQuit
+2026-11-04T03:46:13.976Z,3356.976807,7a78,6,Info [FLog::StudioMain] End of main. Return value 0. Has entered application scope: true
+FILE 0.745.462.7451125_20261104T032428Z_Studio_1143B_last.log
+FILE 0.745.462.7451125_20261104T032427Z_Studio_4FE6E_last.log
+FILE 0.745.462.7451125_20261104T032247Z_Studio_4C722_last.log

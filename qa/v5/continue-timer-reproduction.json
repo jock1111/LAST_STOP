@@ -1,0 +1,20 @@
+{
+  "before": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"pass\":false,\"error\":\"ServerScriptService.Tests.FloorTimerReproduction2:23: Previous floor timeout sealed a later floor\"}"
+      }
+    ],
+    "isError": false
+  },
+  "after": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"pass\":true}"
+      }
+    ],
+    "isError": false
+  }
+}

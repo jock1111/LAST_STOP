@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "[{\"ok\":true,\"name\":\"wall-window\",\"statuses\":[{\"id\":\"rbxassetid://139879343795031\",\"status\":\"Success\"}],\"mesh\":\"rbxassetid://139879343795031\"},{\"ok\":true,\"name\":\"container-tall\",\"statuses\":[{\"id\":\"rbxassetid://111941181941792\",\"status\":\"Success\"}],\"mesh\":\"rbxassetid://111941181941792\"},{\"ok\":true,\"name\":\"wall-window\",\"statuses\":[{\"id\":\"rbxassetid://139879343795031\",\"status\":\"Success\"}],\"mesh\":\"rbxassetid://139879343795031\"},{\"ok\":true,\"name\":\"floor-panel\",\"statuses\":[{\"id\":\"rbxassetid://117453701091733\",\"status\":\"Success\"}],\"mesh\":\"rbxassetid://117453701091733\"},{\"ok\":true,\"name\":\"floor-panel\",\"statuses\":[{\"id\":\"rbxassetid://117453701091733\",\"status\":\"Success\"}],\"mesh\":\"rbxassetid://117453701091733\"},{\"ok\":true,\"name\":\"floor-panel\",\"statuses\":[{\"id\":\"rbxassetid://117453701091733\",\"status\":\"Success\"}],\"mesh\":\"rbxassetid://117453701091733\"},{\"ok\":true,\"name\":\"floor-panel\",\"statuses\":[{\"id\":\"rbxassetid://117453701091733\",\"status\":\"Success\"}],\"mesh\":\"rbxassetid://117453701091733\"},{\"ok\":true,\"name\":\"wall-window\",\"statuses\":[{\"id\":\"rbxassetid://139879343795031\",\"status\":\"Success\"}],\"mesh\":\"rbxassetid://139879343795031\"}]"
+    }
+  ],
+  "isError": false
+}

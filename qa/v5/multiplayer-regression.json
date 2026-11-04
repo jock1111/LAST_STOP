@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"recovery\":\"{\\\"ok\\\":true}\",\"players\":{\"1\":{\"id\":-1,\"name\":\"Player1\",\"result\":\"{\\\"objective\\\":\\\"Return to the elevator. Stay together.\\\",\\\"progress\\\":5,\\\"secured\\\":193,\\\"activePlayers\\\":0,\\\"floorName\\\":\\\"Pelagic / Flooded Laboratory\\\",\\\"state\\\":\\\"Results\\\",\\\"message\\\":\\\"Secured 193 coins.\\\",\\\"seed\\\":1794137259,\\\"unbanked\\\":0,\\\"target\\\":5,\\\"depth\\\":2,\\\"result\\\":\\\"BANKED\\\",\\\"banked\\\":193}\"},\"2\":{\"id\":-2,\"name\":\"Player2\",\"result\":\"{\\\"objective\\\":\\\"Return to the elevator. Stay together.\\\",\\\"progress\\\":5,\\\"secured\\\":90,\\\"activePlayers\\\":1,\\\"floorName\\\":\\\"Saint Orin / Containment Ward\\\",\\\"state\\\":\\\"Results\\\",\\\"message\\\":\\\"Secured 90 coins.\\\",\\\"seed\\\":1794137259,\\\"unbanked\\\":0,\\\"target\\\":5,\\\"depth\\\":1,\\\"result\\\":\\\"BANKED\\\",\\\"banked\\\":90}\"}}}"
+    }
+  ],
+  "isError": false
+}

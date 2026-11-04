@@ -1,0 +1,20 @@
+{
+  "c1": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"Trace\":\"[{\\\"state\\\":\\\"LAST STOP   /   RESULTS   /   01\\\",\\\"t\\\":0,\\\"event\\\":\\\"waiting for floor\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   01\\\",\\\"t\\\":39.2,\\\"event\\\":\\\"entered Hospital\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   01\\\",\\\"t\\\":47.1,\\\"event\\\":\\\"FAIL AssistantCommand:55: Movement stuck at 19.750980377197266, 4.980131149291992, 699.4796752929688\\\\nAssistantCommand:55 function walk\\\\nAssistantCommand:96 function interact\\\\nAssistantCommand:152\\\\nAssistantCommand:123\\\\n\\\",\\\"health\\\":100}]\",\"Pass\":false,\"Error\":\"AssistantCommand:55: Movement stuck at 19.750980377197266, 4.980131149291992, 699.4796752929688\\nAssistantCommand:55 function walk\\nAssistantCommand:96 function interact\\nAssistantCommand:152\\nAssistantCommand:123\\n\"}"
+      }
+    ],
+    "isError": false
+  },
+  "c2": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"Trace\":\"[{\\\"state\\\":\\\"LAST STOP   /   RESULTS   /   01\\\",\\\"t\\\":0,\\\"event\\\":\\\"waiting for floor\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   01\\\",\\\"t\\\":39.1,\\\"event\\\":\\\"entered Hospital\\\",\\\"health\\\":100}]\"}"
+      }
+    ],
+    "isError": false
+  }
+}

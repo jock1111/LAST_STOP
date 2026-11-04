@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"brand\":\"LAST STOP   /   RESULTS   /   03\",\"deliberatelyHidden\":true,\"after\":true,\"snapshot\":\"{\\\"objective\\\":\\\"Recover the relay case from the north east platform.\\\",\\\"progress\\\":3,\\\"lost\\\":193,\\\"activePlayers\\\":1,\\\"floorName\\\":\\\"Abandoned Subway / The Last Train\\\",\\\"state\\\":\\\"Results\\\",\\\"message\\\":\\\"You were overwhelmed.\\\",\\\"seed\\\":1794301326,\\\"unbanked\\\":0,\\\"target\\\":5,\\\"depth\\\":3,\\\"result\\\":\\\"LOST\\\",\\\"banked\\\":0}\",\"before\":true}"
+    }
+  ],
+  "isError": false
+}

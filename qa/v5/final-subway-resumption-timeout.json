@@ -1,0 +1,20 @@
+{
+  "c1": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"snapshot\":\"{\\\"objective\\\":\\\"Recover the relay case from the north east platform.\\\",\\\"progress\\\":3,\\\"lost\\\":193,\\\"activePlayers\\\":1,\\\"floorName\\\":\\\"Abandoned Subway / The Last Train\\\",\\\"state\\\":\\\"Results\\\",\\\"message\\\":\\\"You were overwhelmed.\\\",\\\"seed\\\":1794301326,\\\"unbanked\\\":0,\\\"target\\\":5,\\\"depth\\\":3,\\\"result\\\":\\\"LOST\\\",\\\"banked\\\":0}\",\"trace\":{\"Trace\":\"[{\\\"state\\\":\\\"LAST STOP   /   RESULTS   /   03\\\",\\\"t\\\":0,\\\"event\\\":\\\"waiting for floor\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   RESULTS   /   03\\\",\\\"t\\\":55.1,\\\"event\\\":\\\"FAIL AssistantCommand:146: Floor did not start\\\\nAssistantCommand:146\\\\nAssistantCommand:138\\\\n\\\",\\\"health\\\":100}]\",\"Pass\":false,\"Error\":\"AssistantCommand:146: Floor did not start\\nAssistantCommand:146\\nAssistantCommand:138\\n\"}}"
+      }
+    ],
+    "isError": false
+  },
+  "c2": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"snapshot\":\"{\\\"objective\\\":\\\"Recover the relay case from the north east platform.\\\",\\\"progress\\\":3,\\\"lost\\\":193,\\\"activePlayers\\\":0,\\\"floorName\\\":\\\"Abandoned Subway / The Last Train\\\",\\\"state\\\":\\\"Results\\\",\\\"message\\\":\\\"The floor sealed before the objective was completed.\\\",\\\"seed\\\":1794301326,\\\"unbanked\\\":0,\\\"target\\\":5,\\\"depth\\\":3,\\\"result\\\":\\\"LOST\\\",\\\"banked\\\":0}\",\"trace\":{\"Trace\":\"[{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   03\\\",\\\"t\\\":0,\\\"event\\\":\\\"waiting for floor\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   03\\\",\\\"t\\\":0.5,\\\"event\\\":\\\"entered AbandonedSubway\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   03\\\",\\\"t\\\":1.5,\\\"event\\\":\\\"walking to Sample\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   03\\\",\\\"t\\\":11.9,\\\"event\\\":\\\"hold Sample\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   RESULTS   /   03\\\",\\\"t\\\":14.7,\\\"event\\\":\\\"after Sample / The floor sealed before the objective was completed.\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   RESULTS   /   03\\\",\\\"t\\\":14.7,\\\"event\\\":\\\"rejected at 21.983537673950195, -9.800742149353027, 668.7540893554688 / ray Workspace.LastStopWorld.Runtime.Lobby.StationArchitecture.Wall\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   RESULTS   /   03\\\",\\\"t\\\":17.6,\\\"event\\\":\\\"FAIL AssistantCommand:135: Prompt did not advance Sample\\\\nAssistantCommand:135 function interact\\\\nAssistantCommand:167\\\\nAssistantCommand:138\\\\n\\\",\\\"health\\\":100}]\",\"Pass\":false,\"Error\":\"AssistantCommand:135: Prompt did not advance Sample\\nAssistantCommand:135 function interact\\nAssistantCommand:167\\nAssistantCommand:138\\n\"}}"
+      }
+    ],
+    "isError": false
+  }
+}

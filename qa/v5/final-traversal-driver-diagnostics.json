@@ -1,0 +1,20 @@
+{
+  "c1": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"V5HospitalAttempt3\":{\"Trace\":\"[{\\\"state\\\":\\\"LAST STOP   /   RESULTS   /   01\\\",\\\"t\\\":0,\\\"event\\\":\\\"waiting for floor\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   01\\\",\\\"t\\\":40.1,\\\"event\\\":\\\"entered Hospital\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   01\\\",\\\"t\\\":40.6,\\\"event\\\":\\\"FAIL AssistantCommand:101: No visible standing area for Fuse\\\\nAssistantCommand:101 function interact\\\\nAssistantCommand:158\\\\nAssistantCommand:129\\\\n\\\",\\\"health\\\":100}]\",\"Pass\":false,\"Error\":\"AssistantCommand:101: No visible standing area for Fuse\\nAssistantCommand:101 function interact\\nAssistantCommand:158\\nAssistantCommand:129\\n\"},\"V5FullExpedition\":{\"Trace\":\"[{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   01\\\",\\\"t\\\":0,\\\"event\\\":\\\"waiting for floor\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   01\\\",\\\"t\\\":0.5,\\\"event\\\":\\\"entered Hospital\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   01\\\",\\\"t\\\":6.1,\\\"event\\\":\\\"FAIL AssistantCommand:55: Movement stuck at -4.5, 5.83901309967041, 725\\\\nAssistantCommand:55 function walk\\\\nAssistantCommand:102 function interact\\\\nAssistantCommand:158\\\\nAssistantCommand:129\\\\n\\\",\\\"health\\\":100}]\",\"Pass\":false,\"Error\":\"AssistantCommand:55: Movement stuck at -4.5, 5.83901309967041, 725\\nAssistantCommand:55 function walk\\nAssistantCommand:102 function interact\\nAssistantCommand:158\\nAssistantCommand:129\\n\"}}"
+      }
+    ],
+    "isError": false
+  },
+  "c2": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"V5FullExpedition\":{\"Trace\":\"[{\\\"state\\\":\\\"LAST STOP   /   RESULTS   /   01\\\",\\\"t\\\":0,\\\"event\\\":\\\"waiting for floor\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   01\\\",\\\"t\\\":39.9,\\\"event\\\":\\\"entered Hospital\\\",\\\"health\\\":100},{\\\"state\\\":\\\"LAST STOP   /   FLOOR   /   01\\\",\\\"t\\\":140,\\\"event\\\":\\\"FAIL AssistantCommand:154: Cooperative control did not unlock\\\\nAssistantCommand:154\\\\nAssistantCommand:129\\\\n\\\",\\\"health\\\":100}]\",\"Pass\":false,\"Error\":\"AssistantCommand:154: Cooperative control did not unlock\\nAssistantCommand:154\\nAssistantCommand:129\\n\"}}"
+      }
+    ],
+    "isError": false
+  }
+}

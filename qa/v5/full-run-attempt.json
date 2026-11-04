@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "[{\"ui\":\"LAST STOP   /   TRAVEL\",\"t\":0,\"event\":\"waiting for floor\",\"health\":100},{\"ui\":\"LAST STOP   /   FLOOR   /   01\",\"t\":0.6,\"event\":\"entered Hospital\",\"health\":100},{\"ui\":\"LAST STOP   /   FLOOR   /   01\",\"t\":2.9,\"event\":\"holding Fuse at 17.249475479125977, 2.942038059234619, 702.5204467773438\",\"health\":100},{\"ui\":\"LAST STOP   /   FLOOR   /   01\",\"t\":4.8,\"event\":\"after Fuse / Take the emergency power cell from the east service corridor.\",\"health\":100},{\"ui\":\"LAST STOP   /   FLOOR   /   01\",\"t\":6.7,\"event\":\"holding Power at 27.210206985473633, 2.942038059234619, 719.8775634765625\",\"health\":100},{\"ui\":\"LAST STOP   /   FLOOR   /   01\",\"t\":9.4,\"event\":\"after Power / Take the emergency power cell from the east service corridor.\",\"health\":100},{\"ui\":\"LAST STOP   /   FLOOR   /   01\",\"t\":13.2,\"event\":\"holding ControlA at -11.832664489746094, 5.48868465423584, 707.2050170898438\",\"health\":100},{\"ui\":\"LAST STOP   /   FLOOR   /   01\",\"t\":14.9,\"event\":\"after ControlA / Take the emergency power cell from the east service corridor.\",\"health\":100},{\"ui\":\"LAST STOP   /   FLOOR   /   01\",\"t\":20.6,\"event\":\"FAIL AssistantCommand:14: movement stuck at -10.78394603729248, 2.942038059234619, 698.7944946289062\\nAssistantCommand:14 function walk\\nAssistantCommand:25\\nAssistantCommand:17\\n\",\"health\":100}]"
+    }
+  ],
+  "isError": false
+}
