@@ -3,6 +3,7 @@ local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
 local PhysicsService = game:GetService("PhysicsService")
 local SubwayCycle = require(game:GetService("ReplicatedStorage").Shared.Util.SubwayCycle)
+local GameConfig = require(game:GetService("ReplicatedStorage").Shared.Config.GameConfig)
 local EnemyService = {}
 EnemyService.__index = EnemyService
 local Stalker = {}
@@ -46,9 +47,14 @@ function Stalker.new(parent, patrol, context)
         state = "Patrol", think = 0, memoryUntil = 0, lastPosition = root.Position, stuckTime = 0,
         random = Random.new(), alertUntil = 0, lurkUntil = 0}, Stalker)
     self.moveConnection = humanoid.MoveToFinished:Connect(function(reached)
-        if self.destroyed then return end
-        if reached and self.waypoints then self.waypointIndex += 1; self:_nextWaypoint()
-        else self.lastPath = 0 end
+        if self.destroyed or not self.waypoints or self.humanoid.WalkSpeed == 0 then return end
+        local point = self.waypoints[self.waypointIndex]
+        if reached and point and (self.root.Position - point.Position).Magnitude < 6 then
+            self.waypointIndex += 1
+            self:_nextWaypoint()
+        else
+            self.waypoints, self.lastPath = nil, 0
+        end
     end)
     return self
 end
@@ -56,6 +62,7 @@ end
 function Stalker:_setState(state)
     if self.state == state then return end
     self.state = state
+    self.stuckTime, self.lastPosition = 0, self.root.Position
     self.model:SetAttribute("AIState", state)
     self.model:SetAttribute("StateChangedAt", workspace:GetServerTimeNow())
 end
@@ -74,30 +81,34 @@ function Stalker:_pickPatrolIndex()
 end
 
 function Stalker:_nextWaypoint()
+    if self.humanoid.WalkSpeed == 0 then return end
     local point = self.waypoints and self.waypoints[self.waypointIndex]
-    if not point then return end
+    if not point then self.waypoints, self.lastPath = nil, 0; return end
     if point.Action == Enum.PathWaypointAction.Jump then self.humanoid.Jump = true end
     self.humanoid:MoveTo(point.Position)
 end
 
 function Stalker:_pathTo(position)
+    if self.waypoints and self.pathDestination and (position - self.pathDestination).Magnitude < 5 then return end
     if self.computing or os.clock() - self.lastPath < 1 then return end
     self.lastPath = os.clock()
     self.generation += 1
     local generation = self.generation
+    local requestedState = self.state
+    self.pathDestination = position
     self.computing = true
     task.spawn(function()
-        local path = PathfindingService:CreatePath({AgentRadius = 1.6, AgentHeight = 8, AgentCanJump = true, WaypointSpacing = 5})
+        local path = PathfindingService:CreatePath({AgentRadius = 1.6, AgentHeight = 8, AgentCanJump = true, WaypointSpacing = 5, Costs = GameConfig.NavigationCosts})
         local ok = pcall(function() path:ComputeAsync(self.root.Position, position) end)
         self.computing = false
-        if self.destroyed or generation ~= self.generation then path:Destroy(); return end
+        if self.destroyed or generation ~= self.generation or self.state ~= requestedState then path:Destroy(); return end
         if self.blockedConnection then self.blockedConnection:Disconnect() end
         if self.path then self.path:Destroy() end
         self.path = path
         if ok and path.Status == Enum.PathStatus.Success then
             self.waypoints, self.waypointIndex = path:GetWaypoints(), 2
             self.blockedConnection = path.Blocked:Connect(function(index)
-                if index >= self.waypointIndex then self.lastPath = 0 end
+                if self.waypoints and index >= self.waypointIndex then self.waypoints, self.lastPath = nil, 0 end
             end)
             self:_nextWaypoint()
         else
@@ -138,7 +149,7 @@ function Stalker:Update(dt)
         local character = candidate.Character
         local root = character and character:FindFirstChild("HumanoidRootPart")
         local health = character and character:FindFirstChildOfClass("Humanoid")
-        if root and health and health.Health > 0 then
+        if root and health and health.Health > 0 and (not self.context.canTargetPlayer or self.context.canTargetPlayer(candidate)) then
             local range = (root.Position - self.root.Position).Magnitude
             local direction = root.Position - self.root.Position
             local inCone = range < 15 or direction.Unit:Dot(self.root.CFrame.LookVector) > -.25
@@ -187,6 +198,7 @@ function Stalker:Update(dt)
         end
         if os.clock() < self.lurkUntil then
             self:_setState("Lurk")
+            self.waypoints = nil
             self.humanoid.WalkSpeed = 0
             self.humanoid:MoveTo(self.root.Position)
         else
@@ -195,7 +207,7 @@ function Stalker:Update(dt)
             self:_pathTo(self.patrolPoints[self.patrolIndex])
         end
     end
-    if (not target or distance > 5.3) and (self.root.Position - self.lastPosition).Magnitude < .15 then
+    if self.humanoid.WalkSpeed > 0 and (not target or distance > 5.3) and (self.root.Position - self.lastPosition).Magnitude < .15 then
         self.stuckTime += elapsed
     else
         self.stuckTime = 0
@@ -203,7 +215,7 @@ function Stalker:Update(dt)
     self.lastPosition = self.root.Position
     if self.stuckTime > 2 then
         self.humanoid.Jump = true
-        self.lastPath, self.stuckTime = 0, 0
+        self.waypoints, self.lastPath, self.stuckTime = nil, 0, 0
         self.patrolIndex = self.patrolIndex % #self.patrolPoints + 1
     end
 end

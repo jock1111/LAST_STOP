@@ -2,7 +2,7 @@ return function()
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local SubwayCycle = require(ReplicatedStorage.Shared.Util.SubwayCycle)
 
-	-- Phases follow a 16 s period: Safe 0-9, Warning 9-12, Active 12-16.
+	-- Four seconds of warning precede each four-second pass.
 	local phase = SubwayCycle.Phase(0, 0)
 	assert(phase == "Safe", "Cycle start must be Safe")
 	assert(select(1, SubwayCycle.Phase(10, 0)) == "Warning", "Expected Warning at 10 s")
@@ -20,6 +20,12 @@ return function()
 	assert(SubwayCycle.Exposed(Vector3.new(0, 0, -32), -32), "Player in the lane under the train must be exposed")
 	assert(not SubwayCycle.Exposed(Vector3.new(20, 0, -32), -32), "Player beside the lane must be safe")
 	assert(not SubwayCycle.Exposed(Vector3.new(0, 0, 40), -32), "Player far down the track must be safe")
+	assert(SubwayCycle.Exposed(Vector3.new(0, 3, -12), -32), "Full car length must damage")
+	assert(SubwayCycle.Exposed(Vector3.new(0, 3, -60), -32, -50), "Swept train movement must not tunnel")
+	assert(not SubwayCycle.Exposed(Vector3.new(0, 12, -32), -32), "Above the train must be safe")
+	assert(not SubwayCycle.Exposed(Vector3.new(0, -12, -32), -32), "Below the train must be safe")
+	assert(SubwayCycle.ActiveStart - SubwayCycle.WarningStart >= 4, "Warning is too short")
+	assert(SubwayCycle.Damage == 25, "Train damage balance changed")
 
 	-- Stalker patrol choice: the next waypoint is always different from the current one.
 	local seeded = Random.new(7)

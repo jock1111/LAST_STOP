@@ -45,6 +45,12 @@ end)
 remotes.Toast.OnClientEvent:Connect(function(message)
 	hud:ShowToast(message)
 end)
+-- Recover the authoritative state after listeners are ready and after respawn.
+-- A Results event can arrive while the character/GUI is being recreated.
+player.CharacterAdded:Connect(function()
+	remotes.RequestState:FireServer()
+end)
+remotes.RequestState:FireServer()
 
 -- Resources are intentionally retained for the lifetime of this player session.
 player.AncestryChanged:Connect(function(_, parent)

@@ -50,6 +50,7 @@ return function()
         local initial = stalker.root.Position
         waitFor(function() return (stalker.root.Position - initial).Magnitude > 2 end, "physical monster movement", 10)
         local victim = active[1]
+        waitFor(function() return os.clock() - expedition.floorStartedAt >= config.StalkerArrivalGraceSeconds end, "arrival grace", 25)
         local humanoid = victim.Character:FindFirstChildOfClass("Humanoid")
         humanoid.Health = 100
         victim.Character:PivotTo(stalker.root.CFrame * CFrame.new(0, 0, -3))
@@ -67,7 +68,7 @@ return function()
             or subway and Vector3.new(0, .5, -32) or Vector3.new(20, .5, 20)
         victim.Character:PivotTo(CFrame.new(floors._floorOrigin + exposure))
         waitFor(function() return humanoid.Health < 100 end, "environmental hazard damage", 3)
-        assert(humanoid.Health == (subway and 70 or 92), "Hazard must deal a bounded 30 (train) or 8 damage")
+        assert(humanoid.Health == (subway and 75 or 92), "Hazard must deal a bounded 25 (train) or 8 damage")
         humanoid.Health = 100
         room.startedAt = originalStart
         for key, entry in room.targets do

@@ -54,7 +54,15 @@ function Room:_valid(player, target)
     if not root or not self.context.isPlayerActive(player) or (root.Position - target.Position).Magnitude > 12 then return false end
     local parameters = RaycastParams.new()
     parameters.FilterType = Enum.RaycastFilterType.Exclude
-    parameters.FilterDescendantsInstances = {player.Character}
+    parameters.RespectCanCollide = true
+    local ignored = {player.Character}
+    for _, teammate in Players:GetPlayers() do
+        if teammate.Character then table.insert(ignored, teammate.Character) end
+    end
+    for _, child in self.model:GetChildren() do
+        if child:GetAttribute("V4Stalker") then table.insert(ignored, child) end
+    end
+    parameters.FilterDescendantsInstances = ignored
     local head = player.Character:FindFirstChild("Head")
     local origin = head and head.Position or root.Position + Vector3.new(0, 1.5, 0)
     local hit = workspace:Raycast(origin, target.Position - origin, parameters)
@@ -169,12 +177,12 @@ function Room:Start()
         self.instructions = {"Take the signal relay from the north platform console.",
             "Install the relay at the south signal box. Watch the track: the last train passes on a timer.",
             "Synchronize signal controls A + B. Two players have 10 seconds. Solo has 22 seconds.",
-            "Recover the relay case from the stranded car.", "Carry the case to the elevator receiver. Stay off the track during a train pass."}
+        "Recover the relay case from the north east platform.", "Carry the case to the elevator receiver. Stay off the track during a train pass."}
         self:_target("Fuse", Vector3.new(-22, 3.4, -52), "Take relay", "NORTH PLATFORM / RELAY", 1)
         self:_target("Power", Vector3.new(-22, 3.4, 40), "Install relay", "SOUTH SIGNAL BOX", 2, 2)
         self:_target("ControlA", Vector3.new(-24, 3.4, 8), "Hold signal", "PLATFORM / CONTROL A", 3, 1)
         self:_target("ControlB", Vector3.new(24, 3.4, -8), "Hold signal", "EAST / CONTROL B", 3, 1)
-        self:_target("Sample", Vector3.new(18, 3.4, -86), "Recover relay case", "STRANDED CAR", 4, 2)
+        self:_target("Sample", Vector3.new(22, 3.4, -40), "Recover relay case", "NORTH PLATFORM / RELAY CASE", 4, 2)
         self:_target("Delivery", Vector3.new(4, 3, 56), "Deliver relay", "ELEVATOR RECEIVER", 5, 2)
     elseif laboratory then
         local westFirst = self.seed % 2 == 0
@@ -211,23 +219,32 @@ function Room:Start()
     -- Hidden loot: one seed-placed side stash per run. It is server-side only and
     -- adds a small bonus to the unbanked pot (never client-supplied).
     local stashRandom = Random.new(self.seed + 977)
-    local stashPositions = {Vector3.new(-30, 3, 20), Vector3.new(30, 3, -20), Vector3.new(0, 3, 34), Vector3.new(-34, 3, -34)}
+    local stashPositions = subway and {Vector3.new(-22, 3, -30), Vector3.new(22, 3, 30)}
+        or laboratory and {Vector3.new(-37, 3, 30), Vector3.new(37, 3, 30)}
+        or {Vector3.new(-30, 3, 20), Vector3.new(30, 3, -20)}
     self.stashPosition = stashPositions[stashRandom:NextInteger(1, #stashPositions)]
     self.stashFound = false
     local stash = Instance.new("Part")
     stash.Name, stash.Anchored, stash.CanCollide = "HiddenStash", true, false
-    stash.Size, stash.Position, stash.Transparency = Vector3.new(2, 1.2, 2), self.stashPosition, 1
+    stash.Size, stash.CFrame, stash.Transparency = Vector3.new(2, 1.2, 2), self.model:GetPivot() * CFrame.new(self.stashPosition), 1
     stash.Parent = self.model
     local stashPrompt = Instance.new("ProximityPrompt")
     stashPrompt.ActionText, stashPrompt.ObjectText = "Search stash", "Hidden stash"
     stashPrompt.HoldDuration, stashPrompt.MaxActivationDistance = 1, 10
     stashPrompt.Parent = stash
-    stashPrompt.Triggered:Connect(function(player)
-        if self.destroyed or self.completed or self.stashFound or not self.context.isPlayerActive(player) then return end
+    local stashHolds = {}
+    table.insert(self.connections, stashPrompt.PromptButtonHoldBegan:Connect(function(player)
+        if self:_valid(player, stash) then stashHolds[player] = os.clock() end
+    end))
+    table.insert(self.connections, stashPrompt.Triggered:Connect(function(player)
+        local began = stashHolds[player]
+        stashHolds[player] = nil
+        if self.destroyed or self.completed or self.stashFound or not began
+            or os.clock() - began < stashPrompt.HoldDuration - .15 or not self:_valid(player, stash) then return end
         self.stashFound = true
         stash:Destroy()
         self.context.onHiddenLoot(player)
-    end)
+    end))
     self:_setObjective(self.instructions[1])
     self.startedAt = os.clock()
     task.spawn(function() self:_hazards(self.hazardMode) end)
@@ -235,6 +252,8 @@ end
 
 function Room:_hazards(mode)
     local lastDamage = {}
+    local trainHitPass = {}
+    local previousTrainZ
     local laboratory = mode == "Flood"
     local subway = mode == "Train"
     while not self.destroyed and self.model and not self.completed do
@@ -248,6 +267,7 @@ function Room:_hazards(mode)
             phase = cycle > 14 and "Active" or cycle > 10 and "Warning" or "Safe"
         end
         self.model:SetAttribute("HazardPhase", phase)
+        local trainPass = math.floor((elapsed + self.seed % 7) / SubwayCycle.Period)
         -- Random event: a seed-timed power flicker (lighting only, never damage).
         -- It holds for 1.6 s so clients can see it, not just a single tick.
         local flickerSlot = math.floor(elapsed / 1.6)
@@ -285,14 +305,16 @@ function Room:_hazards(mode)
                 elseif subway then
                     -- The train occupies the track lane only while Active, and
                     -- is in the track bed behind the centre line.
-                    exposed = SubwayCycle.Exposed(localPosition, self.model:GetAttribute("TrainZ") or -200)
+                    exposed = trainHitPass[player] ~= trainPass
+                        and SubwayCycle.Exposed(localPosition, self.model:GetAttribute("TrainZ") or -200, previousTrainZ)
                 else
                     exposed = math.abs(localPosition.X) < 5 and localPosition.Z < 0 and localPosition.Z > -24
                 end
                 if exposed then
                     lastDamage[player] = os.clock()
+                    if subway then trainHitPass[player] = trainPass end
                     local source = laboratory and "Electrified floodwater" or subway and "Passing train" or "Containment discharge"
-                    self.context.damagePlayer(player, subway and 30 or 8, source)
+                    self.context.damagePlayer(player, subway and SubwayCycle.Damage or 8, source)
                 end
             end
         end
@@ -304,6 +326,7 @@ function Room:_hazards(mode)
             for _, entry in self.targets do entry.prompt.Enabled = entry.stage == self.stage end
             self:_setObjective(self.instructions[self.stage])
         end
+        previousTrainZ = phase == "Active" and self.model:GetAttribute("TrainZ") or nil
         task.wait(.25)
     end
 end

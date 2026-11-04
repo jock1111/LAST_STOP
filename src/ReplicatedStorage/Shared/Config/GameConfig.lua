@@ -9,6 +9,9 @@ return {
 	EscapeSeconds = 20,
 	DecisionSeconds = 25,
 	FloorTimeLimitSeconds = 240,
+	StalkerArrivalGraceSeconds = 18,
+	StalkerArrivalSafeRadius = 18,
+	NavigationCosts = {FloodBasin = 50, TrainTrack = 25},
 	LateJoinPolicy = "LobbyOnly", -- late joiners wait safely in the lobby
 	SafeRegionPadding = Vector3.new(10, 7, 10),
 	InteractionDistance = 12,

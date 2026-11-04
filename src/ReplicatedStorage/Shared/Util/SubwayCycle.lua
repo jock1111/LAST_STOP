@@ -3,8 +3,9 @@
 local SubwayCycle = {}
 
 SubwayCycle.Period = 16
-SubwayCycle.WarningStart = 9
+SubwayCycle.WarningStart = 8
 SubwayCycle.ActiveStart = 12
+SubwayCycle.Damage = 25
 
 -- Returns "Safe", "Warning" or "Active" for an elapsed time and a per-run offset.
 function SubwayCycle.Phase(elapsed, offset)
@@ -26,8 +27,12 @@ function SubwayCycle.TrainZ(cycle, phase)
 end
 
 -- A player is hit when inside the track lane and close to the train's Z.
-function SubwayCycle.Exposed(localPosition, trainZ)
-	return math.abs(localPosition.X) < 6 and math.abs(localPosition.Z - trainZ) < 12
+function SubwayCycle.Exposed(localPosition, trainZ, previousZ)
+	local startZ = previousZ or trainZ
+	return math.abs(localPosition.X) < 6.5
+		and localPosition.Y > -6 and localPosition.Y < 8
+		and localPosition.Z > math.min(startZ, trainZ) - 22
+		and localPosition.Z < math.max(startZ, trainZ) + 22
 end
 
 -- Random next patrol waypoint that is never the one just reached.

@@ -73,6 +73,9 @@ function Environment.UpgradeLobby(model)
     end
     Environment.Mesh(art, "computer-system", CFrame.new(14, 2.4, -11))
     model.QueueConsole.Transparency = 1
+    model.QueueConsole.CFrame = CFrame.new(14, 3.4, -7)
+    model.QueueConsole.CanCollide = false
+    model.QueueConsole.CanQuery = false
     for z = -8, 24, 8 do
         local floor = Environment.Mesh(art, "floor-panel", CFrame.new(0, -.4, z), Vector3.new(14, .8, 8))
         floor.CanCollide = false
@@ -175,6 +178,10 @@ function Environment.UpgradeHospital(model)
     crash.CanCollide = false
     local oxygen = Environment.Part(art, "OxygenCart", Vector3.new(1.2, 3.4, 1.2), origin * CFrame.new(-26, 1.7, -22), Color3.fromRGB(50, 110, 70), Enum.Material.Metal)
     oxygen.CanCollide = false
+    -- Thin decorative curtains/tiles must not hide interactive prompts.
+    for _, part in model:GetDescendants() do
+        if part:IsA("BasePart") and not part.CanCollide then part.CanQuery = false end
+    end
     return model
 end
 
@@ -192,7 +199,9 @@ function Environment.BuildSubway()
     local tile = Color3.fromRGB(84, 92, 86)
     local grime = Color3.fromRGB(42, 46, 44)
     -- Track bed in the centre, platforms on either side, raised 4 studs.
-    Environment.Part(model, "TrackBed", Vector3.new(12, 1, 110), CFrame.new(0, -3.5, 0), Color3.fromRGB(28, 30, 30), Enum.Material.Concrete)
+    local trackBed = Environment.Part(model, "TrackBed", Vector3.new(12, 1, 110), CFrame.new(0, -3.5, 0), Color3.fromRGB(28, 30, 30), Enum.Material.Concrete)
+    local trackCost = Instance.new("PathfindingModifier")
+    trackCost.Label, trackCost.Parent = "TrainTrack", trackBed
     for _, x in {-22, 22} do
         Environment.Part(model, "Platform", Vector3.new(16, 1, 110), CFrame.new(x, -.5, 0), tile, Enum.Material.Concrete)
         Environment.Part(model, "PlatformEdge", Vector3.new(.8, 1.2, 110), CFrame.new(x + (x > 0 and -7.6 or 7.6), .1, 0), Color3.fromRGB(214, 176, 62), Enum.Material.Metal)
@@ -208,16 +217,16 @@ function Environment.BuildSubway()
             Environment.Mesh(architecture, "container-tall", CFrame.new(x, 5, z), Vector3.new(4, 12, 4))
         end
     end
-    -- Ticket hall and stair north/south. Stairs are walkable ramps for the stalker.
-    Environment.Part(model, "EntranceStairs", Vector3.new(14, 1, 12), CFrame.new(0, -2, -58), tile, Enum.Material.Concrete)
+    -- Level crossings connect both platforms without requiring a jump out of the track bed.
+    Environment.Part(model, "NorthCrossing", Vector3.new(60, 1, 8), CFrame.new(0, -.5, -46), tile, Enum.Material.Concrete)
+    Environment.Sign(architecture, "USE MARKED CROSSINGS / CLEAR TRACK ON WARNING", Vector3.new(0, 9, -46), Vector3.new(26, 2, .15), amber)
     Environment.Sign(architecture, "LAST TRAIN   /   NORTHBOUND  -  NOT IN SERVICE", Vector3.new(0, 10, -55), Vector3.new(20, 2, .15), amber)
     Environment.Sign(architecture, "SIGNAL RELAY  /  AUTHORIZED STAFF ONLY", Vector3.new(0, 10, 55), Vector3.new(18, 2, .15), cyan)
     for z = -48, 48, 16 do
         Environment.Light(model, Vector3.new(-22, 11, z), Color3.fromRGB(230, 214, 176), 24)
         Environment.Light(model, Vector3.new(22, 11, z), Color3.fromRGB(230, 214, 176), 24)
     end
-    -- Stopped train car in the north tunnel. Its doors are solid, so the hazard
-    -- is the rolling pass, not the geometry.
+    -- The visual train never collides with characters. Server bounds apply damage.
     -- The train is a model the server moves with PivotTo. Its position drives
     -- the warning, the visible motion and the damage lane from one value.
     local train = Instance.new("Model")
@@ -235,8 +244,9 @@ function Environment.BuildSubway()
         part.Transparency, part.CanCollide, part.CanQuery = 1, false, false
         return part
     end
-    marker("EntranceSpawn", Vector3.new(0, 4, 46))
-    marker("ElevatorSocket", Vector3.new(0, 0, 62))
+    marker("EntranceSpawn", Vector3.new(-22, 4, 46))
+    local elevatorSocket = marker("ElevatorSocket", Vector3.new(0, 0, 62))
+    elevatorSocket.CFrame *= CFrame.Angles(0, math.pi, 0)
     marker("ElevatorReturnZone", Vector3.new(0, 5, 62), Vector3.new(18, 10, 16))
     marker("EnemySpawn", Vector3.new(-22, 4, -40))
     marker("RoomBounds", Vector3.new(0, 5, 0), Vector3.new(60, 20, 130))
@@ -247,7 +257,7 @@ function Environment.BuildSubway()
         point.Transparency, point.CanCollide, point.CanQuery = 1, false, false
     end
     -- Return bridge from the platform edge to the elevator socket.
-    Environment.Part(model, "ElevatorBridge", Vector3.new(18, 1, 16), CFrame.new(0, -.5, 56), dark)
+    Environment.Part(model, "ElevatorBridge", Vector3.new(60, 1, 16), CFrame.new(0, -.5, 56), dark)
     return model
 end
 
@@ -259,7 +269,9 @@ function Environment.BuildLaboratory()
     model.PrimaryPart = origin
     local architecture = Instance.new("Folder")
     architecture.Name, architecture.Parent = "ImportedArchitecture", model
-    Environment.Part(model, "Basin", Vector3.new(94, 1, 110), CFrame.new(0, -4, 0), dark, Enum.Material.Concrete)
+    local basin = Environment.Part(model, "Basin", Vector3.new(94, 1, 110), CFrame.new(0, -4, 0), dark, Enum.Material.Concrete)
+    local basinCost = Instance.new("PathfindingModifier")
+    basinCost.Label, basinCost.Parent = "FloodBasin", basin
     local water = Environment.Part(model, "FloodWater", Vector3.new(90, .16, 106), CFrame.new(0, -1.1, 0), Color3.fromRGB(32, 87, 95), Enum.Material.Glass)
     water.Transparency, water.Reflectance, water.CanCollide = .38, .2, false
     water:SetAttribute("WaterSurface", true)
@@ -310,6 +322,15 @@ function Environment.BuildLaboratory()
             Environment.Mesh(architecture, "pipe", CFrame.new(x, 10, z), Vector3.new(2, 12, 2))
         end
     end
+    -- Recovery ramps cross the gaps between rail segments, so falling into
+    -- the basin never leaves a player trapped below the raised catwalk.
+    for _, x in {-30, 30} do
+        for _, z in {-32, 32} do
+            local slope = math.atan(3.5 / 12) * (x > 0 and 1 or -1)
+            Environment.Part(model, "BasinAccessRamp", Vector3.new(12.5, 1, 4),
+                CFrame.new(x, -2.25, z) * CFrame.Angles(0, 0, slope), amber)
+        end
+    end
     Environment.Mesh(architecture, "computer-system", CFrame.new(-37, 2.4, -44))
     Environment.Mesh(architecture, "computer-system", CFrame.new(37, 2.4, -44))
     Environment.Mesh(architecture, "computer-wide", CFrame.new(0, 2, -45))
@@ -339,7 +360,8 @@ function Environment.BuildLaboratory()
         return part
     end
     marker("EntranceSpawn", Vector3.new(0, 4, 43))
-    marker("ElevatorSocket", Vector3.new(0, 0, 63))
+    local elevatorSocket = marker("ElevatorSocket", Vector3.new(0, 0, 63))
+    elevatorSocket.CFrame *= CFrame.Angles(0, math.pi, 0)
     marker("ElevatorReturnZone", Vector3.new(0, 5, 63), Vector3.new(18, 10, 16))
     marker("EnemySpawn", Vector3.new(0, 5, -40))
     marker("RoomBounds", Vector3.new(0, 5, 0), Vector3.new(96, 20, 130))

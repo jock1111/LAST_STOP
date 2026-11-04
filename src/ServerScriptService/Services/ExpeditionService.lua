@@ -88,6 +88,7 @@ function ExpeditionService:_send(player, patch)
 	for key, value in pairs(patch or {}) do
 		payload[key] = value
 	end
+	player:SetAttribute("LastStopSnapshot", game:GetService("HttpService"):JSONEncode(payload))
 	self._remotes.StateChanged:FireClient(player, payload)
 end
 
@@ -95,6 +96,12 @@ function ExpeditionService:_broadcast(patch)
 	for _, player in ipairs(self:_activePlayers()) do
 		self:_send(player, patch)
 	end
+end
+
+function ExpeditionService:SyncState(player)
+	if not self.active[player] then return false end
+	self:_send(player, {decisionDeadline = self.decisionDeadline})
+	return true
 end
 
 function ExpeditionService:_toast(player, text)
@@ -298,6 +305,7 @@ function ExpeditionService:_beginNextFloor(token)
 		end,
 	})
 	self.floor:Start()
+	self.floorStartedAt = os.clock()
 	for index, player in ipairs(self:_activePlayers()) do
 		self:_movePlayer(player, self.floor.spawnCFrame * CFrame.new((((index - 1) % 4) - 1.5) * 3, 0, (math.floor((index - 1) / 4) - 1) * 3))
 	end
@@ -306,6 +314,7 @@ function ExpeditionService:_beginNextFloor(token)
 		if self._token == token and self.state == "Floor" and self.floor then
 			self._enemyService:SpawnStalker(self.floor.model, self.floor.patrolPoints, {
 				getActivePlayers = function() return self:_activePlayers() end,
+				canTargetPlayer = function(player) return not self:_isStalkerProtected(player) end,
 				damagePlayer = function(player, amount, source) self:DamagePlayer(player, amount, source) end,
 			})
 			self:_broadcast({ message = "Something is moving in the dark." })
@@ -403,9 +412,10 @@ function ExpeditionService:_enterDecision(token)
 		return
 	end
 	self.votes = {}
+	self.decisionDeadline = os.time() + self._config.DecisionSeconds
 	self:_setState("Decision", {
 		message = "BANK to secure your haul, or CONTINUE and keep it at risk.",
-		decisionDeadline = os.time() + self._config.DecisionSeconds,
+		decisionDeadline = self.decisionDeadline,
 	})
 	self:_wait(self._config.DecisionSeconds, token, function()
 		for _, player in ipairs(self:_activePlayers()) do
@@ -489,6 +499,13 @@ function ExpeditionService:_eliminate(player, reason)
 	self._floorService:SetLobbyElevator(true, "LAST STOP")
 end
 
+function ExpeditionService:_isStalkerProtected(player)
+	local root = characterRoot(player)
+	if not self.floor or not root then return true end
+	return os.clock() - self.floorStartedAt < self._config.StalkerArrivalGraceSeconds
+		or (root.Position - self.floor.spawnCFrame.Position).Magnitude < self._config.StalkerArrivalSafeRadius
+end
+
 function ExpeditionService:DamagePlayer(player, amount, source)
 	if not self.active[player] or (self.state ~= "Floor" and self.state ~= "Escape") then
 		return
@@ -496,6 +513,7 @@ function ExpeditionService:DamagePlayer(player, amount, source)
 	if type(amount) ~= "number" or amount <= 0 or amount > 30 then
 		return
 	end
+	if source == "Stalker" and self:_isStalkerProtected(player) then return end
 	local humanoid = characterHumanoid(player)
 	if humanoid and humanoid.Health > 0 then
 		humanoid:TakeDamage(amount)

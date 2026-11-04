@@ -155,6 +155,19 @@ remotes.RequestQueue.OnServerEvent:Connect(function(player, ...)
 	local ok, message = matchmaking:RequestJoin(player)
 	toast(player, message)
 end)
+remotes.RequestState.OnServerEvent:Connect(function(player, ...)
+	if select("#", ...) ~= 0 or not remotelyAllowed("State", player) then return end
+	if currentExpedition and currentExpedition:SyncState(player) then return end
+	local snapshot = player:GetAttribute("LastStopSnapshot")
+	if snapshot then
+		local ok, data = pcall(game:GetService("HttpService").JSONDecode, game:GetService("HttpService"), snapshot)
+		if ok and data.state == "Results" then remotes.StateChanged:FireClient(player, data); return end
+	end
+	remotes.StateChanged:FireClient(player, {
+		state = "Lobby", floorName = "Terminus Concourse", progress = 0, unbanked = 0,
+		banked = economy:GetBankedCoins(player), objective = "Board an expedition. Bring your team home.",
+	})
+end)
 
 remotes.RequestDecision.OnServerEvent:Connect(function(player, decision, ...)
 	if select("#", ...) ~= 0 or type(decision) ~= "string" or #decision > 10 or not remotelyAllowed("Decision", player) then
@@ -202,6 +215,7 @@ Players.PlayerRemoving:Connect(function(player)
 		currentExpedition:OnPlayerRemoving(player)
 	end
 	limiter:Forget("Queue:" .. player.UserId)
+	limiter:Forget("State:" .. player.UserId)
 	limiter:Forget("Decision:" .. player.UserId)
 	limiter:Forget("Medkit:" .. player.UserId)
 	profiles:Release(player)
