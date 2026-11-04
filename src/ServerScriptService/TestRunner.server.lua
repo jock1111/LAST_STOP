@@ -11,6 +11,7 @@ local ok, err = pcall(function()
 	require(script.Parent.Tests.SubwayCycleSpec)()
 	require(script.Parent.Tests.RouteVariantSpec)()
 	require(script.Parent.Tests.InteractionOcclusionSpec)()
+	require(script.Parent.Tests.FloorTimerSpec)()
 	require(script.Parent.Tests.PrefabLifecycleSpec)()
 end)
 if not ok then

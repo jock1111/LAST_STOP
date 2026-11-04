@@ -305,13 +305,14 @@ function ExpeditionService:_beginNextFloor(token)
 		end,
 	})
 	self.floor:Start()
+	local startedFloor = self.floor
 	self.floorStartedAt = os.clock()
 	for index, player in ipairs(self:_activePlayers()) do
 		self:_movePlayer(player, self.floor.spawnCFrame * CFrame.new((((index - 1) % 4) - 1.5) * 3, 0, (math.floor((index - 1) / 4) - 1) * 3))
 	end
 	self:_setState("Floor", { message = self.floorDefinition.Prompt })
 	task.delay(5, function()
-		if self._token == token and self.state == "Floor" and self.floor then
+		if self._token == token and self.state == "Floor" and self.floor == startedFloor then
 			self._enemyService:SpawnStalker(self.floor.model, self.floor.patrolPoints, {
 				getActivePlayers = function() return self:_activePlayers() end,
 				canTargetPlayer = function(player) return not self:_isStalkerProtected(player) end,
@@ -321,7 +322,7 @@ function ExpeditionService:_beginNextFloor(token)
 		end
 	end)
 	task.delay(self._config.FloorTimeLimitSeconds, function()
-		if self._token == token and self.state == "Floor" then
+		if self._token == token and self.state == "Floor" and self.floor == startedFloor then
 			self:_failCurrentFloor("The floor sealed before the objective was completed.")
 		end
 	end)
