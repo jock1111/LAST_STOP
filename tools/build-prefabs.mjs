@@ -48,11 +48,20 @@ function panel(parent,pos,size=[5,7,.3],yaw=0){
  part(parent,'InsetPanel',[size[0]-.25,size[1]-.25,.16],[pos[0],pos[1],pos[2]+.22],C.dark,1088,{yaw,pbr:'MetalPlate'});
 }
 function floor(parent,pos,size,kind='ChippedConcrete',color=C.concrete){return part(parent,'Floor',size,pos,color,kind==='MetalPlate'?1088:816,{pbr:kind});}
-function wall(parent,pos,size,color=C.concrete){
+function wall(parent,pos,size,color=C.concrete,o={}){
  const w=part(parent,'Wall',size,pos,color,816,{pbr:'ChippedConcrete'});
- const trimSize=[size[0],.28,size[2]+.08];
- part(parent,'WallSkirting',trimSize,[pos[0],.65,pos[2]],C.dark);
- part(parent,'WallBand',[size[0]+.02,.7,size[2]+.02],[pos[0],3.5,pos[2]],C.green);
+ const alongX=size[0]>=size[2];
+ part(parent,'WallSkirting',alongX?[size[0],.28,size[2]+.08]:[size[0]+.08,.28,size[2]],[pos[0],.65,pos[2]],C.dark);
+ if(o.clinical){
+  // Clinical trim follows the wall's long axis. A single trim block centred on
+  // a thin wall protrudes from both faces, so wainscot, cap and accent read as
+  // continuous bands instead of crossing doorways or the corridor.
+  part(parent,'WardWainscot',alongX?[size[0]-.5,2.5,size[2]+.14]:[size[0]+.14,2.5,size[2]-.5],[pos[0],2.05,pos[2]],[150,158,150],816,{detail:true});
+  part(parent,'WardCap',alongX?[size[0]-.4,.28,size[2]+.22]:[size[0]+.22,.28,size[2]-.4],[pos[0],3.45,pos[2]],[130,138,132],816,{detail:true});
+  part(parent,'WallAccent',alongX?[size[0]-.6,.1,size[2]+.16]:[size[0]+.16,.1,size[2]-.6],[pos[0],4.0,pos[2]],C.green,272,{detail:true});
+ } else {
+  part(parent,'WallBand',[size[0]+.02,.7,size[2]+.02],[pos[0],3.5,pos[2]],C.green);
+ }
  return w;
 }
 function bench(parent,x,z,yaw=0){
@@ -162,7 +171,7 @@ for(const x of [-18,-10,10,18]){
 // Signage hierarchy: station identifier, wayfinding, posters.
 sign(lobby,'MainStationSign','SAINT ORIN\nRESEARCH TRANSIT  /  TERMINUS',[26,4,.35],[0,13.2,-14],C.white);
 sign(lobby,'BoardingWayfinding','↓  DEEP ACCESS  /  ELEVATOR  ↓',[20,1.6,.25],[0,9.7,-14],C.cyan);
-sign(lobby,'PlatformSign','01  /  NORTHBOUND\nSERVICE SUSPENDED',[.35,4,12],[-40.9,7,-8],C.amber,-90);
+sign(lobby,'PlatformSign','01  /  NORTHBOUND\nSERVICE SUSPENDED',[12,4,.35],[-39.2,7,-8],C.amber,-90);
 sign(lobby,'OriginalPoster','DO NOT WAIT\nFOR THE LAST TRAIN\nTRANSIT AUTHORITY  1986',[5,7,.1],[38.9,7,24],C.white,-90,[40,79,85]);
 sign(lobby,'SafetyPoster','IF THE LIGHTS FAIL\nFOLLOW THE AMBER LINE',[5,7,.1],[38.9,7,9],C.amber,-90,C.navy);
 // Queue console (preserved boarding anchor) with illuminated screen and keys.
@@ -209,7 +218,12 @@ for(const z of [8,8.5,9])part(lift,'ThresholdGroove',[19,.04,.06],[0,.57,z],C.ru
 for(const side of [-1,1]){
  const d=part(lift,side===-1?'DoorLeft':'DoorRight',[9.5,12.8,.45],[side*4.78,6.95,8.55],C.steel,1088,{pbr:'MetalPlate'});
  part(d,'DoorInset',[8.7,10.5,.08],[side*4.78,6.9,8.82],C.dark,1088,{pbr:'MetalPlate',detail:true});
- part(d,'DoorEdgeSeal',[.06,12.8,.35],[side*4.75,6.9,8.55],C.rubber,272,{detail:true});
+ // Meeting seals sit on the inner leaf edges, not mid-door. Bottom seals and
+ // portholes finish the leaf without interfering with the welded tween.
+ part(d,'DoorMeetingSeal',[.08,12.8,.35],[side*.06,6.9,8.55],C.rubber,272,{detail:true});
+ part(d,'DoorBottomSeal',[9.2,.3,.4],[side*4.78,.72,8.55],C.rubber,272,{detail:true});
+ part(d,'DoorViewportFrame',[2.5,3,.1],[side*4.78,8.7,8.84],C.steel,1088,{detail:true});
+ part(d,'DoorViewportGlass',[2.1,2.6,.06],[side*4.78,8.7,8.9],C.cyan,1568,{alpha:.55,detail:true});
  for(let y=1.5;y<13;y+=1.4)part(lift,'JambHazardStripe',[.55,.7,.12],[side*10,y,9.21],C.amber,272,{roll:25,detail:true});
 }
 // Cabin instruction and control panel.
@@ -217,10 +231,14 @@ sign(lift,'CabinInstruction','MAX 12\nBANK TO SURVIVE',[5,1.8,.1],[0,10.9,-7.79]
 part(lift,'ControlPanel',[1.5,4,.25],[8,5.5,-7.8],C.dark);
 for(let i=0;i<4;i++){part(lift,'TactileButton',[.5,.5,.15],[8,4.2+i*.75,-7.57],i===3?C.red:C.amber,272,{shape:2,detail:true});}
 sign(lift,'EtchedPanelLabel','01\n02\n03\nSOS',[.5,3,.03],[8.55,5.3,-7.6],C.white);
-// Animated floor indicator above the door.
-sign(lift,'FloorDisplay','B0  /  CONCOURSE',[6.8,1.15,.12],[0,14.4,9.48],C.cyan);
+// Animated floor indicator above the door. The three named dots sit proud of
+// the bezel so FloorService can paint and chase them without z-fighting.
+sign(lift,'FloorDisplay','B0  /  CONCOURSE',[6.8,.75,.1],[0,14.85,9.56],C.cyan);
 part(lift,'IndicatorBezel',[7.4,1.75,.16],[0,14.42,9.48],C.dark,1088,{detail:true});
-for(let i=0;i<3;i++)part(lift,'IndicatorDot',[.3,.3,.02],[i-1,14.45,9.49],i===0?C.amber:C.dark,288,{detail:true});
+for(let i=0;i<3;i++){
+ part(lift,`IndicatorRing${i+1}`,[.42,.42,.03],[i-1,14.02,9.575],C.dark,288,{detail:true});
+ part(lift,`IndicatorDot${i+1}`,[.3,.3,.02],[i-1,14.02,9.605],i===0?C.amber:C.dark,288,{detail:true});
+}
 const liftMarkers=folder(lift,'Markers');marker(liftMarkers,'EntranceSpawn',[0,4,0]);marker(liftMarkers,'ElevatorReturnZone',[0,5,0],[18,10,14]);
 write('Elevator',lift);
 
@@ -233,55 +251,57 @@ for(const [name,x,z,w,d] of roomSpecs){
  for(let tz=z-d/2+4;tz<z+d/2;tz+=10)lamp(r,[x,11.8,tz],name==='Archive'?[180,202,186]:C.white,19,2);
 }
 // Corridor walls have authored door openings; there is no enclosing box fallback.
-// A painted plaster wainscot band runs along the corridor so the ward reads as
-// clinical rather than industrial.
-for(const [x,z,len] of [[-7,-28,14],[-7,-10,6],[-7,17,14],[7,-30,10],[7,-8,12],[7,23,8]])wall(rooms,[x,6,z],[.65,12,len],[167,183,171]);
-for(const [x,z,len] of [[-7,-28,14],[-7,-10,6],[-7,17,14],[7,-30,10],[7,-8,12],[7,23,8]]){
- part(rooms,'WardWainscot',[len-.6,2.4,.2],[x,2.4,z],[150,158,150],816,{detail:true});
- part(rooms,'WardCap',[len-.6,.3,.2],[x,3.7,z],[130,138,132],816,{detail:true});
+// Clinical trim follows each wall's long axis so wainscot and caps never bridge
+// a doorway or run across the corridor.
+const corridorWalls=[[-7,-28,14],[-7,-10,6],[-7,17,14],[7,-30,10],[7,-8,12],[7,23,8]];
+for(const [x,z,len] of corridorWalls)wall(rooms,[x,6,z],[.65,12,len],[167,183,171],{clinical:true});
+for(const [x,z,len] of corridorWalls){
+ const railX=x+(x<0?.45:-.45);
+ part(rooms,'WallProtectionRail',[.2,.25,len-1.6],[railX,3,z],C.green,1088,{detail:true});
+ for(const dz of [-(len-1.6)/2,(len-1.6)/2])part(rooms,'RailBracket',[.3,.3,.3],[railX,3,z+dz],C.steel,1088,{detail:true});
 }
-for(const x of [-35,35])wall(rooms,[x,6,-3],[.8,12,66],[173,186,174]);
-for(const [x,z,w] of [[-21,-17,28],[-21,13,28],[21,23,28],[21,-37,28],[-13,34,4],[13,34,4]])wall(rooms,[x,6,z],[w,12,.8],[173,186,174]);
+for(const x of [-35,35])wall(rooms,[x,6,-3],[.8,12,66],[173,186,174],{clinical:true});
+for(const [x,z,w] of [[-21,-17,28],[-21,13,28],[21,23,28],[21,-37,28],[-13,34,4],[13,34,4]])wall(rooms,[x,6,z],[w,12,.8],[173,186,174],{clinical:true});
+// Foyer side walls close the arrival room around the elevator opening.
+for(const x of [-15,15])wall(rooms,[x,6,28],[.8,12,12],[173,186,174],{clinical:true});
 // Open east-loop doorway between treatment and archive.
-for(const z of [-5,-15]){wall(rooms,[11,6,z],[8,12,.6]);wall(rooms,[31,6,z],[8,12,.6]);}
+for(const z of [-5,-15]){wall(rooms,[11,6,z],[8,12,.6],[173,186,174],{clinical:true});wall(rooms,[31,6,z],[8,12,.6],[173,186,174],{clinical:true});}
 for(const [x,z] of [[-7,3],[7,9],[7,-19],[21,-5]]){
  part(rooms,'DoorLintel',[.9,2,9],[x,11,z],C.green);
  for(const dz of [-4.5,4.5])part(rooms,'DoorJamb',[.9,10,.35],[x,5,z+dz],C.green);
 }
 for(const z of [-29,-13,4,20]){
  sign(rooms,'OverheadWayfinding',z<0?'ARCHIVE  →  /  WARD  ←':'←  PATIENT WARD\nELEVATOR  ↓',[10,1.4,.2],[0,9.5,z],C.white);
- part(rooms,'WallProtectionRail',[.2,.25,10],[-6.5,3,z],C.green);
 }
-sign(rooms,'HospitalIdentifier','SAINT ORIN\nCLINICAL RESEARCH / WARD 07',[11,2.4,.2],[0,7.8,33.5],C.white,0,C.green);
+sign(rooms,'HospitalIdentifier','SAINT ORIN\nCLINICAL RESEARCH / WARD 07',[11,2.4,.2],[-14.45,7.8,28],C.white,-90,C.green);
 for(const z of [-9,5]){bed(rooms,-25,z);bed(rooms,-13,z);}
-for(const z of [-9,5]){part(rooms,'CurtainTrack',[19,.15,.15],[-22,10,z+4],C.steel);for(let x=-31;x<-12;x+=1.6)part(rooms,'FadedCurtainFold',[.5,6,.3],[x,7,z+4],C.green,1312,{detail:true});}
+// Privacy curtains are per bed, not one ward-wide track crossing both beds.
+for(const [x,z] of [[-25,-9],[-13,-9],[-25,5],[-13,5]]){
+ part(rooms,'CurtainTrack',[8.6,.15,.15],[x,10,z+3.9],C.steel);
+ for(let dx=-3.6;dx<=3.6;dx+=1.2)part(rooms,'FadedCurtainFold',[.5,6,.3],[x+dx,7,z+3.9],C.green,1312,{detail:true});
+}
 bed(rooms,26,10);
 part(rooms,'ScannerTable',[4,1,7],[17,2.4,10],C.white);
 for(const x of [14.5,19.5])part(rooms,'ScannerSupport',[1,7,1],[x,4,7],C.white);
 part(rooms,'ScannerArch',[6,1.2,3],[17,7.5,7],C.white);
 sign(rooms,'ScannerLabel','ORIN // IMAGING\nDO NOT ENTER WHEN LIT',[4,.9,.1],[17,7.5,8.6],C.cyan);
 monitor(rooms,15,4,19);
-// Nurses' station at the arrival foyer: counter, monitor, chart tray and a
-// toppled tray so the ward reads as hurriedly evacuated.
+// Nurses' station in the arrival foyer: a supported counter, monitor, chart
+// tray and spill, clear of the delivery receiver and elevator approach.
 const ns=folder(rooms,'NursesStation');
-part(ns,'NursesCounter',[6,.3,2.4],[0,2.9,-24],C.white,1088,{pbr:'ChippedConcrete'});
-part(ns,'NursesTop',[6.2,.1,2.6],[0,3.2,-24],C.white,1088,{detail:true});
-part(ns,'StationMonitor',[2.3,1.7,.35],[1.5,4,-24],C.dark);
-part(ns,'MonitorStand',[.3,1,.4],[1.5,2.6,-24],C.steel);
-part(ns,'ChartTray',[1.2,.2,1.6],[-1.5,3.2,-24],C.white,272,{detail:true});
-part(ns,'SpillPuddle',[1.4,.08,1.4],[2,0.1,-25],C.rubber,1312,{alpha:.4,detail:true});
-// Additional ward beds with privacy curtains and abandoned personal effects.
-for(const z of [-20,-6,8]){
- part(rooms,'WardBed',[3.45,.8,6.8],[-14,2,z],C.white,272);
- part(rooms,'BedBlanket',[3.5,.16,3.3],[-14,2.49,z+1.6],C.green,1312);
- part(rooms,'BedPillow',[2.6,.3,1.3],[-14,2.5,z-2.3],C.white,1312);
- part(rooms,'IVPole',[.12,6,.12],[-16.9,3.5,z-1.4],C.steel);
- part(rooms,'IVBag',[.8,1.3,.35],[-16.5,5.5,z-1.4],C.white,1568,{alpha:.3,detail:true});
- part(rooms,'BedsideCabinet',[2,2.8,2],[-10.5,1.8,z-2],C.white);
- part(rooms,'CurtainTrack',[10,.15,.15],[-17,10,z+4],C.steel);
- for(let x=-22;x<-6;x+=1.6)part(rooms,'FadedCurtainFold',[.5,6,.3],[x,7,z+4],C.green,1312,{detail:true});
- part(rooms,'DroppedClipboard',[.4,.3,.2],[-11,0.15,z-1.5],C.white,272,{detail:true});
- part(rooms,'SpilledPills',[.6,.15,.6],[-10.2,0.14,z-1],C.rubber,1312,{detail:true});
+part(ns,'NursesBody',[5.8,2.6,2.2],[-10,1.45,30.5],C.white,1088,{pbr:'ChippedConcrete'});
+part(ns,'NursesCounter',[6,.3,2.4],[-10,2.9,30.5],C.white,1088,{pbr:'ChippedConcrete'});
+part(ns,'NursesTop',[6.2,.1,2.6],[-10,3.1,30.5],C.white,1088,{detail:true});
+part(ns,'StationMonitor',[2.3,1.7,.35],[-8.5,4,30.5],C.dark);
+part(ns,'MonitorStand',[.3,1,.4],[-8.5,3.5,30.5],C.steel);
+part(ns,'ChartTray',[1.2,.2,1.6],[-11.5,3.2,30.5],C.white,272,{detail:true});
+part(ns,'SpillPuddle',[1.4,.08,1.4],[-8,0.1,29.2],C.rubber,1312,{alpha:.4,detail:true});
+part(ns,'StationChair',[1.5,1.8,1.5],[-11.5,1,32],C.rubber,272);
+// Abandoned personal effects around the authored beds, without duplicate beds
+// or room-wide curtains.
+for(const [x,z] of [[-21,-12],[-9,-4],[-21,8],[-9,11]]){
+ part(rooms,'DroppedClipboard',[.4,.3,.2],[x,0.15,z],C.white,272,{detail:true});
+ part(rooms,'SpilledPills',[.6,.15,.6],[x+1.2,0.14,z+.4],C.rubber,1312,{detail:true});
 }
 // Treatment room carts: crash cart and a treatment trolley with supplies.
 const tc=folder(rooms,'TreatmentCarts');
@@ -298,9 +318,8 @@ for(const z of [-29,-19,-9,1]){
  part(rooms,'BreachTape',[.12,.1,12],[30,4,z],tape);
  part(rooms,'BreachTape',[.12,.1,12],[30,5.6,z],tape);
 }
-for(const x of [-21,-11,-1]){
- part(rooms,'PeelingPaint',[.2,2.4,6],[x,6.2,-22],[96,104,92],816,{alpha:.35,detail:true});
- part(rooms,'PeelingPaint',[.2,2.4,6],[x,6.2,14],[96,104,92],816,{alpha:.35,detail:true});
+for(const [x,z] of [[-34.35,-10],[-34.35,4],[34.35,6],[34.35,18]]){
+ part(rooms,'PeelingPaint',[.18,2.4,6],[x,6.2,z],[96,104,92],816,{alpha:.35,detail:true});
 }
 for(const x of [13,21,29]){
  part(rooms,'ArchiveShelf',[5,8,2],[x,4,-33],C.steel);
@@ -313,6 +332,11 @@ for(const [name,p] of [['Ward_Record',[-18,0,-12]],['Imaging_Record',[27,0,17]],
 for(const [x,z] of [[-34,0],[34,12],[34,-23]]){vent(rooms,x,8,z);pipe(rooms,[x,10.7,z],13,'Z');}
 sign(rooms,'ArchiveDoorSign','RECORD ARCHIVE\nAUTHORIZED STAFF',[.15,1.8,6],[7.6,7,-19],C.white,90,C.green);
 sign(rooms,'WardSign','PATIENT WARD\nBEDS 01 — 04',[.15,1.8,6],[-7.6,7,3],C.white,-90,C.green);
+// Ward control A is a wall station on the outer ward wall, clear of the beds.
+part(rooms,'WardControlCabinet',[.4,2.4,1.8],[-34.4,3.4,9],C.steel,1088,{pbr:'MetalPlate'});
+part(rooms,'WardControlFace',[.12,1.8,1.3],[-34.2,3.4,9],C.dark,1088,{detail:true});
+part(rooms,'WardControlLamp',[.1,.18,.18],[-34.12,4.35,9],C.amber,288,{detail:true});
+for(const y of [2.5,4.3])part(rooms,'ControlConduit',[.1,.1,2.6],[-34.35,y,9],C.steel,1088,{detail:true});
 const hm=folder(hospital,'Markers');
 marker(hm,'EntranceSpawn',[0,4,28]);marker(hm,'ElevatorSocket',[0,0,43],[1,1,1],180);marker(hm,'ElevatorReturnZone',[0,5,43],[18,10,14]);
 marker(hm,'EnemySpawn',[0,5,-25]);marker(hm,'RoomBounds',[0,7,3],[74,16,100]);
@@ -325,7 +349,7 @@ function medCab(x,z,yaw){
  part(rooms,'MedTray',[1.2,.15,.7],[x,y+1.45,z+0.32],C.white,288,{detail:true});
  part(rooms,'MedBin',[.35,.35,.35],[x+0.55,y+1.45,z+0.42],C.red,272,{detail:true});
 }
-for(const p of [[10,8,0],[32,8,180],[10,20,0],[32,20,180],[-32,4,90],[-6,4,-90],[-32,-10,90],[-6,-10,-90]])medCab(p[0],p[1],p[2]);
+for(const p of [[10,8,0],[32,8,180],[10,20,0],[32,20,180],[-32,4,90],[-6,11,-90],[-32,-10,90],[-6,-10,-90]])medCab(p[0],p[1],p[2]);
 write('Hospital',hospital);
 
 // An original articulated containment subject. Art details are welded onto

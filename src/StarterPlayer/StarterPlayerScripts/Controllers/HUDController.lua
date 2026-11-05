@@ -50,7 +50,7 @@ function HUD.new(player, callbacks)
     local root = Instance.new("Frame")
     root.Name, root.Size, root.BackgroundTransparency, root.Parent = "SafeArea", UDim2.fromScale(1, 1), 1, gui
     self.root = root
-    label(root, "Build", "V5 DEVELOPMENT", UDim2.fromOffset(150, 16), UDim2.new(0, 14, 1, -20), 9, palette.muted)
+    label(root, "Build", "V6 / VISUAL DEVELOPMENT", UDim2.fromOffset(150, 16), UDim2.new(0, 14, 1, -20), 9, palette.muted)
     self.mission = panel(root, "Mission", UDim2.fromOffset(348, 132), UDim2.fromOffset(22, 70))
     self.brand = label(self.mission, "Brand", "LAST STOP   /   RESEARCH TRANSIT", UDim2.new(1, -28, 0, 20), UDim2.fromOffset(14, 10), 10, palette.cyan)
     self.title = label(self.mission, "Floor", "TERMINUS CONCOURSE", UDim2.new(1, -28, 0, 26), UDim2.fromOffset(14, 31), 16)

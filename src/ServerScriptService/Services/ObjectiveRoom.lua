@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local Environment = require(script.Parent.EnvironmentService)
+local Pbr = require(script.Parent.PbrMaterialService)
 local SubwayCycle = require(game:GetService("ReplicatedStorage").Shared.Util.SubwayCycle)
 local Room = {}
 Room.__index = Room
@@ -149,6 +150,7 @@ function Room:Start()
     else
         self.model = Environment.UpgradeHospital(assets.Floors.Hospital:Clone())
     end
+    Pbr:Apply(self.model)
     self.model:PivotTo(CFrame.new(self._floorService._floorOrigin))
     self.model.Name = self.definition.Template
     self.model:SetAttribute("SourceTemplate", "ServerStorage.LastStopAssets / " .. self.definition.Template)
@@ -210,7 +212,7 @@ function Room:Start()
             "Recover the quarantined archive case.", "Carry the archive case back to the elevator receiver."}
         self:_target("Fuse", serviceRoute and Vector3.new(19, 3.1, -1) or Vector3.new(-29, 3.1, -1), serviceRoute and "Take power cell" or "Take power cell", serviceRoute and "SERVICE CORRIDOR / POWER" or "WEST WARD / POWER", 1)
         self:_target("Power", Vector3.new(29, 4.2, 17), "Install power cell", "IMAGING / POWER", 2, 2)
-        self:_target("ControlA", Vector3.new(-13, 3, 5), "Hold signal", "WARD / CONTROL A", 3, 1)
+        self:_target("ControlA", Vector3.new(-33.6, 3.4, 9), "Hold signal", "WARD / CONTROL A", 3, 1)
         self:_target("ControlB", Vector3.new(13, 3, 9), "Hold signal", "IMAGING / CONTROL B", 3, 1)
         self:_target("Sample", Vector3.new(25, 4.1, -23), "Recover archive case", "QUARANTINED ARCHIVE", 4, 2)
         self:_target("Delivery", Vector3.new(4, 3, 28), "Deliver archive", "ELEVATOR RECEIVER", 5, 2)

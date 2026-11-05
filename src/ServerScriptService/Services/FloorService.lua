@@ -5,7 +5,14 @@ local TweenService = game:GetService("TweenService")
 local Pbr = require(script.Parent.PbrMaterialService)
 local FloorService = {}
 FloorService.__index = FloorService
-local BUILD = "V5 / DEVELOPMENT"
+local BUILD = "V6 / VISUAL DEVELOPMENT"
+local amber = Color3.fromRGB(246, 168, 66)
+local dark = Color3.fromRGB(24, 36, 44)
+local INDICATOR_MODE_CLOSED = "closed"
+local INDICATOR_MODE_OPEN = "open"
+local INDICATOR_MODE_TRAVEL = "travel"
+local INDICATOR_DOT_COLORS = {amber, dark, dark}
+local INDICATOR_TRAVEL_COLORS = {amber, amber, cyan}
 local function need(parent, name, class)
 	local child = parent:FindFirstChild(name)
 	assert(child and child:IsA(class), ("[LAST STOP] Missing %s %s.%s; run node tools/build-prefabs.mjs then rojo build default.project.json."):format(class,parent:GetFullName(),name))
@@ -34,7 +41,7 @@ local function prepareDoors(model)
 end
 function FloorService.new(options)
 	options=options or {}
-	return setmetatable({_worldName=options.WorldName or "LastStopWorld",_floorOrigin=options.FloorOrigin or Vector3.new(0,0,700),_doorTweens={},_doorGeneration=0},FloorService)
+	return setmetatable({_worldName=options.WorldName or "LastStopWorld",_floorOrigin=options.FloorOrigin or Vector3.new(0,0,700),_doorTweens={},_doorGeneration=0,_indicatorDots={},_indicatorRings={},_indicatorGeneration=0,_indicatorMode=INDICATOR_MODE_CLOSED},FloorService)
 end
 function FloorService:BuildWorld()
 	local lobby,elevator=clone(library(),"Lobby"),clone(library(),"Elevator")
@@ -64,10 +71,57 @@ function FloorService:BuildWorld()
 		DoorClosed={Left=doors.Left.CFrame,Right=doors.Right.CFrame},
 		DoorOpen={Left=doors.Left.CFrame*CFrame.new(-9.8,0,0),Right=doors.Right.CFrame*CFrame.new(9.8,0,0)},
 		Display=need(elevator,"FloorDisplay","BasePart")}
+	-- Named indicator dots sit proud of the bezel so they can be painted and
+	-- chased without z-fighting; cache them once at build time.
+	for i=1,3 do
+		local dot=elevator:FindFirstChild("IndicatorDot"..i,true)
+		local ring=elevator:FindFirstChild("IndicatorRing"..i,true)
+		if dot then table.insert(self._indicatorDots,dot) end
+		if ring then table.insert(self._indicatorRings,ring) end
+	end
 	workspace:SetAttribute("LastStopBuild",BUILD)
 	self:SetLobbyElevator(true,"B0 / CONCOURSE")
 	print("[LAST STOP] "..BUILD.." loaded prefab Lobby + Elevator")
 	return self.lobby
+end
+local function dotColor(dot,color)
+	dot.Color=color
+	local light=dot:FindFirstChildOfClass("PointLight")
+	if light then light.Color=color end
+end
+function FloorService:_startIndicators(mode,text)
+	if not self.lobby then return end
+	self._indicatorGeneration+=1
+	local generation=self._indicatorGeneration
+	self._indicatorMode=mode
+	if text then display(self.lobby.Display,text) end
+	-- Travel mode runs a short-lived chase loop in the background. Each tick is
+	-- generation-checked so a newer door cycle stops it; it never yields the
+	-- door tween because the doors are animated independently in SetLobbyElevator.
+	if mode==INDICATOR_MODE_TRAVEL then
+		task.spawn(function()
+			local phase=0
+			while generation==self._indicatorGeneration and self._indicatorMode==INDICATOR_MODE_TRAVEL do
+				phase=(phase+.25)%1
+				for i=1,3 do
+					local offset=((i-1)/3+phase)%1
+					local color=offset<.34 and INDICATOR_TRAVEL_COLORS[1] or offset<.67 and INDICATOR_TRAVEL_COLORS[2] or INDICATOR_TRAVEL_COLORS[3]
+					local ring=self._indicatorRings[i]
+					if ring then ring.Transparency=color==dark and .9 or .2 end
+					dotColor(self._indicatorDots[i],color)
+				end
+				task.wait(.05)
+			end
+			-- Settle to the current closed state when the chase ends.
+			self:_startIndicators(INDICATOR_MODE_CLOSED,"LAST STOP")
+		end)
+	elseif mode==INDICATOR_MODE_OPEN then
+		-- Boarding: steady amber current-floor dot, others dimmed.
+		for i=1,3 do dotColor(self._indicatorDots[i], i==1 and amber or dark) end
+	elseif mode==INDICATOR_MODE_CLOSED then
+		-- Idle between runs: only the current-floor dot is lit.
+		for i=1,3 do dotColor(self._indicatorDots[i], i==1 and amber or dark) end
+	end
 end
 function FloorService:SetLobbyElevator(open,text)
 	if not self.lobby then return end
@@ -95,7 +149,11 @@ function FloorService:SetLobbyElevator(open,text)
 		local t=TweenService:Create(door,TweenInfo.new(.85,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut),{CFrame=positions[side]})
 		table.insert(self._doorTweens,t);t:Play()
 	end
-	if text then display(self.lobby.Display,text) end
+	if open then
+		self:_startIndicators(INDICATOR_MODE_OPEN,text or "BOARD NOW")
+	else
+		self:_startIndicators(INDICATOR_MODE_TRAVEL,text or "DESCENDING")
+	end
 end
 local ObjectiveRoom = require(script.Parent.ObjectiveRoom)
 function FloorService:CreateRoom(definition, seed)

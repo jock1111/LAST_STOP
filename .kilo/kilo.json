@@ -1,4 +1,5 @@
 {
+  "$schema": "https://app.kilo.ai/config.json",
   // Kilo Code MCP configuration for LAST STOP.
   // Connects Kilo to Roblox Studio's official Studio MCP server via the
   // Roblox-installed mcp.bat launcher, which resolves the current StudioMCP.exe.

@@ -57,30 +57,132 @@ end
 
 function Environment.UpgradeLobby(model)
     local art = Instance.new("Folder")
-    art.Name, art.Parent = "ImportedConcourse", model
-    for _, x in {-38, 38} do
-        for z = -24, 24, 8 do
-            local panel = Environment.Mesh(art, "wall-window", CFrame.new(x, 8, z) * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(8, 16, 2.4))
-            panel.CanCollide = false
+    art.Name, art.Parent = "ConcourseDressing", model
+
+    -- The elevator leaves slide to x=+/-14.58. A pocket wall on the lobby side
+    -- of the opening hides them without changing the door tween or blocking the
+    -- walkable centre. The header ties the pockets together.
+    for _, side in {-1, 1} do
+        local pocket = Environment.Part(art, "ElevatorPocket", Vector3.new(10, 14, .4),
+            CFrame.new(side * 14.5, 7, -16), dark, Enum.Material.Metal)
+        pocket.MaterialVariant = "MetalPlate"
+        local trim = Environment.Part(art, "PocketTrim", Vector3.new(.3, 14, .55),
+            CFrame.new(side * 9.55, 7, -15.95), Color3.fromRGB(145, 165, 171), Enum.Material.Metal)
+        trim.CanCollide, trim.CanQuery = false, false
+    end
+    local header = Environment.Part(art, "ElevatorHeader", Vector3.new(21, .8, .5),
+        CFrame.new(0, 14.1, -16), dark, Enum.Material.Metal)
+    header.MaterialVariant = "MetalPlate"
+    Environment.Sign(art, "DEEP ACCESS  /  B0 CONCOURSE", Vector3.new(0, 15.35, -15.72),
+        Vector3.new(12, 1.2, .14), cyan, 180)
+
+    -- Hazard band in front of the threshold.
+    for index = 0, 9 do
+        local stripe = Environment.Part(art, "ThresholdHazard", Vector3.new(2, .04, 1.1),
+            CFrame.new(-9 + index * 2, .03, -15.3), index % 2 == 0 and amber or dark,
+            Enum.Material.SmoothPlastic)
+        stripe.CanCollide, stripe.CanQuery = false, false
+    end
+
+    -- The boarding terminal stays exactly where the prefab authored it. The
+    -- kiosk, canopy, pendant and queue lane are additive so the console screen,
+    -- keys and proximity prompt remain aligned and usable.
+    local kiosk = Instance.new("Folder")
+    kiosk.Name, kiosk.Parent = "QueueKiosk", art
+    for _, x in {11.9, 16.1} do
+        local pylon = Environment.Part(kiosk, "KioskPylon", Vector3.new(.35, 4.6, 2.6),
+            CFrame.new(x, 2.3, -10), dark, Enum.Material.Metal)
+        pylon.MaterialVariant = "MetalPlate"
+    end
+    local canopy = Environment.Part(kiosk, "KioskCanopy", Vector3.new(4.8, .3, 2.8),
+        CFrame.new(14, 4.55, -10), dark, Enum.Material.Metal)
+    canopy.MaterialVariant = "MetalPlate"
+    local back = Environment.Part(kiosk, "KioskBack", Vector3.new(4.4, 4.4, .25),
+        CFrame.new(14, 2.3, -11.15), dark, Enum.Material.Metal)
+    back.MaterialVariant = "MetalPlate"
+    local mat = Environment.Part(kiosk, "KioskMat", Vector3.new(4.6, .05, 2.2),
+        CFrame.new(14, .03, -8.1), Color3.fromRGB(50, 60, 64), Enum.Material.Fabric)
+    mat.CanCollide, mat.CanQuery = false, false
+    Environment.Part(kiosk, "PendantCable", Vector3.new(.08, 3.2, .08),
+        CFrame.new(14, 16.6, -10), dark)
+    Environment.Light(kiosk, Vector3.new(14, 15.1, -10), amber, 18)
+
+    local lane = Instance.new("Folder")
+    lane.Name, lane.Parent = "QueueLane", art
+    local stripe = Environment.Part(lane, "QueueFloorStripe", Vector3.new(8.6, .03, 15),
+        CFrame.new(14, .035, 2.5), amber, Enum.Material.Neon)
+    stripe.Transparency, stripe.CanCollide, stripe.CanQuery = .45, false, false
+    for _, x in {9.5, 18.5} do
+        for index, z in {-5, 0, 5, 10} do
+            local post = Environment.Part(lane, "QueueStanchion", Vector3.new(.18, 3.2, .18),
+                CFrame.new(x, 1.6, z), Color3.fromRGB(145, 165, 171), Enum.Material.Metal)
+            post.CanCollide, post.CanQuery = false, false
+            local base = Environment.Part(lane, "StanchionBase", Vector3.new(.7, .12, .7),
+                CFrame.new(x, .08, z), dark, Enum.Material.Metal)
+            base.CanCollide, base.CanQuery = false, false
+            if index < 4 then
+                local belt = Environment.Part(lane, "QueueBelt", Vector3.new(.06, .12, 5),
+                    CFrame.new(x, 3.05, z + 2.5), Color3.fromRGB(120, 40, 38), Enum.Material.Fabric)
+                belt.CanCollide, belt.CanQuery = false, false
+            end
         end
     end
-    for _, x in {-25, 25} do
-        Environment.Mesh(art, "display-wall-wide", CFrame.new(x, 6, -32), Vector3.new(12, 8, 3))
-        Environment.Light(art, Vector3.new(x, 14, -24), cyan, 28)
-        for z = -12, 12, 12 do
-            Environment.Mesh(art, "container-tall", CFrame.new(x > 0 and 34 or -34, 3.6, z))
+
+    -- Service-track freight and the east-gallery maintenance bay give the
+    -- concourse a working transit-hub history beyond the boarding kiosk.
+    local service = Instance.new("Folder")
+    service.Name, service.Parent = "ServiceFreight", art
+    local flatbed = Environment.Part(service, "FreightFlatbed", Vector3.new(7, .5, 4.5),
+        CFrame.new(-34, .35, 10), Color3.fromRGB(95, 111, 119), Enum.Material.Metal)
+    flatbed.MaterialVariant = "MetalPlate"
+    for _, dx in {-2.5, 0, 2.5} do
+        for _, dz in {-1.6, 1.6} do
+            local wheel = Environment.Part(service, "FreightWheel", Vector3.new(.55, .55, .35),
+                CFrame.new(-34 + dx, .1, 10 + dz), Color3.fromRGB(27, 32, 35), Enum.Material.Rubber)
+            wheel.CanCollide, wheel.CanQuery = false, false
         end
     end
-    Environment.Mesh(art, "computer-system", CFrame.new(14, 2.4, -11))
-    model.QueueConsole.Transparency = 1
-    model.QueueConsole.CFrame = CFrame.new(14, 3.4, -7)
-    model.QueueConsole.CanCollide = false
-    model.QueueConsole.CanQuery = false
-    for z = -8, 24, 8 do
-        local floor = Environment.Mesh(art, "floor-panel", CFrame.new(0, -.4, z), Vector3.new(14, .8, 8))
-        floor.CanCollide = false
+    for _, entry in {{-35.2, 1.8, 9, 2.4}, {-32.6, 1.5, 10.5, 2.1}, {-34.2, 3.9, 9.6, 1.8}} do
+        local crate = Environment.Part(service, "FreightCrate", Vector3.one * entry[4],
+            CFrame.new(entry[1], entry[2], entry[3]), Color3.fromRGB(96, 78, 52), Enum.Material.Wood)
+        crate.CanCollide, crate.CanQuery = false, false
+        local strap = Environment.Part(service, "CrateStrap", Vector3.new(entry[4] + .04, .12, .18),
+            CFrame.new(entry[1], entry[2], entry[3]), Color3.fromRGB(40, 44, 46), Enum.Material.Metal)
+        strap.CanCollide, strap.CanQuery = false, false
     end
-    Environment.Sign(art, "CONTAINMENT TRANSIT  /  AUTHORIZED CREW", Vector3.new(0, 13, -16), Vector3.new(25, 1.8, .15))
+    local puddle = Environment.Part(service, "ServicePuddle", Vector3.new(3, .03, 2),
+        CFrame.new(-30, .03, 16), Color3.fromRGB(40, 70, 74), Enum.Material.Glass)
+    puddle.Transparency, puddle.CanCollide, puddle.CanQuery = .35, false, false
+
+    local gallery = Instance.new("Folder")
+    gallery.Name, gallery.Parent = "GalleryMaintenance", art
+    local bench = Environment.Part(gallery, "WorkbenchTop", Vector3.new(2.4, .3, 6),
+        CFrame.new(36.5, 3, 0), Color3.fromRGB(120, 128, 126), Enum.Material.Wood)
+    bench.CanCollide, bench.CanQuery = false, false
+    for _, dx in {-1, 1} do
+        for _, dz in {-2.6, 2.6} do
+            local leg = Environment.Part(gallery, "WorkbenchLeg", Vector3.new(.22, 3, .22),
+                CFrame.new(36.5 + dx, 1.5, dz), Color3.fromRGB(95, 111, 119), Enum.Material.Metal)
+            leg.CanCollide, leg.CanQuery = false, false
+        end
+    end
+    local pegboard = Environment.Part(gallery, "Pegboard", Vector3.new(.12, 5, 6),
+        CFrame.new(39.35, 5, 0), Color3.fromRGB(70, 58, 50), Enum.Material.Wood)
+    pegboard.CanCollide, pegboard.CanQuery = false, false
+    for _, y in {4.2, 5.2, 6.2} do
+        local tool = Environment.Part(gallery, "HangingTool", Vector3.new(.12, .9, .18),
+            CFrame.new(39.2, y, -1.2), Color3.fromRGB(145, 165, 171), Enum.Material.Metal)
+        tool.CanCollide, tool.CanQuery = false, false
+    end
+    local locker = Environment.Part(gallery, "ToolLocker", Vector3.new(1.6, 6, 2),
+        CFrame.new(36.5, 3, 4.8), Color3.fromRGB(70, 88, 94), Enum.Material.Metal)
+    locker.MaterialVariant = "MetalPlate"
+    locker.CanCollide, locker.CanQuery = false, false
+    Environment.Part(gallery, "LampCable", Vector3.new(.08, 8, .08),
+        CFrame.new(36.5, 14, 0), dark)
+    Environment.Light(gallery, Vector3.new(36.5, 10, 0), amber, 14)
+    Environment.Sign(gallery, "MAINTENANCE  /  AUTHORIZED CREW", Vector3.new(33.5, 7, -6),
+        Vector3.new(5, 1.6, .14), amber, 90)
 end
 
 local function leak(parent, position, color)
@@ -98,87 +200,76 @@ end
 
 function Environment.UpgradeHospital(model)
     local origin = model:GetPivot()
-    local identifier = model:FindFirstChild("HospitalIdentifier", true)
-    if identifier then identifier.CFrame = origin * CFrame.new(0, 10.5, 33.5) end
     local art = Instance.new("Folder")
-    art.Name, art.Parent = "ImportedArchitecture", model
-    local replacements = {}
-    for _, part in model:GetDescendants() do
-        if part:IsA("BasePart") and part.Name == "Wall" then
-            table.insert(replacements, part)
-        end
+    art.Name, art.Parent = "ClinicalDressing", model
+
+    -- The authored V6 clinical architecture, trim, beds, curtains, nurses'
+    -- station and wall control stay untouched. Runtime only adds story props in
+    -- clear floor space so no objective or corridor is obstructed.
+    local gurney = Environment.Part(art, "GurneyFrame", Vector3.new(2.2, .4, 6.2),
+        origin * CFrame.new(-18, 1.1, -15) * CFrame.Angles(0, math.rad(90), math.rad(8)),
+        Color3.fromRGB(120, 128, 126), Enum.Material.Metal)
+    gurney.CanCollide, gurney.CanQuery = false, false
+    for _, dx in {-2.6, 2.6} do
+        local wheel = Environment.Part(art, "GurneyWheel", Vector3.new(.5, .5, .5),
+            origin * CFrame.new(-18 + dx, .35, -15), Color3.fromRGB(27, 32, 35), Enum.Material.Rubber)
+        wheel.CanCollide, wheel.CanQuery = false, false
     end
-    for _, part in replacements do
-        -- Mesh wall panels retain the existing collision/layout contract.
-        local width = math.max(part.Size.X, part.Size.Z)
-        local yaw = part.Size.Z > part.Size.X and math.pi / 2 or 0
-        local count = math.max(1, math.ceil(width / 8))
-        for index = 1, count do
-            local offset = (index - .5) * width / count - width / 2
-            local cframe = CFrame.new(part.Position) * CFrame.Angles(0, yaw, 0) * CFrame.new(offset, 0, 0)
-            local mesh = Environment.Mesh(art, "wall", cframe, Vector3.new(width / count, part.Size.Y, .8))
-            mesh.CanCollide = false
-            mesh.Color = Color3.fromRGB(150, 164, 158)
-        end
-        part.Transparency = 1
-    end
-    local props = {
-        {"bed-single", -23, 2, -8}, {"bed-single", -23, 2, 5},
-        {"computer-wide", 28, 3, 10}, {"computer-system", 19, 3, -28},
-        {"container-tall", -29, 3.6, 24}, {"container", 29, 2.4, 27},
-    }
-    for _, entry in props do
-        Environment.Mesh(art, entry[1], origin * CFrame.new(entry[2], entry[3], entry[4]))
-    end
-    -- Abandoned clinic dressing: overturned gurneys, a toppled IV stand, a dark
-    -- nurses' station and peeling paint bands so the ward reads as left behind.
-    local grime = Color3.fromRGB(96, 104, 92)
-    for index, z in {-16, 14} do
-        local gurney = Environment.Part(art, "GurneyFrame", Vector3.new(2.2, .4, 6.2), origin * CFrame.new(-14 + index * 3, 1.1, z) * CFrame.Angles(0, 0, math.rad(index == 1 and 78 or -64)), Color3.fromRGB(120, 128, 126), Enum.Material.Metal)
-        gurney.CanCollide = false
-    end
-    local stand = Environment.Part(art, "IVStand", Vector3.new(.3, 6, .3), origin * CFrame.new(-6, 3, 14) * CFrame.Angles(0, 0, math.rad(82)), Color3.fromRGB(190, 190, 186), Enum.Material.Metal)
-    stand.CanCollide = false
-    Environment.Part(art, "NursesStation", Vector3.new(10, 3, 3), origin * CFrame.new(24, 1.5, -14), Color3.fromRGB(70, 58, 50), Enum.Material.Wood)
-    for _, z in {-30, -10, 10, 30} do
-        local band = Environment.Part(art, "PeelingPaint", Vector3.new(.2, 2.4, 6), origin * CFrame.new(-17.8, 6.2, z), grime, Enum.Material.Concrete)
-        band.CanCollide = false
-        band.Transparency = .35
-    end
-    for _, x in {-29, -19} do
-        Environment.Mesh(art, "container", origin * CFrame.new(x, 1.2, -1), Vector3.new(3, 2.4, 2.4))
-    end
-    for z = -29, 27, 8 do
-        local mesh = Environment.Mesh(art, "floor-panel", origin * CFrame.new(0, -.55, z), Vector3.new(12, 1, 8))
-        mesh.CanCollide = false
-    end
-    Environment.Sign(art, "SAINT ORIN   /   CONTAINMENT WARD", origin:PointToWorldSpace(Vector3.new(0, 9, -35)), Vector3.new(13, 1.4, .1))
-    Environment.Sign(art, "CLOSED  -  NO ADMISSIONS", origin:PointToWorldSpace(Vector3.new(-25, 7, 33)), Vector3.new(9, 1.2, .1), Color3.fromRGB(182, 74, 64))
+    local stand = Environment.Part(art, "IVStand", Vector3.new(.3, 6, .3),
+        origin * CFrame.new(-31.5, 3, 7), Color3.fromRGB(190, 190, 186), Enum.Material.Metal)
+    stand.CanCollide, stand.CanQuery = false, false
+    local bag = Environment.Part(art, "IVBag", Vector3.new(.8, 1.3, .35),
+        origin * CFrame.new(-31.5, 5.5, 7), Color3.fromRGB(210, 219, 208), Enum.Material.Glass)
+    bag.Transparency, bag.CanCollide, bag.CanQuery = .3, false, false
+
+    local linen = Environment.Part(art, "LinenCart", Vector3.new(2.4, 2.2, 1.6),
+        origin * CFrame.new(-32, 1.1, -14), Color3.fromRGB(120, 128, 126), Enum.Material.Metal)
+    linen.CanCollide, linen.CanQuery = false, false
+    local linenTop = Environment.Part(art, "LinenBundle", Vector3.new(2.2, .7, 1.4),
+        origin * CFrame.new(-32, 2.55, -14), Color3.fromRGB(210, 219, 208), Enum.Material.Fabric)
+    linenTop.CanCollide, linenTop.CanQuery = false, false
+
+    -- Discharge boundary is readable from outside the damage lane.
     for _, x in {-5.5, 5.5} do
-        local strip = Environment.Part(art, "DischargeBoundary", Vector3.new(.15, .1, 24), origin * CFrame.new(x, .15, -12), amber, Enum.Material.Neon)
-        strip.CanCollide = false
+        local strip = Environment.Part(art, "DischargeBoundary", Vector3.new(.15, .1, 24),
+            origin * CFrame.new(x, .15, -12), amber, Enum.Material.Neon)
+        strip.CanCollide, strip.CanQuery = false, false
         strip:SetAttribute("HazardIndicator", true)
     end
-    Environment.Sign(art, "DISCHARGE ZONE  /  USE SIDE WARDS DURING ALARM", origin:PointToWorldSpace(Vector3.new(0, 8, -4)), Vector3.new(12, 1.2, .1), amber)
-    -- Clinical atmosphere: tiled wainscot, ceiling light fittings the power flicker
-    -- drives (tagged FlickerLight), a crash cart and an oxygen cart for medical detail.
-    local tile = Color3.fromRGB(176, 186, 184)
-    for _, x in {-17.8, 17.8} do
-        local wainscot = Environment.Part(art, "TiledWainscot", Vector3.new(.2, 3.2, 58), origin * CFrame.new(x, 2.4, 0), tile, Enum.Material.Marble)
-        wainscot.CanCollide = false
+    for _, z in {-.5, -23.5} do
+        local strip = Environment.Part(art, "DischargeThreshold", Vector3.new(10, .1, .3),
+            origin * CFrame.new(0, .15, z), amber, Enum.Material.Neon)
+        strip.CanCollide, strip.CanQuery = false, false
+        strip:SetAttribute("HazardIndicator", true)
     end
-    for _, z in {-26, -6, 14} do
-        for _, x in {-8, 8} do
-            local fitting = Environment.Part(art, "CeilingLight", Vector3.new(2.4, .3, 4), origin * CFrame.new(x, 9.6, z), Color3.fromRGB(230, 236, 230), Enum.Material.Neon)
-            fitting.CanCollide = false
-            fitting:SetAttribute("FlickerLight", true)
+    Environment.Sign(art, "DISCHARGE ZONE  /  USE SIDE WARDS DURING ALARM",
+        origin:PointToWorldSpace(Vector3.new(0, 8, -4)), Vector3.new(12, 1.2, .1), amber, 180)
+
+    -- Existing ceiling diffusers become the flicker source, so no duplicate
+    -- fittings are layered over the authored room lighting.
+    local tagged = 0
+    for _, part in model:GetDescendants() do
+        if tagged >= 10 then break end
+        if part:IsA("BasePart") and part.Name == "Diffuser" then
+            part:SetAttribute("FlickerLight", true)
+            tagged += 1
         end
     end
-    local crash = Environment.Part(art, "CrashCart", Vector3.new(2.2, 3, 1.4), origin * CFrame.new(26, 1.5, 3), Color3.fromRGB(190, 40, 40), Enum.Material.Metal)
-    crash.CanCollide = false
-    local oxygen = Environment.Part(art, "OxygenCart", Vector3.new(1.2, 3.4, 1.2), origin * CFrame.new(-26, 1.7, -22), Color3.fromRGB(50, 110, 70), Enum.Material.Metal)
-    oxygen.CanCollide = false
-    -- Thin decorative curtains/tiles must not hide interactive prompts.
+
+    -- Foyer mobility prop, clear of the delivery receiver and elevator approach.
+    local wheelchair = Environment.Part(art, "WheelchairSeat", Vector3.new(1.6, .3, 1.8),
+        origin * CFrame.new(10, 1.4, 25), Color3.fromRGB(70, 88, 94), Enum.Material.Fabric)
+    wheelchair.CanCollide, wheelchair.CanQuery = false, false
+    local backrest = Environment.Part(art, "WheelchairBack", Vector3.new(1.6, 1.6, .2),
+        origin * CFrame.new(10, 2.3, 25.8), Color3.fromRGB(70, 88, 94), Enum.Material.Fabric)
+    backrest.CanCollide, backrest.CanQuery = false, false
+    for _, dx in {-1, 1} do
+        local wheel = Environment.Part(art, "WheelchairWheel", Vector3.new(.2, 1.4, 1.4),
+            origin * CFrame.new(10 + dx, .8, 25), Color3.fromRGB(27, 32, 35), Enum.Material.Rubber)
+        wheel.CanCollide, wheel.CanQuery = false, false
+    end
+
+    -- Thin decorative geometry must not intercept objective line-of-sight rays.
     for _, part in model:GetDescendants() do
         if part:IsA("BasePart") and not part.CanCollide then part.CanQuery = false end
     end

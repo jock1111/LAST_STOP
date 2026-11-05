@@ -1,6 +1,6 @@
 # LAST STOP — V4 Containment
 
-A cooperative Roblox horror expedition with a persistent transit hub, an industrial hospital, a flooded laboratory and an abandoned subway. Open **LAST_STOP.rbxlx** in Roblox Studio and press Play. The build marker is **V5 DEVELOPMENT**.
+A cooperative Roblox horror expedition with a persistent transit hub, an industrial hospital, a flooded laboratory and an abandoned subway. Open **LAST_STOP.rbxlx** in Roblox Studio and press Play. The build marker is **V6 / VISUAL DEVELOPMENT**.
 
 ## Play
 
