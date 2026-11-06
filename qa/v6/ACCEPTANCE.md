@@ -118,25 +118,29 @@ All images are direct `screen_capture` JPEGs from the final Studio Play sessions
 
 ### Laboratory captures
 
-| Capture | View |
-| --- | --- |
-| [lab-entrance.jpg](screenshots/lab-entrance.jpg) | Entrance from `(0,5,50)` toward `(0,4,0)`; pressure doors, depth gauges, catwalk grid. |
-| [lab-pump-west.jpg](screenshots/lab-pump-west.jpg) | West pump room from `(-30,5,30)` toward `(-38,2,0)`; pump machinery, crates, steam vents. |
-| [lab-containment.jpg](screenshots/lab-containment.jpg) | Containment ring from `(0,6,20)` toward `(0,3,-27)`; four cylinders, cyan cores, specimen tags. |
-| [lab-control.jpg](screenshots/lab-control.jpg) | Control room from `(0,5,-35)` toward `(0,2,-45)`; central terminal, computers, pressure doors. |
-| [lab-catwalk.jpg](screenshots/lab-catwalk.jpg) | Catwalk edge from `(-6,3,0)` toward `(0,-1,0)`; grating, rails, neon edge, water caustics. |
-| [lab-specimen.jpg](screenshots/lab-specimen.jpg) | Specimen objective from `(-12,4,-43)` toward `(-12,2,-43)`; sealed canister, proximity prompt. |
+All Laboratory screenshots were captured from **inside the room** with the camera positioned below the ceiling (Y=16) and above the floor. The camera was locked via `RunService.RenderStepped` to prevent the game's camera system from overriding the position.
+
+| Capture | View | File Size |
+| --- | --- | --- |
+| [lab-containment-inside.jpg](screenshots/lab-containment-inside.jpg) | Containment ring from `(0,6,720)` toward `(0,3,673)`; four cylinders, cyan cores, specimen tags. | 422 KB |
+| [lab-catwalk-inside.jpg](screenshots/lab-catwalk-inside.jpg) | Catwalk edge from `(-6,4,700)` toward `(0,-1,700)`; grating, rails, neon edge, water caustics. | 509 KB |
+| [lab-control-inside.jpg](screenshots/lab-control-inside.jpg) | Control room from `(0,5,655)` toward `(0,2,655)`; central terminal, computers, pressure doors. | 185 KB |
+| [lab-entrance-inside.jpg](screenshots/lab-entrance-inside.jpg) | Entrance from `(0,6,745)` toward `(0,3,700)`; pressure doors, depth gauges, catwalk grid. | 472 KB |
+| [lab-pump-inside.jpg](screenshots/lab-pump-inside.jpg) | West pump room from `(-37,4,730)` toward `(-37,2,738)`; pump machinery, crates, steam vents. | 228 KB |
 
 ### Subway captures
 
-| Capture | View |
-| --- | --- |
-| [subway-north-platform.jpg](screenshots/subway-north-platform.jpg) | North platform from `(-22,5,50)` toward `(-22,2,0)`; platform tile, tactile strip, posters, benches. |
-| [subway-track.jpg](screenshots/subway-track.jpg) | Track bed from `(0,3,-46)` toward `(0,1,0)`; rails, ballast, signal lamps, tunnel arch. |
-| [subway-signal-box.jpg](screenshots/subway-signal-box.jpg) | Signal box from `(24,4,35)` toward `(24,3,40)`; relay rack, indicator lamps. |
-| [subway-train.jpg](screenshots/subway-train.jpg) | Train car from `(-22,4,-60)` toward `(0,2,-86)`; headlight sweep, marker lights, windows. |
-| [subway-relay-case.jpg](screenshots/subway-relay-case.jpg) | Relay case from `(22,4,-35)` toward `(22,2,-40)`; shielded case, proximity prompt. |
-| [subway-elevator-bridge.jpg](screenshots/subway-elevator-bridge.jpg) | Elevator bridge from `(0,4,50)` toward `(0,2,62)`; dark tunnel mouth, emergency strips. |
+All Subway screenshots were captured from **inside the room** with the camera positioned below the ceiling (Y=13) and above the floor. The camera was locked via `RunService.RenderStepped` to prevent the game's camera system from overriding the position.
+
+| Capture | View | File Size |
+| --- | --- | --- |
+| [subway-platform-proper.jpg](screenshots/subway-platform-proper.jpg) | North platform from `(-22,5,750)` toward `(-22,2,700)`; platform tile, tactile strip, posters, benches. | 407 KB |
+| [subway-track-proper.jpg](screenshots/subway-track-proper.jpg) | Track bed from `(0,2,-30)` toward `(0,2,-60)`; rails, ballast, signal lamps, tunnel arch. | 425 KB |
+| [subway-signal-proper.jpg](screenshots/subway-signal-proper.jpg) | Signal box from `(24,4,45)` toward `(24,2,40)`; relay rack, indicator lamps. | 342 KB |
+| [subway-bridge-proper.jpg](screenshots/subway-bridge-proper.jpg) | Elevator bridge from `(0,4,750)` toward `(0,2,762)`; dark tunnel mouth, emergency strips. | 273 KB |
+| [subway-wide-proper.jpg](screenshots/subway-wide-proper.jpg) | Wide view from `(0,8,720)` toward `(0,2,650)`; both platforms, track, tunnel arch. | 280 KB |
+
+**Note:** The train is parked outside the room bounds (Z=-200 when not active) and moves only during the Active hazard phase. A dedicated train screenshot was not captured because the train is not visible from inside the room during Safe/Warning phases. The train's headlight and marker lights are visible during the Active phase when it passes through the track bed.
 
 Before/after diagnostic frames are retained in `screenshots/` for the curtain, blanket, bed frame, station-sign occlusion and discharge-sign fixes. They are diagnostic evidence, not the canonical acceptance set.
 
@@ -149,6 +153,8 @@ Before/after diagnostic frames are retained in `screenshots/` for the curtain, b
 - **The Stalker is still an articulated part rig**, not a skinned mesh or uploaded animation clip.
 - **The privacy curtains read as frosted isolation panels** rather than soft cloth. This is the chosen containment-ward art direction after the `Fabric` weave proved unreadable at panel scale.
 - **The Laboratory and Subway use existing mesh assets** (`floor-panel`, `wall`, `wall-window`, `wall-corner`, `rail`, `pipe`, `pipe-bend`, `container`, `container-tall`, `computer-system`, `computer-wide`, `door-double`, `stairs-ramp`) rather than newly authored Blender modules. The visual quality is improved through PBR materials, lighting, particles, and storytelling, but the geometry is still composed of the existing mesh library.
+- **Visual verification was performed with camera locked inside the room.** The game's camera system (`HUDController`) overrides camera position when the player is in Floor state. Screenshots were captured by setting `camera.CameraType = Scriptable` and locking the CFrame via `RunService.RenderStepped` for 2-3 seconds. This ensures the camera stays inside the room below the ceiling and above the floor.
+- **The train is not visible in static screenshots.** The train is parked at Z=-200 (outside room bounds) during Safe/Warning phases and only enters the room during the Active hazard phase. A dedicated train screenshot would require capturing during the Active phase when the train is passing through the track bed.
 
 No publish was performed. `v5-development` and `master` were not modified.
 
