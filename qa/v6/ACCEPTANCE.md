@@ -118,27 +118,30 @@ All images are direct `screen_capture` JPEGs from the final Studio Play sessions
 
 ### Laboratory captures
 
-All Laboratory screenshots were captured from **inside the room** with the camera positioned below the ceiling (Y=16) and above the floor. The camera was locked via `RunService.RenderStepped` to prevent the game's camera system from overriding the position.
+All Laboratory screenshots were captured from **inside the room** with the camera positioned below the ceiling (Y=16) and above the floor. The camera was locked via `RunService.RenderStepped` to prevent the game's camera system from overriding the position. Each canonical frame was pixel-sampled and raycast-checked where noted.
 
-| Capture | View | File Size |
-| --- | --- | --- |
-| [lab-containment-inside.jpg](screenshots/lab-containment-inside.jpg) | Containment ring from `(0,6,720)` toward `(0,3,673)`; four cylinders, cyan cores, specimen tags. | 422 KB |
-| [lab-catwalk-inside.jpg](screenshots/lab-catwalk-inside.jpg) | Catwalk edge from `(-6,4,700)` toward `(0,-1,700)`; grating, rails, neon edge, water caustics. | 509 KB |
-| [lab-control-inside.jpg](screenshots/lab-control-inside.jpg) | Control room from `(0,5,655)` toward `(0,2,655)`; central terminal, computers, pressure doors. | 185 KB |
-| [lab-entrance-inside.jpg](screenshots/lab-entrance-inside.jpg) | Entrance from `(0,6,745)` toward `(0,3,700)`; pressure doors, depth gauges, catwalk grid. | 472 KB |
-| [lab-pump-inside.jpg](screenshots/lab-pump-inside.jpg) | West pump room from `(-37,4,730)` toward `(-37,2,738)`; pump machinery, crates, steam vents. | 228 KB |
+| Capture | View | Verification | File Size |
+| --- | --- | --- | --- |
+| [lab-cylinder-fresh.jpg](screenshots/lab-cylinder-fresh.jpg) | Containment cell from `(0,6,700)` toward `(-25,4,673)`; glass cylinder, plinth, specimen tag. | Raycast hit `container-tall` at `(-22.2, 4.2, 676)`; 442 KB JPEG. | 442 KB |
+| [lab-containment-fresh.jpg](screenshots/lab-containment-fresh.jpg) | Containment/control sightline from `(0,6,720)` toward `(0,3,673)`; cylinders, catwalk grid, central console. | Raycast hit `computer-wide` at `(0, 2.0, 657.1)`; 404 KB JPEG. | 404 KB |
+| [lab-catwalk-fresh.jpg](screenshots/lab-catwalk-fresh.jpg) | Catwalk edge from `(-6,4,700)` toward `(0,-1,700)`; grating, rails, neon edge, water caustics. | Raycast hit `floor-panel` at `(-1.2, 0, 700)`; 491 KB JPEG. | 491 KB |
+| [lab-control-fresh.jpg](screenshots/lab-control-fresh.jpg) | Control console from `(0,6,672)` toward `(0,2,648)`; `computer-wide`, side computers, pressure doors. | Raycast hit `computer-wide` at `(0, 3.5, 657.1)`; 312 KB JPEG. | 312 KB |
+| [lab-pump-fresh.jpg](screenshots/lab-pump-fresh.jpg) | West pump room from `(-31,5,744)` toward `(-37,3,736)`; pump machinery, computer-system, crates. | Raycast hit `computer-system` at `(-36.4, 3.2, 736.8)`; 405 KB JPEG. | 405 KB |
+| [lab-entrance-fresh.jpg](screenshots/lab-entrance-fresh.jpg) | Entrance/elevator wall from `(0,6,738)` toward `(0,3,758)`; doors, back wall, return zone. | Raycast hit `BackWall` at `(0, 1.0, 771.0)`; 334 KB JPEG. | 334 KB |
 
 ### Subway captures
 
-All Subway screenshots were captured from **inside the room** with the camera positioned below the ceiling (Y=13) and above the floor. The camera was locked via `RunService.RenderStepped` to prevent the game's camera system from overriding the position.
+All Subway screenshots were captured from **inside the room** with the camera positioned below the ceiling (Y=13) and above the floor. The camera was locked via `RunService.RenderStepped` to prevent the game's camera system from overriding the position. The platform frame was raycast-checked; all canonical frames were pixel-sampled.
 
 | Capture | View | File Size |
 | --- | --- | --- |
-| [subway-platform-proper.jpg](screenshots/subway-platform-proper.jpg) | North platform from `(-22,5,750)` toward `(-22,2,700)`; platform tile, tactile strip, posters, benches. | 407 KB |
-| [subway-track-proper.jpg](screenshots/subway-track-proper.jpg) | Track bed from `(0,2,-30)` toward `(0,2,-60)`; rails, ballast, signal lamps, tunnel arch. | 425 KB |
-| [subway-signal-proper.jpg](screenshots/subway-signal-proper.jpg) | Signal box from `(24,4,45)` toward `(24,2,40)`; relay rack, indicator lamps. | 342 KB |
-| [subway-bridge-proper.jpg](screenshots/subway-bridge-proper.jpg) | Elevator bridge from `(0,4,750)` toward `(0,2,762)`; dark tunnel mouth, emergency strips. | 273 KB |
-| [subway-wide-proper.jpg](screenshots/subway-wide-proper.jpg) | Wide view from `(0,8,720)` toward `(0,2,650)`; both platforms, track, tunnel arch. | 280 KB |
+| [subway-platform-view.jpg](screenshots/subway-platform-view.jpg) | West platform from `(0,6,720)` toward `(-22,2,720)`; platform edge, containers, tactile strip. Raycast hit `container-tall` at `(-14, 3.45, 720)`. | 255 KB |
+| [subway-track-view.jpg](screenshots/subway-track-view.jpg) | Track bed from `(0,3,0)` toward `(0,2,-50)`; rails, ballast, signal lamps, tunnel arch. | 440 KB |
+| [subway-signal-view.jpg](screenshots/subway-signal-view.jpg) | Signal box from `(24,4,45)` toward `(24,2,40)`; relay rack, indicator lamps. | 336 KB |
+| [subway-bridge-view.jpg](screenshots/subway-bridge-view.jpg) | Elevator bridge from `(0,4,750)` toward `(0,2,762)`; dark tunnel mouth, emergency strips. | 269 KB |
+| [subway-wide-view.jpg](screenshots/subway-wide-view.jpg) | Wide view from `(0,10,760)` toward `(0,2,600)`; both platforms, track, tunnel arch. | 329 KB |
+
+**Pixel verification:** luminance sampling found every canonical frame has more than 30% of sampled pixels and more than 20% of the center region above luminance 16. The Subway signal and wide frames are intentionally low-key but are not black; they still contain lit geometry and HUD. Earlier `*-inside.jpg` / `*-proper.jpg` / `*-view.jpg` diagnostic frames are retained in `screenshots/` but the tables above are the canonical acceptance set.
 
 **Note:** The train is parked outside the room bounds (Z=-200 when not active) and moves only during the Active hazard phase. A dedicated train screenshot was not captured because the train is not visible from inside the room during Safe/Warning phases. The train's headlight and marker lights are visible during the Active phase when it passes through the track bed.
 
@@ -153,7 +156,7 @@ Before/after diagnostic frames are retained in `screenshots/` for the curtain, b
 - **The Stalker is still an articulated part rig**, not a skinned mesh or uploaded animation clip.
 - **The privacy curtains read as frosted isolation panels** rather than soft cloth. This is the chosen containment-ward art direction after the `Fabric` weave proved unreadable at panel scale.
 - **The Laboratory and Subway use existing mesh assets** (`floor-panel`, `wall`, `wall-window`, `wall-corner`, `rail`, `pipe`, `pipe-bend`, `container`, `container-tall`, `computer-system`, `computer-wide`, `door-double`, `stairs-ramp`) rather than newly authored Blender modules. The visual quality is improved through PBR materials, lighting, particles, and storytelling, but the geometry is still composed of the existing mesh library.
-- **Visual verification was performed with camera locked inside the room.** The game's camera system (`HUDController`) overrides camera position when the player is in Floor state. Screenshots were captured by setting `camera.CameraType = Scriptable` and locking the CFrame via `RunService.RenderStepped` for 2-3 seconds. This ensures the camera stays inside the room below the ceiling and above the floor.
+- **Visual verification was performed with camera locked inside the room.** The game's camera system (`HUDController`) overrides camera position when the player is in Floor state. Screenshots were captured by setting `camera.CameraType = Scriptable` and locking the CFrame via `RunService.RenderStepped` for 3-4 seconds. This ensures the camera stays inside the room below the ceiling and above the floor. Canonical frames were also pixel-sampled for luminance so HUD-over-black captures cannot be mistaken for scenery.
 - **The train is not visible in static screenshots.** The train is parked at Z=-200 (outside room bounds) during Safe/Warning phases and only enters the room during the Active hazard phase. A dedicated train screenshot would require capturing during the Active phase when the train is passing through the track bed.
 
 No publish was performed. `v5-development` and `master` were not modified.
