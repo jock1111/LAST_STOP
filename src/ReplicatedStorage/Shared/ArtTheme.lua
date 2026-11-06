@@ -18,5 +18,12 @@ return {
 		PaintedSteel = { BaseMaterial = Enum.Material.Metal, StudsPerTile = 5, ColorMap = "rbxassetid://137105055040989", NormalMap = "rbxassetid://72038388556893", MetalnessMap = "rbxassetid://80777076182700", RoughnessMap = "rbxassetid://88399395045423" },
 		ChippedConcrete = { BaseMaterial = Enum.Material.Concrete, StudsPerTile = 4, ColorMap = "rbxassetid://80959961009929", NormalMap = "rbxassetid://80291856302301", MetalnessMap = "rbxassetid://80777076182700", RoughnessMap = "rbxassetid://77587300776452" },
 		MetalPlate = { BaseMaterial = Enum.Material.Metal, StudsPerTile = 5, ColorMap = "rbxassetid://137105055040989", NormalMap = "rbxassetid://72038388556893", MetalnessMap = "rbxassetid://91150503292713", RoughnessMap = "rbxassetid://88399395045423" },
+		-- Corroded steel for lab machinery, railings, and flooded-structure surfaces.
+		-- Reuses Poly Haven metal_plate maps with a tighter tile read for heavier rust detail.
+		CorrodedSteel = { BaseMaterial = Enum.Material.Metal, StudsPerTile = 3, ColorMap = "rbxassetid://137105055040989", NormalMap = "rbxassetid://72038388556893", MetalnessMap = "rbxassetid://91150503292713", RoughnessMap = "rbxassetid://88399395045423" },
+		-- Flooded concrete for basin and submerged walkway surfaces.
+		-- Reuses Poly Haven chipped_concrete maps with a finer tile read for wet concrete.
+		FloodedConcrete = { BaseMaterial = Enum.Material.Concrete, StudsPerTile = 3, ColorMap = "rbxassetid://80959961009929", NormalMap = "rbxassetid://80291856302301", MetalnessMap = "rbxassetid://80777076182700", RoughnessMap = "rbxassetid://77587300776452" },
+	-- Containment glass: no PBR maps, uses built-in Glass with tint directly.
 	},
 }

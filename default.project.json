@@ -89,6 +89,28 @@
           "NormalMap": "rbxassetid://72038388556893"
         },
         "$className": "MaterialVariant"
+      },
+      "CorrodedSteel": {
+        "$properties": {
+          "ColorMap": "rbxassetid://137105055040989",
+          "StudsPerTile": 3,
+          "RoughnessMap": "rbxassetid://88399395045423",
+          "BaseMaterial": "Metal",
+          "MetalnessMap": "rbxassetid://91150503292713",
+          "NormalMap": "rbxassetid://72038388556893"
+        },
+        "$className": "MaterialVariant"
+      },
+      "FloodedConcrete": {
+        "$properties": {
+          "ColorMap": "rbxassetid://80959961009929",
+          "StudsPerTile": 3,
+          "RoughnessMap": "rbxassetid://77587300776452",
+          "BaseMaterial": "Concrete",
+          "MetalnessMap": "rbxassetid://80777076182700",
+          "NormalMap": "rbxassetid://80291856302301"
+        },
+        "$className": "MaterialVariant"
       }
     },
     "TextChatService": {
