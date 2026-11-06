@@ -1,6 +1,6 @@
-Current acceptance is recorded in [v4/ACCEPTANCE.md](v4/ACCEPTANCE.md).
+Current acceptance is recorded in [v6/ACCEPTANCE.md](v6/ACCEPTANCE.md).
 
-The following report is archived V3 evidence.
+Earlier reports: [v5/ACCEPTANCE.md](v5/ACCEPTANCE.md), [v4/ACCEPTANCE.md](v4/ACCEPTANCE.md). The report below is archived V3 evidence.
 
 # Recovery V3 acceptance — 2026-11-03
 

@@ -15,7 +15,7 @@ All eight 1024×1024 maps below were uploaded through Studio Asset Manager under
 
 | Filename | Roblox image ID | Saved target property |
 | --- | ---: | --- |
-| chipped_concrete_diff_1k.jpg | 80959961009929 | MaterialService.ChippedConcrete.ColorMap |
+| chipped_concrete_diff_1k.jpg | 80959961009929 | MaterialService.ChippedConcrete.ColorMap (4 studs/tile) |
 | chipped_concrete_nor_gl_1k.jpg | 80291856302301 | MaterialService.ChippedConcrete.NormalMap |
 | chipped_concrete_rough_1k.png | 77587300776452 | MaterialService.ChippedConcrete.RoughnessMap |
 | chipped_concrete_metal_1k.png | 80777076182700 | MaterialService.ChippedConcrete.MetalnessMap; PaintedSteel.MetalnessMap |

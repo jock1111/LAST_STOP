@@ -71,7 +71,7 @@
       "ChippedConcrete": {
         "$properties": {
           "ColorMap": "rbxassetid://80959961009929",
-          "StudsPerTile": 8,
+          "StudsPerTile": 4,
           "RoughnessMap": "rbxassetid://77587300776452",
           "BaseMaterial": "Concrete",
           "MetalnessMap": "rbxassetid://80777076182700",

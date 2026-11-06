@@ -16,7 +16,7 @@ return {
 	-- Exact inventory IDs are documented in ART_ASSETS.md.
 	Pbr = {
 		PaintedSteel = { BaseMaterial = Enum.Material.Metal, StudsPerTile = 5, ColorMap = "rbxassetid://137105055040989", NormalMap = "rbxassetid://72038388556893", MetalnessMap = "rbxassetid://80777076182700", RoughnessMap = "rbxassetid://88399395045423" },
-		ChippedConcrete = { BaseMaterial = Enum.Material.Concrete, StudsPerTile = 8, ColorMap = "rbxassetid://80959961009929", NormalMap = "rbxassetid://80291856302301", MetalnessMap = "rbxassetid://80777076182700", RoughnessMap = "rbxassetid://77587300776452" },
+		ChippedConcrete = { BaseMaterial = Enum.Material.Concrete, StudsPerTile = 4, ColorMap = "rbxassetid://80959961009929", NormalMap = "rbxassetid://80291856302301", MetalnessMap = "rbxassetid://80777076182700", RoughnessMap = "rbxassetid://77587300776452" },
 		MetalPlate = { BaseMaterial = Enum.Material.Metal, StudsPerTile = 5, ColorMap = "rbxassetid://137105055040989", NormalMap = "rbxassetid://72038388556893", MetalnessMap = "rbxassetid://91150503292713", RoughnessMap = "rbxassetid://88399395045423" },
 	},
 }

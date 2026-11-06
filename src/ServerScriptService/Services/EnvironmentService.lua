@@ -73,8 +73,9 @@ function Environment.UpgradeLobby(model)
     local header = Environment.Part(art, "ElevatorHeader", Vector3.new(21, .8, .5),
         CFrame.new(0, 14.1, -16), dark, Enum.Material.Metal)
     header.MaterialVariant = "MetalPlate"
-    Environment.Sign(art, "DEEP ACCESS  /  B0 CONCOURSE", Vector3.new(0, 15.35, -15.72),
-        Vector3.new(12, 1.2, .14), cyan, 180)
+    -- The floor display and travel dots occupy the header face now. The old
+    -- "DEEP ACCESS / B0 CONCOURSE" plaque sat behind them and was clipped by the
+    -- bezel, so the boarding wayfinding below the doors is the single label.
 
     -- Hazard band in front of the threshold.
     for index = 0, 9 do
@@ -242,8 +243,10 @@ function Environment.UpgradeHospital(model)
         strip.CanCollide, strip.CanQuery = false, false
         strip:SetAttribute("HazardIndicator", true)
     end
+    -- Mount the warning on the east corridor wall so it never overlaps the
+    -- overhead wayfinding or the room-height signage in the central corridor.
     Environment.Sign(art, "DISCHARGE ZONE  /  USE SIDE WARDS DURING ALARM",
-        origin:PointToWorldSpace(Vector3.new(0, 8, -4)), Vector3.new(12, 1.2, .1), amber, 180)
+        origin:PointToWorldSpace(Vector3.new(6.55, 5.5, -8)), Vector3.new(8, 1.2, .1), amber, 90)
 
     -- Existing ceiling diffusers become the flicker source, so no duplicate
     -- fittings are layered over the authored room lighting.

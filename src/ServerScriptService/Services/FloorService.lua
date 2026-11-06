@@ -7,6 +7,7 @@ local FloorService = {}
 FloorService.__index = FloorService
 local BUILD = "V6 / VISUAL DEVELOPMENT"
 local amber = Color3.fromRGB(246, 168, 66)
+local cyan = Color3.fromRGB(92, 210, 202)
 local dark = Color3.fromRGB(24, 36, 44)
 local INDICATOR_MODE_CLOSED = "closed"
 local INDICATOR_MODE_OPEN = "open"
@@ -108,19 +109,24 @@ function FloorService:_startIndicators(mode,text)
 					local color=offset<.34 and INDICATOR_TRAVEL_COLORS[1] or offset<.67 and INDICATOR_TRAVEL_COLORS[2] or INDICATOR_TRAVEL_COLORS[3]
 					local ring=self._indicatorRings[i]
 					if ring then ring.Transparency=color==dark and .9 or .2 end
-					dotColor(self._indicatorDots[i],color)
+					local dot=self._indicatorDots[i]
+					if dot then dotColor(dot,color) end
 				end
 				task.wait(.05)
 			end
-			-- Settle to the current closed state when the chase ends.
-			self:_startIndicators(INDICATOR_MODE_CLOSED,"LAST STOP")
+			-- Only settle to CLOSED if this task is still the current generation and the
+			-- mode hasn't been changed by a newer door cycle. Otherwise a newer cycle
+			-- has already set the correct state.
+			if generation==self._indicatorGeneration and self._indicatorMode==INDICATOR_MODE_TRAVEL then
+				self:_startIndicators(INDICATOR_MODE_CLOSED,"LAST STOP")
+			end
 		end)
-	elseif mode==INDICATOR_MODE_OPEN then
-		-- Boarding: steady amber current-floor dot, others dimmed.
-		for i=1,3 do dotColor(self._indicatorDots[i], i==1 and amber or dark) end
-	elseif mode==INDICATOR_MODE_CLOSED then
-		-- Idle between runs: only the current-floor dot is lit.
-		for i=1,3 do dotColor(self._indicatorDots[i], i==1 and amber or dark) end
+	elseif mode==INDICATOR_MODE_OPEN or mode==INDICATOR_MODE_CLOSED then
+		-- Boarding and idle both show a steady current-floor dot, others dimmed.
+		for i=1,3 do
+			local dot=self._indicatorDots[i]
+			if dot then dotColor(dot,INDICATOR_DOT_COLORS[i]) end
+		end
 	end
 end
 function FloorService:SetLobbyElevator(open,text)

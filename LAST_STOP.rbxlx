@@ -27,7 +27,7 @@
         <Content name="RoughnessMapContent">
           <uri>rbxassetid://77587300776452</uri>
         </Content>
-        <float name="StudsPerTile">8</float>
+        <float name="StudsPerTile">4</float>
       </Properties>
     </Item>
     <Item class="MaterialVariant" referent="3">
@@ -98,7 +98,7 @@ return {
 	-- Exact inventory IDs are documented in ART_ASSETS.md.
 	Pbr = {
 		PaintedSteel = { BaseMaterial = Enum.Material.Metal, StudsPerTile = 5, ColorMap = "rbxassetid://137105055040989", NormalMap = "rbxassetid://72038388556893", MetalnessMap = "rbxassetid://80777076182700", RoughnessMap = "rbxassetid://88399395045423" },
-		ChippedConcrete = { BaseMaterial = Enum.Material.Concrete, StudsPerTile = 8, ColorMap = "rbxassetid://80959961009929", NormalMap = "rbxassetid://80291856302301", MetalnessMap = "rbxassetid://80777076182700", RoughnessMap = "rbxassetid://77587300776452" },
+		ChippedConcrete = { BaseMaterial = Enum.Material.Concrete, StudsPerTile = 4, ColorMap = "rbxassetid://80959961009929", NormalMap = "rbxassetid://80291856302301", MetalnessMap = "rbxassetid://80777076182700", RoughnessMap = "rbxassetid://77587300776452" },
 		MetalPlate = { BaseMaterial = Enum.Material.Metal, StudsPerTile = 5, ColorMap = "rbxassetid://137105055040989", NormalMap = "rbxassetid://72038388556893", MetalnessMap = "rbxassetid://91150503292713", RoughnessMap = "rbxassetid://88399395045423" },
 	},
 }
@@ -1027,8 +1027,9 @@ function Environment.UpgradeLobby(model)
     local header = Environment.Part(art, "ElevatorHeader", Vector3.new(21, .8, .5),
         CFrame.new(0, 14.1, -16), dark, Enum.Material.Metal)
     header.MaterialVariant = "MetalPlate"
-    Environment.Sign(art, "DEEP ACCESS  /  B0 CONCOURSE", Vector3.new(0, 15.35, -15.72),
-        Vector3.new(12, 1.2, .14), cyan, 180)
+    -- The floor display and travel dots occupy the header face now. The old
+    -- "DEEP ACCESS / B0 CONCOURSE" plaque sat behind them and was clipped by the
+    -- bezel, so the boarding wayfinding below the doors is the single label.
 
     -- Hazard band in front of the threshold.
     for index = 0, 9 do
@@ -1196,8 +1197,10 @@ function Environment.UpgradeHospital(model)
         strip.CanCollide, strip.CanQuery = false, false
         strip:SetAttribute("HazardIndicator", true)
     end
+    -- Mount the warning on the east corridor wall so it never overlaps the
+    -- overhead wayfinding or the room-height signage in the central corridor.
     Environment.Sign(art, "DISCHARGE ZONE  /  USE SIDE WARDS DURING ALARM",
-        origin:PointToWorldSpace(Vector3.new(0, 8, -4)), Vector3.new(12, 1.2, .1), amber, 180)
+        origin:PointToWorldSpace(Vector3.new(6.55, 5.5, -8)), Vector3.new(8, 1.2, .1), amber, 90)
 
     -- Existing ceiling diffusers become the flicker source, so no duplicate
     -- fittings are layered over the authored room lighting.
@@ -2033,6 +2036,7 @@ local FloorService = {}
 FloorService.__index = FloorService
 local BUILD = "V6 / VISUAL DEVELOPMENT"
 local amber = Color3.fromRGB(246, 168, 66)
+local cyan = Color3.fromRGB(92, 210, 202)
 local dark = Color3.fromRGB(24, 36, 44)
 local INDICATOR_MODE_CLOSED = "closed"
 local INDICATOR_MODE_OPEN = "open"
@@ -2134,19 +2138,24 @@ function FloorService:_startIndicators(mode,text)
 					local color=offset<.34 and INDICATOR_TRAVEL_COLORS[1] or offset<.67 and INDICATOR_TRAVEL_COLORS[2] or INDICATOR_TRAVEL_COLORS[3]
 					local ring=self._indicatorRings[i]
 					if ring then ring.Transparency=color==dark and .9 or .2 end
-					dotColor(self._indicatorDots[i],color)
+					local dot=self._indicatorDots[i]
+					if dot then dotColor(dot,color) end
 				end
 				task.wait(.05)
 			end
-			-- Settle to the current closed state when the chase ends.
-			self:_startIndicators(INDICATOR_MODE_CLOSED,"LAST STOP")
+			-- Only settle to CLOSED if this task is still the current generation and the
+			-- mode hasn't been changed by a newer door cycle. Otherwise a newer cycle
+			-- has already set the correct state.
+			if generation==self._indicatorGeneration and self._indicatorMode==INDICATOR_MODE_TRAVEL then
+				self:_startIndicators(INDICATOR_MODE_CLOSED,"LAST STOP")
+			end
 		end)
-	elseif mode==INDICATOR_MODE_OPEN then
-		-- Boarding: steady amber current-floor dot, others dimmed.
-		for i=1,3 do dotColor(self._indicatorDots[i], i==1 and amber or dark) end
-	elseif mode==INDICATOR_MODE_CLOSED then
-		-- Idle between runs: only the current-floor dot is lit.
-		for i=1,3 do dotColor(self._indicatorDots[i], i==1 and amber or dark) end
+	elseif mode==INDICATOR_MODE_OPEN or mode==INDICATOR_MODE_CLOSED then
+		-- Boarding and idle both show a steady current-floor dot, others dimmed.
+		for i=1,3 do
+			local dot=self._indicatorDots[i]
+			if dot then dotColor(dot,INDICATOR_DOT_COLORS[i]) end
+		end
 	end
 end
 function FloorService:SetLobbyElevator(open,text)
@@ -23813,14 +23822,8 @@ CLINICAL RESEARCH / WARD 07</string>
                   <token name="TopSurface">0</token>
                   <float name="Transparency">0</float>
                 </Properties>
-                <Item class="StringValue" referent="718">
-                  <Properties>
-                    <string name="Name">PbrMaterial</string>
-                    <string name="Value">PaintedSteel</string>
-                  </Properties>
-                </Item>
               </Item>
-              <Item class="Part" referent="719">
+              <Item class="Part" referent="718">
                 <Properties>
                   <string name="Name">Mattress</string>
                   <bool name="Anchored">true</bool>
@@ -23854,7 +23857,7 @@ CLINICAL RESEARCH / WARD 07</string>
                   <float name="Transparency">0</float>
                 </Properties>
               </Item>
-              <Item class="Part" referent="720">
+              <Item class="Part" referent="719">
                 <Properties>
                   <string name="Name">FoldedBlanket</string>
                   <bool name="Anchored">true</bool>
@@ -23876,13 +23879,47 @@ CLINICAL RESEARCH / WARD 07</string>
                   <bool name="CanCollide">true</bool>
                   <bool name="CanQuery">true</bool>
                   <bool name="CanTouch">false</bool>
-                  <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                  <Color3uint8 name="Color3uint8">10269354</Color3uint8>
                   <bool name="Massless">false</bool>
-                  <token name="Material">1312</token>
+                  <token name="Material">272</token>
                   <Vector3 name="size">
                     <X>3.5</X>
                     <Y>0.16</Y>
                     <Z>3.3</Z>
+                  </Vector3>
+                  <token name="TopSurface">0</token>
+                  <float name="Transparency">0</float>
+                </Properties>
+              </Item>
+              <Item class="Part" referent="720">
+                <Properties>
+                  <string name="Name">BlanketStripe</string>
+                  <bool name="Anchored">true</bool>
+                  <token name="BottomSurface">0</token>
+                  <CoordinateFrame name="CFrame">
+                    <X>-25</X>
+                    <Y>2.58</Y>
+                    <Z>-7.4</Z>
+                    <R00>1</R00>
+                    <R01>0</R01>
+                    <R02>0</R02>
+                    <R10>0</R10>
+                    <R11>1</R11>
+                    <R12>0</R12>
+                    <R20>0</R20>
+                    <R21>0</R21>
+                    <R22>1</R22>
+                  </CoordinateFrame>
+                  <bool name="CanCollide">false</bool>
+                  <bool name="CanQuery">true</bool>
+                  <bool name="CanTouch">false</bool>
+                  <Color3uint8 name="Color3uint8">7376002</Color3uint8>
+                  <bool name="Massless">false</bool>
+                  <token name="Material">272</token>
+                  <Vector3 name="size">
+                    <X>3.5</X>
+                    <Y>0.02</Y>
+                    <Z>0.32</Z>
                   </Vector3>
                   <token name="TopSurface">0</token>
                   <float name="Transparency">0</float>
@@ -23912,7 +23949,7 @@ CLINICAL RESEARCH / WARD 07</string>
                   <bool name="CanTouch">false</bool>
                   <Color3uint8 name="Color3uint8">13818832</Color3uint8>
                   <bool name="Massless">false</bool>
-                  <token name="Material">1312</token>
+                  <token name="Material">272</token>
                   <Vector3 name="size">
                     <X>2.6</X>
                     <Y>0.3</Y>
@@ -24724,14 +24761,8 @@ _∧__∧__∧__</string>
                   <token name="TopSurface">0</token>
                   <float name="Transparency">0</float>
                 </Properties>
-                <Item class="StringValue" referent="748">
-                  <Properties>
-                    <string name="Name">PbrMaterial</string>
-                    <string name="Value">PaintedSteel</string>
-                  </Properties>
-                </Item>
               </Item>
-              <Item class="Part" referent="749">
+              <Item class="Part" referent="748">
                 <Properties>
                   <string name="Name">Mattress</string>
                   <bool name="Anchored">true</bool>
@@ -24765,7 +24796,7 @@ _∧__∧__∧__</string>
                   <float name="Transparency">0</float>
                 </Properties>
               </Item>
-              <Item class="Part" referent="750">
+              <Item class="Part" referent="749">
                 <Properties>
                   <string name="Name">FoldedBlanket</string>
                   <bool name="Anchored">true</bool>
@@ -24787,13 +24818,47 @@ _∧__∧__∧__</string>
                   <bool name="CanCollide">true</bool>
                   <bool name="CanQuery">true</bool>
                   <bool name="CanTouch">false</bool>
-                  <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                  <Color3uint8 name="Color3uint8">10269354</Color3uint8>
                   <bool name="Massless">false</bool>
-                  <token name="Material">1312</token>
+                  <token name="Material">272</token>
                   <Vector3 name="size">
                     <X>3.5</X>
                     <Y>0.16</Y>
                     <Z>3.3</Z>
+                  </Vector3>
+                  <token name="TopSurface">0</token>
+                  <float name="Transparency">0</float>
+                </Properties>
+              </Item>
+              <Item class="Part" referent="750">
+                <Properties>
+                  <string name="Name">BlanketStripe</string>
+                  <bool name="Anchored">true</bool>
+                  <token name="BottomSurface">0</token>
+                  <CoordinateFrame name="CFrame">
+                    <X>-13</X>
+                    <Y>2.58</Y>
+                    <Z>-7.4</Z>
+                    <R00>1</R00>
+                    <R01>0</R01>
+                    <R02>0</R02>
+                    <R10>0</R10>
+                    <R11>1</R11>
+                    <R12>0</R12>
+                    <R20>0</R20>
+                    <R21>0</R21>
+                    <R22>1</R22>
+                  </CoordinateFrame>
+                  <bool name="CanCollide">false</bool>
+                  <bool name="CanQuery">true</bool>
+                  <bool name="CanTouch">false</bool>
+                  <Color3uint8 name="Color3uint8">7376002</Color3uint8>
+                  <bool name="Massless">false</bool>
+                  <token name="Material">272</token>
+                  <Vector3 name="size">
+                    <X>3.5</X>
+                    <Y>0.02</Y>
+                    <Z>0.32</Z>
                   </Vector3>
                   <token name="TopSurface">0</token>
                   <float name="Transparency">0</float>
@@ -24823,7 +24888,7 @@ _∧__∧__∧__</string>
                   <bool name="CanTouch">false</bool>
                   <Color3uint8 name="Color3uint8">13818832</Color3uint8>
                   <bool name="Massless">false</bool>
-                  <token name="Material">1312</token>
+                  <token name="Material">272</token>
                   <Vector3 name="size">
                     <X>2.6</X>
                     <Y>0.3</Y>
@@ -25635,14 +25700,8 @@ _∧__∧__∧__</string>
                   <token name="TopSurface">0</token>
                   <float name="Transparency">0</float>
                 </Properties>
-                <Item class="StringValue" referent="778">
-                  <Properties>
-                    <string name="Name">PbrMaterial</string>
-                    <string name="Value">PaintedSteel</string>
-                  </Properties>
-                </Item>
               </Item>
-              <Item class="Part" referent="779">
+              <Item class="Part" referent="778">
                 <Properties>
                   <string name="Name">Mattress</string>
                   <bool name="Anchored">true</bool>
@@ -25676,7 +25735,7 @@ _∧__∧__∧__</string>
                   <float name="Transparency">0</float>
                 </Properties>
               </Item>
-              <Item class="Part" referent="780">
+              <Item class="Part" referent="779">
                 <Properties>
                   <string name="Name">FoldedBlanket</string>
                   <bool name="Anchored">true</bool>
@@ -25698,13 +25757,47 @@ _∧__∧__∧__</string>
                   <bool name="CanCollide">true</bool>
                   <bool name="CanQuery">true</bool>
                   <bool name="CanTouch">false</bool>
-                  <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                  <Color3uint8 name="Color3uint8">10269354</Color3uint8>
                   <bool name="Massless">false</bool>
-                  <token name="Material">1312</token>
+                  <token name="Material">272</token>
                   <Vector3 name="size">
                     <X>3.5</X>
                     <Y>0.16</Y>
                     <Z>3.3</Z>
+                  </Vector3>
+                  <token name="TopSurface">0</token>
+                  <float name="Transparency">0</float>
+                </Properties>
+              </Item>
+              <Item class="Part" referent="780">
+                <Properties>
+                  <string name="Name">BlanketStripe</string>
+                  <bool name="Anchored">true</bool>
+                  <token name="BottomSurface">0</token>
+                  <CoordinateFrame name="CFrame">
+                    <X>-25</X>
+                    <Y>2.58</Y>
+                    <Z>6.6</Z>
+                    <R00>1</R00>
+                    <R01>0</R01>
+                    <R02>0</R02>
+                    <R10>0</R10>
+                    <R11>1</R11>
+                    <R12>0</R12>
+                    <R20>0</R20>
+                    <R21>0</R21>
+                    <R22>1</R22>
+                  </CoordinateFrame>
+                  <bool name="CanCollide">false</bool>
+                  <bool name="CanQuery">true</bool>
+                  <bool name="CanTouch">false</bool>
+                  <Color3uint8 name="Color3uint8">7376002</Color3uint8>
+                  <bool name="Massless">false</bool>
+                  <token name="Material">272</token>
+                  <Vector3 name="size">
+                    <X>3.5</X>
+                    <Y>0.02</Y>
+                    <Z>0.32</Z>
                   </Vector3>
                   <token name="TopSurface">0</token>
                   <float name="Transparency">0</float>
@@ -25734,7 +25827,7 @@ _∧__∧__∧__</string>
                   <bool name="CanTouch">false</bool>
                   <Color3uint8 name="Color3uint8">13818832</Color3uint8>
                   <bool name="Massless">false</bool>
-                  <token name="Material">1312</token>
+                  <token name="Material">272</token>
                   <Vector3 name="size">
                     <X>2.6</X>
                     <Y>0.3</Y>
@@ -26546,14 +26639,8 @@ _∧__∧__∧__</string>
                   <token name="TopSurface">0</token>
                   <float name="Transparency">0</float>
                 </Properties>
-                <Item class="StringValue" referent="808">
-                  <Properties>
-                    <string name="Name">PbrMaterial</string>
-                    <string name="Value">PaintedSteel</string>
-                  </Properties>
-                </Item>
               </Item>
-              <Item class="Part" referent="809">
+              <Item class="Part" referent="808">
                 <Properties>
                   <string name="Name">Mattress</string>
                   <bool name="Anchored">true</bool>
@@ -26587,7 +26674,7 @@ _∧__∧__∧__</string>
                   <float name="Transparency">0</float>
                 </Properties>
               </Item>
-              <Item class="Part" referent="810">
+              <Item class="Part" referent="809">
                 <Properties>
                   <string name="Name">FoldedBlanket</string>
                   <bool name="Anchored">true</bool>
@@ -26609,13 +26696,47 @@ _∧__∧__∧__</string>
                   <bool name="CanCollide">true</bool>
                   <bool name="CanQuery">true</bool>
                   <bool name="CanTouch">false</bool>
-                  <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                  <Color3uint8 name="Color3uint8">10269354</Color3uint8>
                   <bool name="Massless">false</bool>
-                  <token name="Material">1312</token>
+                  <token name="Material">272</token>
                   <Vector3 name="size">
                     <X>3.5</X>
                     <Y>0.16</Y>
                     <Z>3.3</Z>
+                  </Vector3>
+                  <token name="TopSurface">0</token>
+                  <float name="Transparency">0</float>
+                </Properties>
+              </Item>
+              <Item class="Part" referent="810">
+                <Properties>
+                  <string name="Name">BlanketStripe</string>
+                  <bool name="Anchored">true</bool>
+                  <token name="BottomSurface">0</token>
+                  <CoordinateFrame name="CFrame">
+                    <X>-13</X>
+                    <Y>2.58</Y>
+                    <Z>6.6</Z>
+                    <R00>1</R00>
+                    <R01>0</R01>
+                    <R02>0</R02>
+                    <R10>0</R10>
+                    <R11>1</R11>
+                    <R12>0</R12>
+                    <R20>0</R20>
+                    <R21>0</R21>
+                    <R22>1</R22>
+                  </CoordinateFrame>
+                  <bool name="CanCollide">false</bool>
+                  <bool name="CanQuery">true</bool>
+                  <bool name="CanTouch">false</bool>
+                  <Color3uint8 name="Color3uint8">7376002</Color3uint8>
+                  <bool name="Massless">false</bool>
+                  <token name="Material">272</token>
+                  <Vector3 name="size">
+                    <X>3.5</X>
+                    <Y>0.02</Y>
+                    <Z>0.32</Z>
                   </Vector3>
                   <token name="TopSurface">0</token>
                   <float name="Transparency">0</float>
@@ -26645,7 +26766,7 @@ _∧__∧__∧__</string>
                   <bool name="CanTouch">false</bool>
                   <Color3uint8 name="Color3uint8">13818832</Color3uint8>
                   <bool name="Massless">false</bool>
-                  <token name="Material">1312</token>
+                  <token name="Material">272</token>
                   <Vector3 name="size">
                     <X>2.6</X>
                     <Y>0.3</Y>
@@ -27456,114 +27577,12 @@ _∧__∧__∧__</string>
             </Item>
             <Item class="Part" referent="837">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
-                <bool name="Anchored">true</bool>
-                <token name="BottomSurface">0</token>
-                <CoordinateFrame name="CFrame">
-                  <X>-28.6</X>
-                  <Y>7</Y>
-                  <Z>-5.1</Z>
-                  <R00>1</R00>
-                  <R01>0</R01>
-                  <R02>0</R02>
-                  <R10>0</R10>
-                  <R11>1</R11>
-                  <R12>0</R12>
-                  <R20>0</R20>
-                  <R21>0</R21>
-                  <R22>1</R22>
-                </CoordinateFrame>
-                <bool name="CanCollide">false</bool>
-                <bool name="CanQuery">true</bool>
-                <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
-                <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
-                <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
-                </Vector3>
-                <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
-              </Properties>
-            </Item>
-            <Item class="Part" referent="838">
-              <Properties>
-                <string name="Name">FadedCurtainFold</string>
-                <bool name="Anchored">true</bool>
-                <token name="BottomSurface">0</token>
-                <CoordinateFrame name="CFrame">
-                  <X>-27.4</X>
-                  <Y>7</Y>
-                  <Z>-5.1</Z>
-                  <R00>1</R00>
-                  <R01>0</R01>
-                  <R02>0</R02>
-                  <R10>0</R10>
-                  <R11>1</R11>
-                  <R12>0</R12>
-                  <R20>0</R20>
-                  <R21>0</R21>
-                  <R22>1</R22>
-                </CoordinateFrame>
-                <bool name="CanCollide">false</bool>
-                <bool name="CanQuery">true</bool>
-                <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
-                <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
-                <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
-                </Vector3>
-                <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
-              </Properties>
-            </Item>
-            <Item class="Part" referent="839">
-              <Properties>
-                <string name="Name">FadedCurtainFold</string>
-                <bool name="Anchored">true</bool>
-                <token name="BottomSurface">0</token>
-                <CoordinateFrame name="CFrame">
-                  <X>-26.2</X>
-                  <Y>7</Y>
-                  <Z>-5.1</Z>
-                  <R00>1</R00>
-                  <R01>0</R01>
-                  <R02>0</R02>
-                  <R10>0</R10>
-                  <R11>1</R11>
-                  <R12>0</R12>
-                  <R20>0</R20>
-                  <R21>0</R21>
-                  <R22>1</R22>
-                </CoordinateFrame>
-                <bool name="CanCollide">false</bool>
-                <bool name="CanQuery">true</bool>
-                <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
-                <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
-                <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
-                </Vector3>
-                <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
-              </Properties>
-            </Item>
-            <Item class="Part" referent="840">
-              <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">PrivacyCurtain</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
                   <X>-25</X>
-                  <Y>7</Y>
+                  <Y>7.1</Y>
                   <Z>-5.1</Z>
                   <R00>1</R00>
                   <R01>0</R01>
@@ -27578,27 +27597,129 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">12373189</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>7.9</X>
+                  <Y>5.8</Y>
+                  <Z>0.08</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
+                <float name="Transparency">0.42</float>
+              </Properties>
+            </Item>
+            <Item class="Part" referent="838">
+              <Properties>
+                <string name="Name">CurtainPleat</string>
+                <bool name="Anchored">true</bool>
+                <token name="BottomSurface">0</token>
+                <CoordinateFrame name="CFrame">
+                  <X>-28.2</X>
+                  <Y>7.05</Y>
+                  <Z>-5.16</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>1</R22>
+                </CoordinateFrame>
+                <bool name="CanCollide">false</bool>
+                <bool name="CanQuery">true</bool>
+                <bool name="CanTouch">false</bool>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
+                <bool name="Massless">false</bool>
+                <token name="Material">272</token>
+                <Vector3 name="size">
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
+                </Vector3>
+                <token name="TopSurface">0</token>
+                <float name="Transparency">0.1</float>
+              </Properties>
+            </Item>
+            <Item class="Part" referent="839">
+              <Properties>
+                <string name="Name">CurtainPleat</string>
+                <bool name="Anchored">true</bool>
+                <token name="BottomSurface">0</token>
+                <CoordinateFrame name="CFrame">
+                  <X>-26.6</X>
+                  <Y>7.05</Y>
+                  <Z>-5.16</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>1</R22>
+                </CoordinateFrame>
+                <bool name="CanCollide">false</bool>
+                <bool name="CanQuery">true</bool>
+                <bool name="CanTouch">false</bool>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
+                <bool name="Massless">false</bool>
+                <token name="Material">272</token>
+                <Vector3 name="size">
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
+                </Vector3>
+                <token name="TopSurface">0</token>
+                <float name="Transparency">0.1</float>
+              </Properties>
+            </Item>
+            <Item class="Part" referent="840">
+              <Properties>
+                <string name="Name">CurtainPleat</string>
+                <bool name="Anchored">true</bool>
+                <token name="BottomSurface">0</token>
+                <CoordinateFrame name="CFrame">
+                  <X>-25</X>
+                  <Y>7.05</Y>
+                  <Z>-5.16</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>1</R22>
+                </CoordinateFrame>
+                <bool name="CanCollide">false</bool>
+                <bool name="CanQuery">true</bool>
+                <bool name="CanTouch">false</bool>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
+                <bool name="Massless">false</bool>
+                <token name="Material">272</token>
+                <Vector3 name="size">
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
+                </Vector3>
+                <token name="TopSurface">0</token>
+                <float name="Transparency">0.1</float>
               </Properties>
             </Item>
             <Item class="Part" referent="841">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">CurtainPleat</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
-                  <X>-23.8</X>
-                  <Y>7</Y>
-                  <Z>-5.1</Z>
+                  <X>-23.4</X>
+                  <Y>7.05</Y>
+                  <Z>-5.16</Z>
                   <R00>1</R00>
                   <R01>0</R01>
                   <R02>0</R02>
@@ -27612,27 +27733,27 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
+                <float name="Transparency">0.1</float>
               </Properties>
             </Item>
             <Item class="Part" referent="842">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">CurtainPleat</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
-                  <X>-22.6</X>
-                  <Y>7</Y>
-                  <Z>-5.1</Z>
+                  <X>-21.8</X>
+                  <Y>7.05</Y>
+                  <Z>-5.16</Z>
                   <R00>1</R00>
                   <R01>0</R01>
                   <R02>0</R02>
@@ -27646,26 +27767,26 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
+                <float name="Transparency">0.1</float>
               </Properties>
             </Item>
             <Item class="Part" referent="843">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">CurtainHem</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
-                  <X>-21.4</X>
-                  <Y>7</Y>
+                  <X>-25</X>
+                  <Y>4.25</Y>
                   <Z>-5.1</Z>
                   <R00>1</R00>
                   <R01>0</R01>
@@ -27680,13 +27801,13 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">7376002</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>7.9</X>
+                  <Y>0.16</Y>
+                  <Z>0.14</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
                 <float name="Transparency">0</float>
@@ -27728,114 +27849,12 @@ _∧__∧__∧__</string>
             </Item>
             <Item class="Part" referent="845">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
-                <bool name="Anchored">true</bool>
-                <token name="BottomSurface">0</token>
-                <CoordinateFrame name="CFrame">
-                  <X>-16.6</X>
-                  <Y>7</Y>
-                  <Z>-5.1</Z>
-                  <R00>1</R00>
-                  <R01>0</R01>
-                  <R02>0</R02>
-                  <R10>0</R10>
-                  <R11>1</R11>
-                  <R12>0</R12>
-                  <R20>0</R20>
-                  <R21>0</R21>
-                  <R22>1</R22>
-                </CoordinateFrame>
-                <bool name="CanCollide">false</bool>
-                <bool name="CanQuery">true</bool>
-                <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
-                <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
-                <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
-                </Vector3>
-                <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
-              </Properties>
-            </Item>
-            <Item class="Part" referent="846">
-              <Properties>
-                <string name="Name">FadedCurtainFold</string>
-                <bool name="Anchored">true</bool>
-                <token name="BottomSurface">0</token>
-                <CoordinateFrame name="CFrame">
-                  <X>-15.4</X>
-                  <Y>7</Y>
-                  <Z>-5.1</Z>
-                  <R00>1</R00>
-                  <R01>0</R01>
-                  <R02>0</R02>
-                  <R10>0</R10>
-                  <R11>1</R11>
-                  <R12>0</R12>
-                  <R20>0</R20>
-                  <R21>0</R21>
-                  <R22>1</R22>
-                </CoordinateFrame>
-                <bool name="CanCollide">false</bool>
-                <bool name="CanQuery">true</bool>
-                <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
-                <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
-                <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
-                </Vector3>
-                <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
-              </Properties>
-            </Item>
-            <Item class="Part" referent="847">
-              <Properties>
-                <string name="Name">FadedCurtainFold</string>
-                <bool name="Anchored">true</bool>
-                <token name="BottomSurface">0</token>
-                <CoordinateFrame name="CFrame">
-                  <X>-14.2</X>
-                  <Y>7</Y>
-                  <Z>-5.1</Z>
-                  <R00>1</R00>
-                  <R01>0</R01>
-                  <R02>0</R02>
-                  <R10>0</R10>
-                  <R11>1</R11>
-                  <R12>0</R12>
-                  <R20>0</R20>
-                  <R21>0</R21>
-                  <R22>1</R22>
-                </CoordinateFrame>
-                <bool name="CanCollide">false</bool>
-                <bool name="CanQuery">true</bool>
-                <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
-                <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
-                <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
-                </Vector3>
-                <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
-              </Properties>
-            </Item>
-            <Item class="Part" referent="848">
-              <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">PrivacyCurtain</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
                   <X>-13</X>
-                  <Y>7</Y>
+                  <Y>7.1</Y>
                   <Z>-5.1</Z>
                   <R00>1</R00>
                   <R01>0</R01>
@@ -27850,27 +27869,129 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">12373189</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>7.9</X>
+                  <Y>5.8</Y>
+                  <Z>0.08</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
+                <float name="Transparency">0.42</float>
+              </Properties>
+            </Item>
+            <Item class="Part" referent="846">
+              <Properties>
+                <string name="Name">CurtainPleat</string>
+                <bool name="Anchored">true</bool>
+                <token name="BottomSurface">0</token>
+                <CoordinateFrame name="CFrame">
+                  <X>-16.2</X>
+                  <Y>7.05</Y>
+                  <Z>-5.16</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>1</R22>
+                </CoordinateFrame>
+                <bool name="CanCollide">false</bool>
+                <bool name="CanQuery">true</bool>
+                <bool name="CanTouch">false</bool>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
+                <bool name="Massless">false</bool>
+                <token name="Material">272</token>
+                <Vector3 name="size">
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
+                </Vector3>
+                <token name="TopSurface">0</token>
+                <float name="Transparency">0.1</float>
+              </Properties>
+            </Item>
+            <Item class="Part" referent="847">
+              <Properties>
+                <string name="Name">CurtainPleat</string>
+                <bool name="Anchored">true</bool>
+                <token name="BottomSurface">0</token>
+                <CoordinateFrame name="CFrame">
+                  <X>-14.6</X>
+                  <Y>7.05</Y>
+                  <Z>-5.16</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>1</R22>
+                </CoordinateFrame>
+                <bool name="CanCollide">false</bool>
+                <bool name="CanQuery">true</bool>
+                <bool name="CanTouch">false</bool>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
+                <bool name="Massless">false</bool>
+                <token name="Material">272</token>
+                <Vector3 name="size">
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
+                </Vector3>
+                <token name="TopSurface">0</token>
+                <float name="Transparency">0.1</float>
+              </Properties>
+            </Item>
+            <Item class="Part" referent="848">
+              <Properties>
+                <string name="Name">CurtainPleat</string>
+                <bool name="Anchored">true</bool>
+                <token name="BottomSurface">0</token>
+                <CoordinateFrame name="CFrame">
+                  <X>-13</X>
+                  <Y>7.05</Y>
+                  <Z>-5.16</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>1</R22>
+                </CoordinateFrame>
+                <bool name="CanCollide">false</bool>
+                <bool name="CanQuery">true</bool>
+                <bool name="CanTouch">false</bool>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
+                <bool name="Massless">false</bool>
+                <token name="Material">272</token>
+                <Vector3 name="size">
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
+                </Vector3>
+                <token name="TopSurface">0</token>
+                <float name="Transparency">0.1</float>
               </Properties>
             </Item>
             <Item class="Part" referent="849">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">CurtainPleat</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
-                  <X>-11.8</X>
-                  <Y>7</Y>
-                  <Z>-5.1</Z>
+                  <X>-11.4</X>
+                  <Y>7.05</Y>
+                  <Z>-5.16</Z>
                   <R00>1</R00>
                   <R01>0</R01>
                   <R02>0</R02>
@@ -27884,27 +28005,27 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
+                <float name="Transparency">0.1</float>
               </Properties>
             </Item>
             <Item class="Part" referent="850">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">CurtainPleat</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
-                  <X>-10.6</X>
-                  <Y>7</Y>
-                  <Z>-5.1</Z>
+                  <X>-9.8</X>
+                  <Y>7.05</Y>
+                  <Z>-5.16</Z>
                   <R00>1</R00>
                   <R01>0</R01>
                   <R02>0</R02>
@@ -27918,26 +28039,26 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
+                <float name="Transparency">0.1</float>
               </Properties>
             </Item>
             <Item class="Part" referent="851">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">CurtainHem</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
-                  <X>-9.4</X>
-                  <Y>7</Y>
+                  <X>-13</X>
+                  <Y>4.25</Y>
                   <Z>-5.1</Z>
                   <R00>1</R00>
                   <R01>0</R01>
@@ -27952,13 +28073,13 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">7376002</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>7.9</X>
+                  <Y>0.16</Y>
+                  <Z>0.14</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
                 <float name="Transparency">0</float>
@@ -28000,114 +28121,12 @@ _∧__∧__∧__</string>
             </Item>
             <Item class="Part" referent="853">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
-                <bool name="Anchored">true</bool>
-                <token name="BottomSurface">0</token>
-                <CoordinateFrame name="CFrame">
-                  <X>-28.6</X>
-                  <Y>7</Y>
-                  <Z>8.9</Z>
-                  <R00>1</R00>
-                  <R01>0</R01>
-                  <R02>0</R02>
-                  <R10>0</R10>
-                  <R11>1</R11>
-                  <R12>0</R12>
-                  <R20>0</R20>
-                  <R21>0</R21>
-                  <R22>1</R22>
-                </CoordinateFrame>
-                <bool name="CanCollide">false</bool>
-                <bool name="CanQuery">true</bool>
-                <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
-                <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
-                <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
-                </Vector3>
-                <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
-              </Properties>
-            </Item>
-            <Item class="Part" referent="854">
-              <Properties>
-                <string name="Name">FadedCurtainFold</string>
-                <bool name="Anchored">true</bool>
-                <token name="BottomSurface">0</token>
-                <CoordinateFrame name="CFrame">
-                  <X>-27.4</X>
-                  <Y>7</Y>
-                  <Z>8.9</Z>
-                  <R00>1</R00>
-                  <R01>0</R01>
-                  <R02>0</R02>
-                  <R10>0</R10>
-                  <R11>1</R11>
-                  <R12>0</R12>
-                  <R20>0</R20>
-                  <R21>0</R21>
-                  <R22>1</R22>
-                </CoordinateFrame>
-                <bool name="CanCollide">false</bool>
-                <bool name="CanQuery">true</bool>
-                <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
-                <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
-                <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
-                </Vector3>
-                <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
-              </Properties>
-            </Item>
-            <Item class="Part" referent="855">
-              <Properties>
-                <string name="Name">FadedCurtainFold</string>
-                <bool name="Anchored">true</bool>
-                <token name="BottomSurface">0</token>
-                <CoordinateFrame name="CFrame">
-                  <X>-26.2</X>
-                  <Y>7</Y>
-                  <Z>8.9</Z>
-                  <R00>1</R00>
-                  <R01>0</R01>
-                  <R02>0</R02>
-                  <R10>0</R10>
-                  <R11>1</R11>
-                  <R12>0</R12>
-                  <R20>0</R20>
-                  <R21>0</R21>
-                  <R22>1</R22>
-                </CoordinateFrame>
-                <bool name="CanCollide">false</bool>
-                <bool name="CanQuery">true</bool>
-                <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
-                <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
-                <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
-                </Vector3>
-                <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
-              </Properties>
-            </Item>
-            <Item class="Part" referent="856">
-              <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">PrivacyCurtain</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
                   <X>-25</X>
-                  <Y>7</Y>
+                  <Y>7.1</Y>
                   <Z>8.9</Z>
                   <R00>1</R00>
                   <R01>0</R01>
@@ -28122,27 +28141,129 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">12373189</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>7.9</X>
+                  <Y>5.8</Y>
+                  <Z>0.08</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
+                <float name="Transparency">0.42</float>
+              </Properties>
+            </Item>
+            <Item class="Part" referent="854">
+              <Properties>
+                <string name="Name">CurtainPleat</string>
+                <bool name="Anchored">true</bool>
+                <token name="BottomSurface">0</token>
+                <CoordinateFrame name="CFrame">
+                  <X>-28.2</X>
+                  <Y>7.05</Y>
+                  <Z>8.84</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>1</R22>
+                </CoordinateFrame>
+                <bool name="CanCollide">false</bool>
+                <bool name="CanQuery">true</bool>
+                <bool name="CanTouch">false</bool>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
+                <bool name="Massless">false</bool>
+                <token name="Material">272</token>
+                <Vector3 name="size">
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
+                </Vector3>
+                <token name="TopSurface">0</token>
+                <float name="Transparency">0.1</float>
+              </Properties>
+            </Item>
+            <Item class="Part" referent="855">
+              <Properties>
+                <string name="Name">CurtainPleat</string>
+                <bool name="Anchored">true</bool>
+                <token name="BottomSurface">0</token>
+                <CoordinateFrame name="CFrame">
+                  <X>-26.6</X>
+                  <Y>7.05</Y>
+                  <Z>8.84</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>1</R22>
+                </CoordinateFrame>
+                <bool name="CanCollide">false</bool>
+                <bool name="CanQuery">true</bool>
+                <bool name="CanTouch">false</bool>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
+                <bool name="Massless">false</bool>
+                <token name="Material">272</token>
+                <Vector3 name="size">
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
+                </Vector3>
+                <token name="TopSurface">0</token>
+                <float name="Transparency">0.1</float>
+              </Properties>
+            </Item>
+            <Item class="Part" referent="856">
+              <Properties>
+                <string name="Name">CurtainPleat</string>
+                <bool name="Anchored">true</bool>
+                <token name="BottomSurface">0</token>
+                <CoordinateFrame name="CFrame">
+                  <X>-25</X>
+                  <Y>7.05</Y>
+                  <Z>8.84</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>1</R22>
+                </CoordinateFrame>
+                <bool name="CanCollide">false</bool>
+                <bool name="CanQuery">true</bool>
+                <bool name="CanTouch">false</bool>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
+                <bool name="Massless">false</bool>
+                <token name="Material">272</token>
+                <Vector3 name="size">
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
+                </Vector3>
+                <token name="TopSurface">0</token>
+                <float name="Transparency">0.1</float>
               </Properties>
             </Item>
             <Item class="Part" referent="857">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">CurtainPleat</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
-                  <X>-23.8</X>
-                  <Y>7</Y>
-                  <Z>8.9</Z>
+                  <X>-23.4</X>
+                  <Y>7.05</Y>
+                  <Z>8.84</Z>
                   <R00>1</R00>
                   <R01>0</R01>
                   <R02>0</R02>
@@ -28156,27 +28277,27 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
+                <float name="Transparency">0.1</float>
               </Properties>
             </Item>
             <Item class="Part" referent="858">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">CurtainPleat</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
-                  <X>-22.6</X>
-                  <Y>7</Y>
-                  <Z>8.9</Z>
+                  <X>-21.8</X>
+                  <Y>7.05</Y>
+                  <Z>8.84</Z>
                   <R00>1</R00>
                   <R01>0</R01>
                   <R02>0</R02>
@@ -28190,26 +28311,26 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
+                <float name="Transparency">0.1</float>
               </Properties>
             </Item>
             <Item class="Part" referent="859">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">CurtainHem</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
-                  <X>-21.4</X>
-                  <Y>7</Y>
+                  <X>-25</X>
+                  <Y>4.25</Y>
                   <Z>8.9</Z>
                   <R00>1</R00>
                   <R01>0</R01>
@@ -28224,13 +28345,13 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">7376002</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>7.9</X>
+                  <Y>0.16</Y>
+                  <Z>0.14</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
                 <float name="Transparency">0</float>
@@ -28272,114 +28393,12 @@ _∧__∧__∧__</string>
             </Item>
             <Item class="Part" referent="861">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
-                <bool name="Anchored">true</bool>
-                <token name="BottomSurface">0</token>
-                <CoordinateFrame name="CFrame">
-                  <X>-16.6</X>
-                  <Y>7</Y>
-                  <Z>8.9</Z>
-                  <R00>1</R00>
-                  <R01>0</R01>
-                  <R02>0</R02>
-                  <R10>0</R10>
-                  <R11>1</R11>
-                  <R12>0</R12>
-                  <R20>0</R20>
-                  <R21>0</R21>
-                  <R22>1</R22>
-                </CoordinateFrame>
-                <bool name="CanCollide">false</bool>
-                <bool name="CanQuery">true</bool>
-                <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
-                <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
-                <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
-                </Vector3>
-                <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
-              </Properties>
-            </Item>
-            <Item class="Part" referent="862">
-              <Properties>
-                <string name="Name">FadedCurtainFold</string>
-                <bool name="Anchored">true</bool>
-                <token name="BottomSurface">0</token>
-                <CoordinateFrame name="CFrame">
-                  <X>-15.4</X>
-                  <Y>7</Y>
-                  <Z>8.9</Z>
-                  <R00>1</R00>
-                  <R01>0</R01>
-                  <R02>0</R02>
-                  <R10>0</R10>
-                  <R11>1</R11>
-                  <R12>0</R12>
-                  <R20>0</R20>
-                  <R21>0</R21>
-                  <R22>1</R22>
-                </CoordinateFrame>
-                <bool name="CanCollide">false</bool>
-                <bool name="CanQuery">true</bool>
-                <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
-                <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
-                <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
-                </Vector3>
-                <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
-              </Properties>
-            </Item>
-            <Item class="Part" referent="863">
-              <Properties>
-                <string name="Name">FadedCurtainFold</string>
-                <bool name="Anchored">true</bool>
-                <token name="BottomSurface">0</token>
-                <CoordinateFrame name="CFrame">
-                  <X>-14.2</X>
-                  <Y>7</Y>
-                  <Z>8.9</Z>
-                  <R00>1</R00>
-                  <R01>0</R01>
-                  <R02>0</R02>
-                  <R10>0</R10>
-                  <R11>1</R11>
-                  <R12>0</R12>
-                  <R20>0</R20>
-                  <R21>0</R21>
-                  <R22>1</R22>
-                </CoordinateFrame>
-                <bool name="CanCollide">false</bool>
-                <bool name="CanQuery">true</bool>
-                <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
-                <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
-                <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
-                </Vector3>
-                <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
-              </Properties>
-            </Item>
-            <Item class="Part" referent="864">
-              <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">PrivacyCurtain</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
                   <X>-13</X>
-                  <Y>7</Y>
+                  <Y>7.1</Y>
                   <Z>8.9</Z>
                   <R00>1</R00>
                   <R01>0</R01>
@@ -28394,27 +28413,129 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">12373189</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>7.9</X>
+                  <Y>5.8</Y>
+                  <Z>0.08</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
+                <float name="Transparency">0.42</float>
+              </Properties>
+            </Item>
+            <Item class="Part" referent="862">
+              <Properties>
+                <string name="Name">CurtainPleat</string>
+                <bool name="Anchored">true</bool>
+                <token name="BottomSurface">0</token>
+                <CoordinateFrame name="CFrame">
+                  <X>-16.2</X>
+                  <Y>7.05</Y>
+                  <Z>8.84</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>1</R22>
+                </CoordinateFrame>
+                <bool name="CanCollide">false</bool>
+                <bool name="CanQuery">true</bool>
+                <bool name="CanTouch">false</bool>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
+                <bool name="Massless">false</bool>
+                <token name="Material">272</token>
+                <Vector3 name="size">
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
+                </Vector3>
+                <token name="TopSurface">0</token>
+                <float name="Transparency">0.1</float>
+              </Properties>
+            </Item>
+            <Item class="Part" referent="863">
+              <Properties>
+                <string name="Name">CurtainPleat</string>
+                <bool name="Anchored">true</bool>
+                <token name="BottomSurface">0</token>
+                <CoordinateFrame name="CFrame">
+                  <X>-14.6</X>
+                  <Y>7.05</Y>
+                  <Z>8.84</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>1</R22>
+                </CoordinateFrame>
+                <bool name="CanCollide">false</bool>
+                <bool name="CanQuery">true</bool>
+                <bool name="CanTouch">false</bool>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
+                <bool name="Massless">false</bool>
+                <token name="Material">272</token>
+                <Vector3 name="size">
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
+                </Vector3>
+                <token name="TopSurface">0</token>
+                <float name="Transparency">0.1</float>
+              </Properties>
+            </Item>
+            <Item class="Part" referent="864">
+              <Properties>
+                <string name="Name">CurtainPleat</string>
+                <bool name="Anchored">true</bool>
+                <token name="BottomSurface">0</token>
+                <CoordinateFrame name="CFrame">
+                  <X>-13</X>
+                  <Y>7.05</Y>
+                  <Z>8.84</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>1</R22>
+                </CoordinateFrame>
+                <bool name="CanCollide">false</bool>
+                <bool name="CanQuery">true</bool>
+                <bool name="CanTouch">false</bool>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
+                <bool name="Massless">false</bool>
+                <token name="Material">272</token>
+                <Vector3 name="size">
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
+                </Vector3>
+                <token name="TopSurface">0</token>
+                <float name="Transparency">0.1</float>
               </Properties>
             </Item>
             <Item class="Part" referent="865">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">CurtainPleat</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
-                  <X>-11.8</X>
-                  <Y>7</Y>
-                  <Z>8.9</Z>
+                  <X>-11.4</X>
+                  <Y>7.05</Y>
+                  <Z>8.84</Z>
                   <R00>1</R00>
                   <R01>0</R01>
                   <R02>0</R02>
@@ -28428,27 +28549,27 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
+                <float name="Transparency">0.1</float>
               </Properties>
             </Item>
             <Item class="Part" referent="866">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">CurtainPleat</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
-                  <X>-10.6</X>
-                  <Y>7</Y>
-                  <Z>8.9</Z>
+                  <X>-9.8</X>
+                  <Y>7.05</Y>
+                  <Z>8.84</Z>
                   <R00>1</R00>
                   <R01>0</R01>
                   <R02>0</R02>
@@ -28462,26 +28583,26 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">8560276</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>0.18</X>
+                  <Y>5.7</Y>
+                  <Z>0.16</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
-                <float name="Transparency">0</float>
+                <float name="Transparency">0.1</float>
               </Properties>
             </Item>
             <Item class="Part" referent="867">
               <Properties>
-                <string name="Name">FadedCurtainFold</string>
+                <string name="Name">CurtainHem</string>
                 <bool name="Anchored">true</bool>
                 <token name="BottomSurface">0</token>
                 <CoordinateFrame name="CFrame">
-                  <X>-9.4</X>
-                  <Y>7</Y>
+                  <X>-13</X>
+                  <Y>4.25</Y>
                   <Z>8.9</Z>
                   <R00>1</R00>
                   <R01>0</R01>
@@ -28496,13 +28617,13 @@ _∧__∧__∧__</string>
                 <bool name="CanCollide">false</bool>
                 <bool name="CanQuery">true</bool>
                 <bool name="CanTouch">false</bool>
-                <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                <Color3uint8 name="Color3uint8">7376002</Color3uint8>
                 <bool name="Massless">false</bool>
-                <token name="Material">1312</token>
+                <token name="Material">272</token>
                 <Vector3 name="size">
-                  <X>0.5</X>
-                  <Y>6</Y>
-                  <Z>0.3</Z>
+                  <X>7.9</X>
+                  <Y>0.16</Y>
+                  <Z>0.14</Z>
                 </Vector3>
                 <token name="TopSurface">0</token>
                 <float name="Transparency">0</float>
@@ -28545,14 +28666,8 @@ _∧__∧__∧__</string>
                   <token name="TopSurface">0</token>
                   <float name="Transparency">0</float>
                 </Properties>
-                <Item class="StringValue" referent="870">
-                  <Properties>
-                    <string name="Name">PbrMaterial</string>
-                    <string name="Value">PaintedSteel</string>
-                  </Properties>
-                </Item>
               </Item>
-              <Item class="Part" referent="871">
+              <Item class="Part" referent="870">
                 <Properties>
                   <string name="Name">Mattress</string>
                   <bool name="Anchored">true</bool>
@@ -28586,7 +28701,7 @@ _∧__∧__∧__</string>
                   <float name="Transparency">0</float>
                 </Properties>
               </Item>
-              <Item class="Part" referent="872">
+              <Item class="Part" referent="871">
                 <Properties>
                   <string name="Name">FoldedBlanket</string>
                   <bool name="Anchored">true</bool>
@@ -28608,13 +28723,47 @@ _∧__∧__∧__</string>
                   <bool name="CanCollide">true</bool>
                   <bool name="CanQuery">true</bool>
                   <bool name="CanTouch">false</bool>
-                  <Color3uint8 name="Color3uint8">6061940</Color3uint8>
+                  <Color3uint8 name="Color3uint8">10269354</Color3uint8>
                   <bool name="Massless">false</bool>
-                  <token name="Material">1312</token>
+                  <token name="Material">272</token>
                   <Vector3 name="size">
                     <X>3.5</X>
                     <Y>0.16</Y>
                     <Z>3.3</Z>
+                  </Vector3>
+                  <token name="TopSurface">0</token>
+                  <float name="Transparency">0</float>
+                </Properties>
+              </Item>
+              <Item class="Part" referent="872">
+                <Properties>
+                  <string name="Name">BlanketStripe</string>
+                  <bool name="Anchored">true</bool>
+                  <token name="BottomSurface">0</token>
+                  <CoordinateFrame name="CFrame">
+                    <X>26</X>
+                    <Y>2.58</Y>
+                    <Z>11.6</Z>
+                    <R00>1</R00>
+                    <R01>0</R01>
+                    <R02>0</R02>
+                    <R10>0</R10>
+                    <R11>1</R11>
+                    <R12>0</R12>
+                    <R20>0</R20>
+                    <R21>0</R21>
+                    <R22>1</R22>
+                  </CoordinateFrame>
+                  <bool name="CanCollide">false</bool>
+                  <bool name="CanQuery">true</bool>
+                  <bool name="CanTouch">false</bool>
+                  <Color3uint8 name="Color3uint8">7376002</Color3uint8>
+                  <bool name="Massless">false</bool>
+                  <token name="Material">272</token>
+                  <Vector3 name="size">
+                    <X>3.5</X>
+                    <Y>0.02</Y>
+                    <Z>0.32</Z>
                   </Vector3>
                   <token name="TopSurface">0</token>
                   <float name="Transparency">0</float>
@@ -28644,7 +28793,7 @@ _∧__∧__∧__</string>
                   <bool name="CanTouch">false</bool>
                   <Color3uint8 name="Color3uint8">13818832</Color3uint8>
                   <bool name="Massless">false</bool>
-                  <token name="Material">1312</token>
+                  <token name="Material">272</token>
                   <Vector3 name="size">
                     <X>2.6</X>
                     <Y>0.3</Y>
@@ -53119,7 +53268,7 @@ BEDS 01 — 04</string>
             <token name="BottomSurface">0</token>
             <CoordinateFrame name="CFrame">
               <X>0</X>
-              <Y>13.2</Y>
+              <Y>16.7</Y>
               <Z>-14</Z>
               <R00>1</R00>
               <R01>0</R01>
@@ -53139,7 +53288,7 @@ BEDS 01 — 04</string>
             <token name="Material">1088</token>
             <Vector3 name="size">
               <X>26</X>
-              <Y>4</Y>
+              <Y>2.8</Y>
               <Z>0.35</Z>
             </Vector3>
             <token name="TopSurface">0</token>

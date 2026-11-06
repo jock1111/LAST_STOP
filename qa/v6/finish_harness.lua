@@ -1,0 +1,10 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local control = ReplicatedStorage:WaitForChild("QA_V6_Control", 15)
+local results = ReplicatedStorage:WaitForChild("QA_V6_Results", 15)
+control:FireServer("finish")
+task.wait(2)
+local ok, data = pcall(function()
+	return HttpService:JSONDecode(results.Value)
+end)
+return { ok = ok, finished = ok and data.finished or false, checks = ok and #data.checks or 0, errors = ok and data.errors or nil }

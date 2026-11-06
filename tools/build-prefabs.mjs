@@ -84,10 +84,11 @@ function vent(parent,x,y,z){
 }
 function bed(parent,x,z){
  const m=folder(parent,'PatientBed');
- part(m,'Undercarriage',[3.8,.45,7.2],[x,1.1,z],C.steel,1088,{pbr:'MetalPlate'});
+ part(m,'Undercarriage',[3.8,.45,7.2],[x,1.1,z],C.steel,1088);
  part(m,'Mattress',[3.45,.8,6.8],[x,2,z],C.white,272);
- part(m,'FoldedBlanket',[3.5,.16,3.3],[x,2.49,z+1.6],C.green,1312);
- part(m,'Pillow',[2.6,.3,1.3],[x,2.5,z-2.3],C.white,1312);
+ part(m,'FoldedBlanket',[3.5,.16,3.3],[x,2.49,z+1.6],[156,178,170],272);
+ part(m,'BlanketStripe',[3.5,.02,.32],[x,2.58,z+1.6],[112,140,130],272,{detail:true});
+ part(m,'Pillow',[2.6,.3,1.3],[x,2.5,z-2.3],C.white,272);
  for(const dz of [-3.6,3.6]){
   part(m,'EndBoard',[4,1.6,.3],[x,2.4,z+dz],C.white);
   for(const dx of [-1.6,1.6])part(m,'Caster',[.55,.65,.65],[x+dx,.55,z+dz*.8],C.rubber,272,{shape:2});
@@ -169,7 +170,9 @@ for(const x of [-18,-10,10,18]){
  part(g,'TurnstileArm',[3.2,.18,.18],[x+1.6,2.4,14],C.steel,1088,{detail:true});
 }
 // Signage hierarchy: station identifier, wayfinding, posters.
-sign(lobby,'MainStationSign','SAINT ORIN\nRESEARCH TRANSIT  /  TERMINUS',[26,4,.35],[0,13.2,-14],C.white);
+// The station identifier sits above the elevator indicator panel; at its old
+// y=13.2 position it covered the floor display and travel dots completely.
+sign(lobby,'MainStationSign','SAINT ORIN\nRESEARCH TRANSIT  /  TERMINUS',[26,2.8,.35],[0,16.7,-14],C.white);
 sign(lobby,'BoardingWayfinding','↓  DEEP ACCESS  /  ELEVATOR  ↓',[20,1.6,.25],[0,9.7,-14],C.cyan);
 sign(lobby,'PlatformSign','01  /  NORTHBOUND\nSERVICE SUSPENDED',[12,4,.35],[-39.2,7,-8],C.amber,-90);
 sign(lobby,'OriginalPoster','DO NOT WAIT\nFOR THE LAST TRAIN\nTRANSIT AUTHORITY  1986',[5,7,.1],[38.9,7,24],C.white,-90,[40,79,85]);
@@ -276,9 +279,13 @@ for(const z of [-29,-13,4,20]){
 sign(rooms,'HospitalIdentifier','SAINT ORIN\nCLINICAL RESEARCH / WARD 07',[11,2.4,.2],[-14.45,7.8,28],C.white,-90,C.green);
 for(const z of [-9,5]){bed(rooms,-25,z);bed(rooms,-13,z);}
 // Privacy curtains are per bed, not one ward-wide track crossing both beds.
+// A single translucent panel keeps the ward readable; shallow pleats and a
+// weighted hem give it cloth depth instead of reading as a row of columns.
 for(const [x,z] of [[-25,-9],[-13,-9],[-25,5],[-13,5]]){
  part(rooms,'CurtainTrack',[8.6,.15,.15],[x,10,z+3.9],C.steel);
- for(let dx=-3.6;dx<=3.6;dx+=1.2)part(rooms,'FadedCurtainFold',[.5,6,.3],[x+dx,7,z+3.9],C.green,1312,{detail:true});
+ part(rooms,'PrivacyCurtain',[7.9,5.8,.08],[x,7.1,z+3.9],[188,204,197],272,{alpha:.42,detail:true});
+ for(const dx of [-3.2,-1.6,0,1.6,3.2])part(rooms,'CurtainPleat',[.18,5.7,.16],[x+dx,7.05,z+3.84],[130,158,148],272,{alpha:.1,detail:true});
+ part(rooms,'CurtainHem',[7.9,.16,.14],[x,4.25,z+3.9],[112,140,130],272,{detail:true});
 }
 bed(rooms,26,10);
 part(rooms,'ScannerTable',[4,1,7],[17,2.4,10],C.white);
