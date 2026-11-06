@@ -207,8 +207,34 @@ function HUD:ApplyState(data)
         if data.state == "Results" or data.state == "Lobby" or data.state == "Ended" then
             task.defer(function() self:FrameLobby() end)
         elseif data.state == "Floor" or data.state == "Escape" or data.state == "Decision" or data.state == "Boarding" or data.state == "Travel" then
-            camera.CameraType = Enum.CameraType.Custom
+            self:EnsureGameplayCamera()
         end
+    end
+end
+
+-- Expedition transitions can leave CameraSubject pointed at a stale humanoid,
+-- which parks Focus under the floor and makes the normal player view black.
+-- Re-seat the live humanoid whenever the focus is implausibly far from the head.
+function HUD:EnsureGameplayCamera()
+    local camera = workspace.CurrentCamera
+    if not camera then return end
+    camera.CameraType = Enum.CameraType.Custom
+    local character = self.player.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not root then return end
+    if camera.CameraSubject ~= humanoid then
+        camera.CameraSubject = humanoid
+    end
+    local focus = camera.Focus
+    local expected = root.Position + Vector3.new(0, humanoid.HipHeight + 1.5, 0)
+    if not focus or (focus.Position - expected).Magnitude > 8 then
+        camera.CameraSubject = nil
+        task.defer(function()
+            if camera.Parent and humanoid.Parent then
+                camera.CameraSubject = humanoid
+            end
+        end)
     end
 end
 function HUD:FrameLobby()

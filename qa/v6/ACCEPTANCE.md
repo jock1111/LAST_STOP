@@ -2,9 +2,55 @@
 
 Branch: `v6-visual-development`. Build label: **V6 / VISUAL DEVELOPMENT**.
 
-Canonical artifact: **LAST_STOP.rbxlx**. SHA-256: `a9a4b6ee6138cceb827999cf13c8f323a24e8d96b1ce00aa3b9a706c1a2b1fe4`. Size: 2,985,421 bytes.
+Canonical artifact: **LAST_STOP.rbxlx**. SHA-256: `2ac28ee6d4b42d99f68d3fa5cda0d26a51d335c03ef166b9b8dbe79325648938`. Size: 3,060,230 bytes.
 
-Offline build audit: **PASS**. 41 scripts, 61 bones, 2,001 prefab instances (Lobby 557, Elevator 131, Hospital 951, Stalker 40, Environment 37, StalkerSkin 285). `node tools/verify-build.mjs` confirms the saved place contains the current source, prefab, MaterialVariant and PBR definitions.
+Offline build audit: **PASS**. 41 scripts, 61 bones, 2,017 prefab instances (Lobby 557, Elevator 131, Hospital 951, Stalker 40, Environment 53, StalkerSkin 285). `node tools/verify-build.mjs` confirms the saved place contains the current source, prefab, MaterialVariant and PBR definitions.
+
+## Milestone 2 — generated meshes, normal camera, active-train capture (2026-11-05)
+
+### New generated mesh assets
+
+Eight meshes were generated in Studio (`generate_mesh`) and committed to `assets/prefabs/Environment.rbxmx` via `tools/add-generated-meshes.mjs` (idempotent; each is a `<name>_Node` Model wrapping one MeshPart, matching the Kenney import layout):
+
+| Mesh | Used for |
+| --- | --- |
+| `containment-vessel` | Laboratory containment cells (replaces box frame + glass cylinder) |
+| `specimen-canister` | 24 staged canisters on catwalks + plinth clusters |
+| `pump-machine` | West/east pump objectives at `(±37, 3, 38)` |
+| `research-console` | Control room consoles (replaces `computer-wide` hero pieces) |
+| `subway-train-car` | The hazard train (replaces box car, windows and bogies) |
+| `station-bench` | Platform benches (replaces slab benches) |
+| `signal-post` | Six signal posts at platform ends and the crossing |
+| `subway-track-section` | Available in the library (trackwork is procedural rails/sleepers/ballast) |
+
+`Environment.Mesh()` now scans library descendants for a MeshPart by name so both the `_Node`-wrapped Kenney assets and the generated models resolve.
+
+### Laboratory upgrades
+
+- Containment cells are corroded pressure vessels with glowing cores rising out of the floodwater.
+- Flood water has a dark under-layer (`FloodWaterDeep`) for real depth plus translucent `LightShaft` volumes.
+- Handrails on the central catwalk; support columns and pipe collars rise from the basin floor.
+- Steam vents, bioluminescent motes, drips, edge lights retained; pump status lamps added.
+
+### Subway upgrades
+
+- Real trackwork: gravel ballast, two running rails and 27 concrete sleepers on the track bed.
+- The hazard train is the generated `subway-train-car` mesh (non-uniform Z stretch to ~44 studs) with roof pods, headlight spot and marker lights; `TrainHazardSpec` still passes.
+- Platform screen walls (`wall` mesh, `ChippedConcrete`), ceiling beams, lamp cages, wall-wash strips, signal posts and station benches.
+- Containers moved from `x=±16` to `x=±27` against the tunnel walls; lockers re-spaced to clear them.
+
+### Normal player camera
+
+Root cause of the black normal-camera view: after expedition/respawn transitions `camera.CameraSubject` could reference a stale humanoid, parking `camera.Focus` under the floor. `HUDController:EnsureGameplayCamera()` now re-seats the live humanoid on Floor/Escape/Decision/Boarding/Travel snapshots whenever the focus is implausibly far from the head. Verified in Play on both floors: `CameraType.Custom`, subject = live humanoid, focus at head height, no obstruction — no Scriptable override or QA camera lock.
+
+### Evidence this milestone
+
+- Build: `node tools/verify-build.mjs` PASS (SHA above).
+- Regressions in Play: `GameplayRecoverySpec` PASS, `TrainHazardSpec` PASS (via `QA_V6_Control` "regressions").
+- Live mesh census: Laboratory spawned 4 `containment-vessel`, 3 `research-console`, 24 `specimen-canister`, 2 `pump-machine`; Subway spawned 1 `subway-train-car`, 6 `station-bench`, 6 `signal-post`.
+- Screenshots (player-height and composed): `screenshots/lab-v6-normal.jpg`, `lab-v6-meshes.jpg`, `lab-v6-containment.jpg`, `lab-v6-pumps.jpg`, `lab-v6-catwalk.jpg`, `subway-v6-normal.jpg`, `subway-v6-platform.jpg`, `subway-v6-track.jpg`, `subway-v6-train-active.jpg`, `subway-v6-train-active2.jpg` (the last two captured while `HazardPhase == "Active"`, `TrainZ ≈ 110`).
+
+Note: `execute_luau` runs in a separate VM with its own `require` cache, so runtime weight overrides must be applied inside the server VM (the QA harness was patched in-place for the Subway run); the shipped `FloorConfig` is unchanged.
 
 ## Scope
 
@@ -155,9 +201,9 @@ Before/after diagnostic frames are retained in `screenshots/` for the curtain, b
 - **Published material permissions are not re-verified.** PBR variants render in local Studio; cross-experience asset permissions and published ownership remain separate checks.
 - **The Stalker is still an articulated part rig**, not a skinned mesh or uploaded animation clip.
 - **The privacy curtains read as frosted isolation panels** rather than soft cloth. This is the chosen containment-ward art direction after the `Fabric` weave proved unreadable at panel scale.
-- **The Laboratory and Subway use existing mesh assets** (`floor-panel`, `wall`, `wall-window`, `wall-corner`, `rail`, `pipe`, `pipe-bend`, `container`, `container-tall`, `computer-system`, `computer-wide`, `door-double`, `stairs-ramp`) rather than newly authored Blender modules. The visual quality is improved through PBR materials, lighting, particles, and storytelling, but the geometry is still composed of the existing mesh library.
-- **Visual verification was performed with camera locked inside the room.** The game's camera system (`HUDController`) overrides camera position when the player is in Floor state. Screenshots were captured by setting `camera.CameraType = Scriptable` and locking the CFrame via `RunService.RenderStepped` for 3-4 seconds. This ensures the camera stays inside the room below the ceiling and above the floor. Canonical frames were also pixel-sampled for luminance so HUD-over-black captures cannot be mistaken for scenery.
-- **The train is not visible in static screenshots.** The train is parked at Z=-200 (outside room bounds) during Safe/Warning phases and only enters the room during the Active hazard phase. A dedicated train screenshot would require capturing during the Active phase when the train is passing through the track bed.
+- **The Laboratory and Subway now combine generated meshes with the existing Kenney library.** Eight Studio-generated assets (`containment-vessel`, `specimen-canister`, `pump-machine`, `research-console`, `subway-train-car`, `station-bench`, `signal-post`, `subway-track-section`) were added to `Environment.rbxmx`; trackwork, water, catwalks and lighting remain procedural/PBR dressing.
+- **Normal-camera verification is live on both floors** (`CameraType.Custom`, live humanoid subject, head-height focus). Composed `screen_capture` frames with explicit `camera_position`/`look_at_position` were used for milestone-2 detail shots; the canonical player view itself was verified without any camera override.
+- **The train was captured during `HazardPhase == "Active"`** (`subway-v6-train-active*.jpg`, `TrainZ ≈ 110` local). It remains parked at Z=-200 during Safe/Warning by design.
 
 No publish was performed. `v5-development` and `master` were not modified.
 

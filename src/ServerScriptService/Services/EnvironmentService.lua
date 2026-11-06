@@ -17,8 +17,13 @@ end
 
 function Environment.Mesh(parent, name, cframe, size)
     meshLibrary = meshLibrary or ServerStorage.LastStopAssets:WaitForChild("Environment")
-    local source = meshLibrary:FindFirstChild(name, true)
-    assert(source and source:IsA("MeshPart"), "Missing imported mesh " .. name)
+    -- Generated assets are inserted as "<name>" Models wrapping a MeshPart;
+    -- FindFirstChild would return the Model, so scan descendants for the part.
+    local source
+    for _, d in meshLibrary:GetDescendants() do
+        if d:IsA("MeshPart") and d.Name == name then source = d break end
+    end
+    assert(source, "Missing imported mesh " .. name)
     local mesh = source:Clone()
     mesh.Anchored, mesh.CanTouch = true, false
     mesh.CFrame = cframe
@@ -351,20 +356,23 @@ function Environment.BuildLaboratory()
         end
     end
 
-    -- Containment cells: plinth, container-tall frame, frosted glass cylinder with cyan core light.
+    -- Containment cells: plinth plus the generated containment-vessel mesh —
+    -- a corroded pressure chamber with a glowing specimen core inside.
     for _, x in {-25, 25} do
         for _, z in {-27, 27} do
             local plinth = Environment.Part(model, "ContainmentPlinth", Vector3.new(13, 1.5, 13), CFrame.new(x, -2, z), dark)
             plinth:SetAttribute("PbrMaterial", "CorrodedSteel")
-            local frame = Environment.Mesh(architecture, "container-tall", CFrame.new(x, 2, z), Vector3.new(6, 9, 6))
-            frame:SetAttribute("PbrMaterial", "CorrodedSteel")
-            local glass = Environment.Part(model, "ContainmentCylinder", Vector3.new(11, 7.5, 7.5), CFrame.new(x, 3.5, z), cyan, Enum.Material.Glass)
-            glass.Shape, glass.Transparency, glass.CanCollide = Enum.PartType.Cylinder, .78, false
-            glass.CFrame *= CFrame.Angles(0, 0, math.pi / 2)
+            local vessel = Environment.Mesh(model, "containment-vessel",
+                CFrame.new(x, 5.4, z), Vector3.new(7, 13.2, 6.6))
+            vessel.CanCollide = true
             local core = Environment.Light(model, Vector3.new(x, 11, z), cyan, 23)
             -- Specimen ID tag on each containment cylinder.
             local idBoard = Environment.Sign(model, string.format("SPEC-73%d-PELAGIC", x < 0 and 4 or 5),
                 Vector3.new(x, 6.5, z), Vector3.new(4, 1, .1), cyan, 0)
+            -- Small canister cluster at the plinth corner.
+            local canister = Environment.Mesh(model, "specimen-canister",
+                CFrame.new(x + 4.5, .7, z + 4.5) * CFrame.Angles(0, .6, 0), Vector3.new(1.4, 3.8, 1.4))
+            canister.CanCollide = false
         end
     end
 
@@ -408,14 +416,34 @@ function Environment.BuildLaboratory()
         end
     end
 
-    -- Control computers: west and east pump consoles, central terminal.
-    Environment.Mesh(architecture, "computer-system", CFrame.new(-37, 2.4, -44)):SetAttribute("PbrMaterial", "PaintedSteel")
-    Environment.Mesh(architecture, "computer-system", CFrame.new(37, 2.4, -44)):SetAttribute("PbrMaterial", "PaintedSteel")
-    Environment.Mesh(architecture, "computer-wide", CFrame.new(0, 2, -45)):SetAttribute("PbrMaterial", "PaintedSteel")
+    -- Control consoles: generated research-console meshes with glowing screens.
+    local consoleA = Environment.Mesh(model, "research-console", CFrame.new(-37, 1.6, -44) * CFrame.Angles(0, math.pi, 0), Vector3.new(6.5, 3, 4.5))
+    consoleA.CanCollide = false
+    local consoleB = Environment.Mesh(model, "research-console", CFrame.new(37, 1.6, -44), Vector3.new(6.5, 3, 4.5))
+    consoleB.CanCollide = false
+    local consoleMain = Environment.Mesh(model, "research-console", CFrame.new(0, 1.6, -45), Vector3.new(7.5, 3.2, 5))
+    consoleMain.CanCollide = false
     for _, x in {-37, 37} do
         Environment.Mesh(architecture, "computer-system", CFrame.new(x, 2.4, 34)):SetAttribute("PbrMaterial", "PaintedSteel")
         Environment.Mesh(architecture, "pipe-bend", CFrame.new(x > 0 and 43 or -43, 3, 38), Vector3.new(5, 5, 3)):SetAttribute("PbrMaterial", "CorrodedSteel")
         Environment.Mesh(architecture, "wall-detail", CFrame.new(x, 7, 52), Vector3.new(5, 7, 1.4)):SetAttribute("PbrMaterial", "CorrodedSteel")
+    end
+
+    -- Pump machines: generated industrial pumps flanking the south walkway,
+    -- next to the PumpA/PumpB objective prompts at (+/-37, 3, 38).
+    for _, x in {-37, 37} do
+        local pump = Environment.Mesh(model, "pump-machine",
+            CFrame.new(x + (x > 0 and -4 or 4), 4.2, 30) * CFrame.Angles(0, x > 0 and -math.pi / 2 or math.pi / 2, 0),
+            Vector3.new(5.5, 10.5, 4.2))
+        pump.CanCollide = true
+        -- Pipe run from pump up to the ceiling.
+        local riser = Environment.Mesh(architecture, "pipe", CFrame.new(x + (x > 0 and -6.5 or 6.5), 9, 30), Vector3.new(1.6, 12, 1.6))
+        riser:SetAttribute("PbrMaterial", "CorrodedSteel")
+        -- Status lamp on each pump: amber until restarted.
+        local lamp = Environment.Part(model, "PumpStatusLamp", Vector3.new(.7, .7, .3),
+            CFrame.new(x + (x > 0 and -1.8 or 1.8), 8.6, 30) * CFrame.Angles(0, x > 0 and -math.pi / 2 or math.pi / 2, 0), amber, Enum.Material.Neon)
+        lamp.CanCollide, lamp.CanQuery = false, false
+        lamp:SetAttribute("PumpStatus", x < 0 and "A" or "B")
     end
 
     -- Pressure doors at the west and east pump room entrances.
@@ -451,8 +479,61 @@ function Environment.BuildLaboratory()
     -- Catwalk edge lights: cyan neon strips marking the walkway boundaries.
     for _, x in {-6.2, 6.2} do
         local strip = Environment.Part(model, "CatwalkEdgeLight", Vector3.new(.12, .12, 100), CFrame.new(x, .12, 0), cyan, Enum.Material.Neon)
+        strip.Transparency = .15
         strip.CanCollide = false
         strip:SetAttribute("HazardIndicator", true)
+    end
+
+    -- Handrails on the central catwalk so the drop into the flood reads as
+    -- dangerous rather than an invisible cliff.
+    for _, x in {-6, 6} do
+        for z = -48, 48, 12 do
+            local post = Environment.Part(model, "HandrailPost", Vector3.new(.35, 3.4, .35), CFrame.new(x, 1.7, z), dark)
+            post.CanCollide, post.CanQuery = false, false
+            post:SetAttribute("PbrMaterial", "CorrodedSteel")
+        end
+        for z = -42, 42, 12 do
+            local rail = Environment.Mesh(architecture, "rail",
+                CFrame.new(x, 3.4, z) * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(12, .5, .5))
+            rail.CanCollide, rail.CanQuery = false, false
+            rail:SetAttribute("PbrMaterial", "CorrodedSteel")
+        end
+    end
+
+    -- Flood depth: a darker under-layer gives the water volume real depth
+    -- instead of a single glass sheet over the basin floor.
+    local deepWater = Environment.Part(model, "FloodWaterDeep", Vector3.new(88, .1, 104), CFrame.new(0, -2.7, 0), Color3.fromRGB(8, 26, 34), Enum.Material.Glass)
+    deepWater.Transparency, deepWater.CanCollide, deepWater.CanQuery, deepWater.CastShadow = .55, false, false, false
+    -- Faint light shafts falling through the water onto the basin floor.
+    for _, pos in {{-22, -1.5, -22}, {18, -1.5, -18}, {-14, -1.5, 22}, {24, -1.5, 26}, {0, -1.5, -34}, {0, -1.5, 34}} do
+        local shaft = Environment.Part(model, "LightShaft", Vector3.new(5, 12, 5), CFrame.new(unpack(pos)), Color3.fromRGB(60, 160, 170), Enum.Material.Glass)
+        shaft.Transparency, shaft.CanCollide, shaft.CanQuery, shaft.CastShadow = .9, false, false, false
+    end
+
+    -- Specimen canisters staged along the catwalks: the lab is a collection
+    -- facility, so samples should be everywhere. All spots sit on walkways
+    -- (deck top is y=0, canister is ~3.6 tall).
+    local canisterSpots = {
+        {-5, -40}, {5, -28}, {-5, -16}, {5, -4}, {-5, 8}, {5, 20}, {-5, 32}, {5, 44},
+        {-34, 44}, {34, 44}, {-20, 44}, {20, 44}, {-34, -44}, {34, -44},
+        {-34, 0}, {34, 0}, {-40, -10}, {40, -10}, {-40, 30}, {40, 30},
+    }
+    for index, spot in canisterSpots do
+        local x, z = spot[1], spot[2]
+        local canister = Environment.Mesh(model, "specimen-canister",
+            CFrame.new(x, 1.8, z) * CFrame.Angles(0, (index * 1.7) % 6.28, 0),
+            Vector3.new(1.3, 3.6, 1.3) * (1 + (index % 3) * .12))
+        canister.CanCollide = false
+        canister.CanQuery = false
+    end
+
+    -- Catwalk support columns rising from the basin floor into the water.
+    for _, pos in {{-20, -30}, {20, -30}, {-20, 30}, {20, 30}, {-36, -20}, {36, -20}, {-36, 20}, {36, 20}} do
+        local column = Environment.Part(model, "CatwalkColumn", Vector3.new(1.6, 7, 1.6), CFrame.new(pos[1], -4.6, pos[2]), dark)
+        column.CanCollide, column.CanQuery = false, false
+        column:SetAttribute("PbrMaterial", "CorrodedSteel")
+        local collar = Environment.Mesh(architecture, "pipe-bend", CFrame.new(pos[1], -2.4, pos[2]), Vector3.new(2.4, 2.4, 2.4))
+        collar:SetAttribute("PbrMaterial", "CorrodedSteel")
     end
 
     -- Bioluminescent mote particles in the water volume.
@@ -533,6 +614,20 @@ function Environment.BuildSubway()
     local trackCost = Instance.new("PathfindingModifier")
     trackCost.Label, trackCost.Parent = "TrainTrack", trackBed
 
+    -- Real trackwork on the bed: gravel ballast strip, two running rails and
+    -- concrete sleepers. The train hazard lane stays |x| < ~5.
+    local ballast = Environment.Part(model, "Ballast", Vector3.new(10, .7, 108), CFrame.new(0, -2.85, 0), Color3.fromRGB(52, 50, 46), Enum.Material.Slate)
+    ballast.CanCollide = false
+    for _, x in {-1.7, 1.7} do
+        local rail = Environment.Part(model, "RunningRail", Vector3.new(.45, .55, 108), CFrame.new(x, -2.35, 0), Color3.fromRGB(120, 124, 128), Enum.Material.Metal)
+        rail.CanCollide = false
+        rail.MaterialVariant = "MetalPlate"
+    end
+    for z = -52, 52, 4 do
+        local sleeper = Environment.Part(model, "Sleeper", Vector3.new(4.6, .3, 1.1), CFrame.new(0, -2.55, z), Color3.fromRGB(38, 34, 30), Enum.Material.Wood)
+        sleeper.CanCollide = false
+    end
+
     -- Platforms: concrete with amber edge strips.
     for _, x in {-22, 22} do
         local platform = Environment.Part(model, "Platform", Vector3.new(16, 1, 110), CFrame.new(x, -.5, 0), tile, Enum.Material.Concrete)
@@ -556,9 +651,10 @@ function Environment.BuildSubway()
     local ceiling = Environment.Part(model, "Ceiling", Vector3.new(60, 1, 120), CFrame.new(0, 13, 0), grime, Enum.Material.Concrete)
     ceiling:SetAttribute("PbrMaterial", "FloodedConcrete")
 
-    -- Container-tall props along tunnel walls (existing mesh).
+    -- Container-tall props hugging the tunnel walls, clear of the platform
+    -- walking lanes and the level crossing.
     for z = -54, 54, 18 do
-        for _, x in {-16, 16} do
+        for _, x in {-27, 27} do
             local container = Environment.Mesh(architecture, "container-tall", CFrame.new(x, 5, z), Vector3.new(4, 12, 4))
             container:SetAttribute("PbrMaterial", "CorrodedSteel")
         end
@@ -587,14 +683,55 @@ function Environment.BuildSubway()
         lamp:SetAttribute("SignalLamp", true)
     end
 
-    -- Benches on both platforms: simple slatted seats with frames.
+    -- Generated signal posts at the platform ends and the north crossing.
+    for _, pos in {{-14, -52}, {14, -52}, {-14, 44}, {14, 44}, {26, 48}, {-26, 48}} do
+        local post = Environment.Mesh(model, "signal-post", CFrame.new(pos[1], 3.4, pos[2]), Vector3.new(1.6, 8, 1.6))
+        post.CanCollide = false
+        post.CanQuery = false
+    end
+
+    -- Platform screen walls: tiled panel sections along the tunnel walls so
+    -- the platforms read as a station rather than a bare box.
+    for z = -48, 48, 12 do
+        for _, x in {-29.2, 29.2} do
+            local panel = Environment.Mesh(architecture, "wall", CFrame.new(x, 6, z) * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(12, 12, 1))
+            panel.CanCollide = false
+            panel:SetAttribute("PbrMaterial", "ChippedConcrete")
+        end
+    end
+    -- Ceiling beams spanning the vault every 16 studs.
+    for z = -48, 48, 16 do
+        local beam = Environment.Part(model, "CeilingBeam", Vector3.new(58, 1.4, 2), CFrame.new(0, 11.5, z), Color3.fromRGB(56, 60, 58), Enum.Material.Metal)
+        beam.CanCollide, beam.CanQuery = false, false
+        beam.MaterialVariant = "MetalPlate"
+        -- Hanging lamp cages under every second beam.
+        if z % 32 == 0 then
+            for _, x in {-22, 22} do
+                local cage = Environment.Part(model, "LampCage", Vector3.new(3, .4, 1), CFrame.new(x, 10.4, z), Color3.fromRGB(60, 64, 62), Enum.Material.Metal)
+                cage.CanCollide, cage.CanQuery = false, false
+                local bulb = Environment.Part(model, "LampBulb", Vector3.new(2.4, .15, .7), CFrame.new(x, 10.1, z), Color3.fromRGB(255, 226, 170), Enum.Material.Neon)
+                bulb.CanCollide, bulb.CanQuery = false, false
+            end
+        end
+    end
+    -- Coloured tunnel light strips along the wall base for depth readability.
+    for z = -40, 40, 20 do
+        for _, x in {-28.6, 28.6} do
+            local strip = Environment.Part(model, "WallWash", Vector3.new(.15, .5, 14), CFrame.new(x, 1.6, z), Color3.fromRGB(70, 140, 150), Enum.Material.Neon)
+            strip.CanCollide, strip.CanQuery = false, false
+            strip.Transparency = .3
+        end
+    end
+
+    -- Benches on both platforms: generated station-bench meshes facing the
+    -- track, set back from the platform edge so they don't block the lane.
     for _, x in {-22, 22} do
         for _, z in {-20, 0, 20} do
-            local bench = Environment.Part(model, "Bench", Vector3.new(4, 1, 1.5), CFrame.new(x, 1, z), Color3.fromRGB(120, 128, 126), Enum.Material.Metal)
-            bench.CanCollide, bench.CanQuery = false, false
-            bench:SetAttribute("PbrMaterial", "CorrodedSteel")
-            local seat = Environment.Part(model, "BenchSeat", Vector3.new(3.8, .3, 1.3), CFrame.new(x, 1.5, z), Color3.fromRGB(140, 148, 146), Enum.Material.Wood)
-            seat.CanCollide, seat.CanQuery = false, false
+            local bench = Environment.Mesh(model, "station-bench",
+                CFrame.new(x + (x > 0 and 3 or -3), 1.1, z) * CFrame.Angles(0, x > 0 and -math.pi / 2 or math.pi / 2, 0),
+                Vector3.new(4.2, 2.4, 1.9))
+            bench.CanCollide = false
+            bench.CanQuery = false
         end
     end
 
@@ -611,7 +748,7 @@ function Environment.BuildSubway()
 
     -- Lockers in service areas: door banks with vents.
     for _, x in {-28, 28} do
-        for _, z in {-40, -20, 20, 40} do
+        for _, z in {-44, -26, 26, 44} do
             local locker = Environment.Part(model, "Locker", Vector3.new(2, 6, 1), CFrame.new(x, 1, z), Color3.fromRGB(70, 88, 94), Enum.Material.Metal)
             locker.CanCollide, locker.CanQuery = false, false
             locker:SetAttribute("PbrMaterial", "CorrodedSteel")
@@ -636,24 +773,20 @@ function Environment.BuildSubway()
         end
     end
 
-    -- The visual train: detailed car with headlight, marker lights, bogies.
+    -- The visual train: generated subway-train-car mesh with weathered panel
+    -- texture, plug doors and window strip. Non-uniform Z stretch gives the
+    -- ~44-stud consist the hazard lane needs.
     local train = Instance.new("Model")
     train.Name, train.Parent = "Train", model
-    local car = Environment.Part(train, "TrainCar", Vector3.new(11, 8, 40), CFrame.new(0, 1.5, -86), Color3.fromRGB(70, 96, 74), Enum.Material.Metal)
+    local car = Environment.Mesh(train, "subway-train-car", CFrame.new(0, 1.6, -86), Vector3.new(11, 8.4, 44))
     car.CanCollide = false
+    car.CanQuery = false
     car:SetAttribute("HazardIndicator", true)
-    car:SetAttribute("PbrMaterial", "CorrodedSteel")
-    -- Train windows: glass panels along the car sides.
-    for _, x in {-5.4, 5.4} do
-        local window = Environment.Part(train, "TrainWindow", Vector3.new(.2, 3, 30), CFrame.new(x, 4, -86) * CFrame.Angles(0, math.pi / 2, 0), Color3.fromRGB(180, 200, 210), Enum.Material.Glass)
-        window.Transparency = .3
-        window.CanCollide = false
-    end
-    -- Train bogies: dark undercarriage details.
-    for _, z in {-100, -72} do
-        local bogie = Environment.Part(train, "TrainBogie", Vector3.new(9, 2, 4), CFrame.new(0, -2, z), Color3.fromRGB(40, 45, 50), Enum.Material.Metal)
-        bogie.CanCollide = false
-        bogie:SetAttribute("PbrMaterial", "CorrodedSteel")
+    -- Roof gear: AC pods and a pantograph silhouette for skyline interest.
+    for _, z in {-96, -76} do
+        local pod = Environment.Part(train, "RoofPod", Vector3.new(4, 1.2, 5), CFrame.new(0, 6.2, z), Color3.fromRGB(52, 58, 60), Enum.Material.Metal)
+        pod.CanCollide, pod.CanQuery = false, false
+        pod.MaterialVariant = "MetalPlate"
     end
     -- Headlight: bright white spotlight on the front of the train.
     local headlight = Environment.Part(train, "Headlight", Vector3.new(2, 2, .4), CFrame.new(0, 3, -106.2), Color3.fromRGB(255, 244, 210), Enum.Material.Neon)
@@ -722,7 +855,9 @@ function Environment.BuildSubway()
     return model
 end
 
-function Environment.BuildLaboratory()
+-- Legacy pre-V6 laboratory is intentionally not assigned to BuildLaboratory;
+-- the upgraded definition above is the authoritative runtime builder.
+function Environment.BuildLaboratoryLegacy()
     local model = Instance.new("Model")
     model.Name = "FloodedLaboratory"
     local origin = Environment.Part(model, "Origin", Vector3.one * .1, CFrame.new(), dark)
