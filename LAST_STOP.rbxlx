@@ -230,7 +230,7 @@ return {
           <Properties>
             <string name="Name">RemoteNames</string>
             <string name="Source"><![CDATA[return {
-RequestSprint = "RequestSprint",
+	RequestSprint = "RequestSprint",
 	RequestQueue = "RequestQueue",
 	RequestState = "RequestState",
 	RequestInteract = "RequestInteract",
@@ -238,6 +238,7 @@ RequestSprint = "RequestSprint",
 	RequestMedkit = "RequestMedkit",
 	StateChanged = "StateChanged",
 	Toast = "Toast",
+	QueueCountdown = "QueueCountdown",
 }
 ]]></string>
           </Properties>
@@ -549,7 +550,7 @@ local function canQueue(player)
 	return profiles:Get(player) ~= nil and (not currentExpedition or not currentExpedition:IsRunning())
 end
 
-matchmaking = MatchmakingService.new(GameConfig, canQueue, function(group, finished)
+matchmaking = MatchmakingService.new(GameConfig, remotes, canQueue, function(group, finished)
 	local expedition
 	expedition = ExpeditionService.new(
 		GameConfig,
@@ -2086,11 +2087,17 @@ function ExpeditionService:_send(player, patch)
 		target = self.floorDefinition and self.floorDefinition.Target or 0,
 		unbanked = self.unbanked[player] or 0,
 		banked = self._economyService:GetBankedCoins(player),
+		coinsEarned = self.unbanked[player] or 0,
+		xpEarned = self.pendingXP[player] or 0,
 		activePlayers = self:_activeCount(),
 		seed = self.seed,
 	}
 	for key, value in pairs(patch or {}) do
 		payload[key] = value
+	end
+	if self.state == "Floor" and self.floor then
+		payload.objectiveStage = self.floor:CurrentObjectiveStage()
+		payload.objectivePosition = self.floor:CurrentObjectivePosition()
 	end
 	player:SetAttribute("LastStopSnapshot", game:GetService("HttpService"):JSONEncode(payload))
 	self._remotes.StateChanged:FireClient(player, payload)
@@ -2485,12 +2492,15 @@ function ExpeditionService:_bankAndReturn(player)
 	end
 	self._banked[player] = true
 	local atRisk = self.unbanked[player] or 0
-	local secured = self._economyService:Bank(player, atRisk, self.pendingXP[player] or 0, self.depth)
+	local xpThisRun = self.pendingXP[player] or 0
+	local secured = self._economyService:Bank(player, atRisk, xpThisRun, self.depth)
 	self.active[player] = nil
 	self.unbanked[player] = 0
 	self.pendingXP[player] = 0
 	self._inventoryService:EndRun(player)
-	self:_send(player, { state = "Results", result = "BANKED", secured = secured, message = "Secured " .. secured .. " coins." })
+	self:_send(player, { state = "Results", result = "BANKED", secured = secured,
+		earned = atRisk, xpEarned = xpThisRun,
+		message = "Secured " .. secured .. " coins." })
 	self:_returnToLobby(player)
 	self._floorService:SetLobbyElevator(true, "LAST STOP")
 end
@@ -2500,11 +2510,13 @@ function ExpeditionService:_eliminate(player, reason)
 		return
 	end
 	local lost = self.unbanked[player] or 0
+	local xpThisRun = self.pendingXP[player] or 0
 	self.active[player] = nil
 	self.unbanked[player] = 0
 	self.pendingXP[player] = 0
 	self._inventoryService:EndRun(player)
-	self:_send(player, { state = "Results", result = "LOST", lost = lost, message = reason })
+	self:_send(player, { state = "Results", result = "LOST", lost = lost,
+		xpEarned = xpThisRun, message = reason })
 	self:_returnToLobby(player)
 	self._floorService:SetLobbyElevator(true, "LAST STOP")
 end
@@ -2853,12 +2865,15 @@ return InventoryService
           <string name="Name">MatchmakingService</string>
           <string name="Source"><![CDATA[-- Server-local matchmaking for the vertical slice. It supports solo starts and
 -- batches up to twelve queued players; cross-server queues belong in Milestone B.
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MatchmakingService = {}
 MatchmakingService.__index = MatchmakingService
 
-function MatchmakingService.new(config, canQueue, onStart, onToast)
+function MatchmakingService.new(config, remotes, canQueue, onStart, onToast)
 	return setmetatable({
 		_config = config,
+		_remotes = remotes,
 		_canQueue = canQueue,
 		_onStart = onStart,
 		_onToast = onToast,
@@ -2889,6 +2904,7 @@ function MatchmakingService:RequestJoin(player)
 	if not self._countdown then
 		self._countdown = self._config.LobbyQueueCountdown
 	end
+	self:_broadcastCountdown()
 	return true, "Queued for the next elevator."
 end
 
@@ -2901,6 +2917,16 @@ function MatchmakingService:Remove(player)
 	end
 	if #self._queue == 0 then
 		self._countdown = nil
+	end
+	self:_broadcastCountdown()
+end
+
+function MatchmakingService:_broadcastCountdown()
+	local remaining = self._countdown or 0
+	for _, player in ipairs(Players:GetPlayers()) do
+		if self._remotes and self._remotes.QueueCountdown then
+			self._remotes.QueueCountdown:FireClient(player, remaining)
+		end
 	end
 end
 
@@ -2917,6 +2943,7 @@ function MatchmakingService:_startQueuedGroup()
 		end
 	end
 	self._countdown = #self._queue > 0 and self._config.LobbyQueueCountdown or nil
+	self:_broadcastCountdown()
 	if #group > 0 then
 		self._running = true
 		self._onStart(group, function()
@@ -2931,9 +2958,7 @@ function MatchmakingService:Start()
 			task.wait(1)
 			if not self._running and self._countdown then
 				self._countdown -= 1
-				for player in pairs(self._queued) do
-					self._onToast(player, "Elevator departs in " .. math.max(0, self._countdown) .. "s")
-				end
+				self:_broadcastCountdown()
 				if self._countdown <= 0 then
 					self:_startQueuedGroup()
 				end
@@ -3271,6 +3296,21 @@ function Room:Start()
     self:_setObjective(self.instructions[1])
     self.startedAt = os.clock()
     task.spawn(function() self:_hazards(self.hazardMode) end)
+end
+
+-- Returns the current objective stage (1..5) and its world position, for
+-- client-side wayfinding cues. Returns nil position when no active target.
+function Room:CurrentObjectiveStage()
+    return self.stage
+end
+
+function Room:CurrentObjectivePosition()
+    for _, entry in pairs(self.targets) do
+        if entry.stage == self.stage and entry.part and entry.part.Parent then
+            return entry.part.Position
+        end
+    end
+    return nil
 end
 
 function Room:_hazards(mode)
@@ -65600,6 +65640,7 @@ local RemoteNames = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChil
 local controllers = script.Parent:WaitForChild("Controllers")
 local HUDController = require(controllers:WaitForChild("HUDController"))
 local InputController = require(controllers:WaitForChild("InputController"))
+local Onboarding = require(controllers:WaitForChild("OnboardingController"))
 
 local soundscape = require(controllers:WaitForChild("SoundscapeController")).new()
 local player = Players.LocalPlayer
@@ -65628,15 +65669,23 @@ local input = InputController.new(function()
 	remotes.RequestMedkit:FireServer()
 end)
 
+local onboarding = Onboarding.new(player, function(text)
+	hud:ShowToast(text)
+end)
+
 remotes.StateChanged.OnClientEvent:Connect(function(state)
 	if type(state) == "table" then
 		hud:ApplyState(state)
-        soundscape:ApplyState(state)
+		soundscape:ApplyState(state)
+		onboarding:update(state.state, state)
 	end
 end)
 
 remotes.Toast.OnClientEvent:Connect(function(message)
 	hud:ShowToast(message)
+end)
+remotes.QueueCountdown.OnClientEvent:Connect(function(seconds)
+	hud:setQueueCountdown(seconds)
 end)
 -- Recover the authoritative state after listeners are ready and after respawn.
 -- A Results event can arrive while the character/GUI is being recreated.
@@ -65650,6 +65699,7 @@ player.AncestryChanged:Connect(function(_, parent)
 	if not parent then
 		input:Destroy()
 		hud:Destroy()
+		onboarding:Destroy()
 	end
 end)
 
@@ -65744,6 +65794,7 @@ return Controller
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 local HUD = {}
 HUD.__index = HUD
 local palette = {ink = Color3.fromRGB(12, 22, 29), line = Color3.fromRGB(63, 86, 94),
@@ -65783,7 +65834,8 @@ local function button(parent, name, text, position, size, color, callback)
 end
 
 function HUD.new(player, callbacks)
-    local self = setmetatable({player = player, callbacks = callbacks, state = "Lobby", connections = {}}, HUD)
+    local self = setmetatable({player = player, callbacks = callbacks, state = "Lobby", connections = {},
+        queueCountdown = 0, objectivePosition = nil, objectiveStage = 0}, HUD)
     local gui = Instance.new("ScreenGui")
     gui.Name, gui.ResetOnSpawn, gui.ZIndexBehavior = "LastStopHUD", false, Enum.ZIndexBehavior.Sibling
     gui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
@@ -65792,11 +65844,12 @@ function HUD.new(player, callbacks)
     local root = Instance.new("Frame")
     root.Name, root.Size, root.BackgroundTransparency, root.Parent = "SafeArea", UDim2.fromScale(1, 1), 1, gui
     self.root = root
-    label(root, "Build", "V6 / VISUAL DEVELOPMENT", UDim2.fromOffset(150, 16), UDim2.new(0, 14, 1, -20), 9, palette.muted)
-    self.mission = panel(root, "Mission", UDim2.fromOffset(348, 132), UDim2.fromOffset(22, 70))
+    label(root, "Build", "V7 / FIRST SESSION", UDim2.fromOffset(150, 16), UDim2.new(0, 14, 1, -20), 9, palette.muted)
+    self.mission = panel(root, "Mission", UDim2.fromOffset(348, 150), UDim2.fromOffset(22, 70))
     self.brand = label(self.mission, "Brand", "LAST STOP   /   RESEARCH TRANSIT", UDim2.new(1, -28, 0, 20), UDim2.fromOffset(14, 10), 10, palette.cyan)
     self.title = label(self.mission, "Floor", "TERMINUS CONCOURSE", UDim2.new(1, -28, 0, 26), UDim2.fromOffset(14, 31), 16)
-    self.objective = label(self.mission, "Objective", "Board an expedition. Bring your team home.", UDim2.new(1, -28, 0, 48), UDim2.fromOffset(14, 59), 13, palette.muted)
+    self.stageLabel = label(self.mission, "Stage", "", UDim2.new(1, -28, 0, 26), UDim2.fromOffset(14, 53), 11, palette.muted)
+    self.objective = label(self.mission, "Objective", "Board an expedition. Bring your team home.", UDim2.new(1, -28, 0, 48), UDim2.fromOffset(14, 72), 13, palette.muted)
     self.objective.TextWrapped = true
     self.segments = {}
     for index = 1, 5 do
@@ -65819,6 +65872,9 @@ function HUD.new(player, callbacks)
     self.stamina = self.health:Clone()
     self.stamina.Position, self.stamina.BackgroundColor3, self.stamina.Parent = UDim2.fromOffset(12, 61), palette.amber, self.vitals
     self.playButton = button(root, "Play", "BOARD EXPEDITION   →", UDim2.new(.5, -120, 1, -86), UDim2.fromOffset(240, 50), palette.cyan, callbacks.queue)
+    self.countdownLabel = label(root, "QueueCountdown", "ELEVATOR DEPARTS IN 0s", UDim2.fromOffset(220, 26), UDim2.new(.5, -110, 1, -144), 12, palette.amber)
+    self.countdownLabel.Visible = false
+    self.countdownLabel.TextXAlignment = Enum.TextXAlignment.Center
     self.medkitButton = button(root, "Medkit", "MEDKIT  /  H", UDim2.new(1, -220, 1, -85), UDim2.fromOffset(150, 48), palette.cyan, callbacks.medkit)
     self.medkitButton.Visible = false
     self.sprintButton = button(root, "Sprint", "RUN", UDim2.new(1, -150, 1, -190), UDim2.fromOffset(72, 54), palette.cyan)
@@ -65857,12 +65913,37 @@ function HUD.new(player, callbacks)
     self.countdown = label(self.decision, "Countdown", "", UDim2.fromOffset(430, 20), UDim2.fromOffset(28, 177), 12, palette.amber)
     button(self.decision, "Bank", "BANK & RETURN", UDim2.fromOffset(28, 223), UDim2.fromOffset(210, 50), palette.cyan, function() callbacks.decision("Bank") end)
     button(self.decision, "Continue", "CONTINUE ↓", UDim2.fromOffset(251, 223), UDim2.fromOffset(210, 50), palette.amber, function() callbacks.decision("Continue") end)
+    -- Results breakdown panel (shown when an expedition ends).
+    self.results = panel(root, "Results", UDim2.fromOffset(420, 260), UDim2.new(.5, -210, .5, -130))
+    self.results.Visible = false
+    label(self.results, "Eyebrow", "EXPEDITION RESULTS", UDim2.fromOffset(430, 26), UDim2.fromOffset(28, 22), 11, palette.cyan)
+    self.resultsTitle = label(self.results, "Title", "", UDim2.fromOffset(430, 40), UDim2.fromOffset(28, 50), 24, palette.white)
+    self.resultsLine1 = label(self.results, "Line1", "", UDim2.fromOffset(430, 24), UDim2.fromOffset(28, 96), 13, palette.cyan)
+    self.resultsLine2 = label(self.results, "Line2", "", UDim2.fromOffset(430, 24), UDim2.fromOffset(28, 120), 13, palette.amber)
+    self.resultsLine3 = label(self.results, "Line3", "", UDim2.fromOffset(430, 24), UDim2.fromOffset(28, 144), 13, palette.muted)
+    self.resultsLine4 = label(self.results, "Line4", "", UDim2.fromOffset(430, 24), UDim2.fromOffset(28, 168), 13, palette.muted)
+    self.resultsHint = label(self.results, "Hint", "", UDim2.fromOffset(430, 24), UDim2.fromOffset(28, 200), 12, palette.muted)
+    -- Subtle wayfinder: screen-edge arrow pointing at the current objective.
+    self.wayfinder = Instance.new("Frame")
+    self.wayfinder.Name, self.wayfinder.Size, self.wayfinder.BackgroundTransparency = "Wayfinder", UDim2.fromOffset(20, 20), .35
+    self.wayfinder.BorderSizePixel, self.wayfinder.Visible = 0, false
+    local arrow = Instance.new("ImageLabel")
+    arrow.Name, arrow.Size, arrow.BackgroundTransparency = "Arrow", UDim2.fromScale(1, 1), 1
+    arrow.Image, arrow.ImageColor3 = "rbxassetid://5693079641", palette.cyan
+    arrow.Position, arrow.Parent = UDim2.fromScale(0, 0), self.wayfinder
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius, corner.Parent = UDim.new(1, 0), self.wayfinder
+    self.wayfinder.Parent = root
+    -- Context-sensitive interaction cue.
+    self.interactCue = label(root, "InteractCue", "HOLD  E  TO  INTERACT", UDim2.fromOffset(200, 24), UDim2.new(.5, -100, 0, 200), 12, palette.cyan)
+    self.interactCue.Visible = false
+    self.interactCue.TextXAlignment = Enum.TextXAlignment.Center
     local function responsive()
         local camera = workspace.CurrentCamera
         if not camera then return end
         local mobile = UserInputService.TouchEnabled or camera.ViewportSize.X < 750
         local portrait = camera.ViewportSize.X < 480
-        self.mission.Size = UDim2.fromOffset(mobile and 280 or 348, mobile and 118 or 132)
+        self.mission.Size = UDim2.fromOffset(mobile and 280 or 348, mobile and 136 or 150)
         self.mission.Position = UDim2.fromOffset(14, mobile and 58 or 70)
         self.title.TextSize, self.objective.TextSize = mobile and 13 or 16, mobile and 11 or 13
         wallet.Position = UDim2.new(1, -174, 0, mobile and 58 or 70)
@@ -65877,25 +65958,28 @@ function HUD.new(player, callbacks)
         self.decision.Position = UDim2.new(.5, -245 * scale.Scale, .5, -150 * scale.Scale)
         self.medkitButton.Position = UDim2.new(1, mobile and -310 or -220, 1, mobile and -62 or -85)
         if portrait then
-            self.mission.Size = UDim2.new(1, -28, 0, 118)
-            wallet.Position, wallet.Size = UDim2.fromOffset(14, 188), UDim2.fromOffset(160, 70)
-            self.vitals.Position = UDim2.new(1, -174, 0, 188)
+            self.mission.Size = UDim2.new(1, -28, 0, 136)
+            wallet.Position, wallet.Size = UDim2.fromOffset(14, 206), UDim2.fromOffset(160, 70)
+            self.vitals.Position = UDim2.new(1, -174, 0, 206)
             self.toast.Position = UDim2.new(.05, 0, 0, 270)
             self.toast.Size = UDim2.new(.9, 0, 0, 54)
             self.hazard.Position, self.hazard.Size = UDim2.new(.05, 0, 0, 330), UDim2.new(.9, 0, 0, 48)
             self.hazard.TextSize, self.hazard.TextWrapped = 11, true
-            self.medkitButton.Position = UDim2.new(0, 14, 1, -200)
-            self.carry.Position = UDim2.new(.5, -190, 1, -300)
+            self.medkitButton.Position = UDim2.new(0, 14, 1, -218)
+            self.carry.Position = UDim2.new(.5, -190, 1, -318)
+            self.countdownLabel.Position = UDim2.new(.5, -110, 0, 188)
         else
             self.carry.Position = UDim2.new(.5, -190, 1, -128)
             self.hazard.Position, self.hazard.Size = UDim2.new(.25, 0, 0, 20), UDim2.new(.5, 0, 0, 36)
             self.hazard.TextSize, self.hazard.TextWrapped = mobile and 11 or 14, true
+            self.medkitButton.Position = UDim2.new(1, mobile and -310 or -220, 1, mobile and -62 or -85)
+            self.countdownLabel.Position = UDim2.new(.5, -110, 1, -144)
         end
     end
     workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(responsive)
     workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(responsive)
     responsive()
-    table.insert(self.connections, RunService.Heartbeat:Connect(function()
+    table.insert(self.connections, RunService.Heartbeat:Connect(function(dt)
         local character = player.Character
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
         local health = humanoid and humanoid.Health or 0
@@ -65905,6 +65989,17 @@ function HUD.new(player, callbacks)
         self.stamina.Size = UDim2.new(energy, -24 * energy, 0, 4)
         self.carry.Text = player:GetAttribute("Carrying") and "CARRYING  /  " .. player:GetAttribute("Carrying") .. "   •   SPRINT DISABLED" or ""
         if self.deadline then self.countdown.Text = "DECISION CLOSES IN " .. math.max(0, self.deadline - os.time()) .. "s" end
+        -- Update queue countdown display.
+        if self.queueCountdown and self.queueCountdown > 0 then
+            self.countdownLabel.Text = "ELEVATOR DEPARTS IN " .. math.ceil(self.queueCountdown) .. "s"
+            self.countdownLabel.Visible = true
+        else
+            self.countdownLabel.Visible = false
+        end
+        -- Wayfinder: subtle screen-edge arrow toward the current objective.
+        self:updateWayfinder(dt)
+        -- Interaction cue when close to the current objective target.
+        self:updateInteractCue(character)
         local world = workspace:FindFirstChild("LastStopWorld")
         local runtime = world and world:FindFirstChild("Runtime")
         local folder = runtime and runtime:FindFirstChild("ActiveExpedition")
@@ -65920,6 +66015,65 @@ function HUD.new(player, callbacks)
     return self
 end
 
+-- Called by the client bootstrap when the QueueCountdown remote fires.
+function HUD:setQueueCountdown(seconds)
+    self.queueCountdown = seconds or 0
+end
+
+-- Update the subtle screen-edge wayfinder pointing at the current objective.
+function HUD:updateWayfinder(dt)
+    local camera = Workspace.CurrentCamera
+    if not camera then self.wayfinder.Visible = false return end
+    local character = self.player.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if not root or not self.objectivePosition then
+        self.wayfinder.Visible = false
+        return
+    end
+    local direction = (self.objectivePosition - root.Position).Unit
+    local cameraDirection = camera.CFrame.LookVector
+    local flatDir = Vector3.new(direction.X, 0, direction.Z).Unit
+    local flatCam = Vector3.new(cameraDirection.X, 0, cameraDirection.Z).Unit
+    local dot = flatDir:Dot(flatCam)
+    -- Only show when the objective is off-screen (behind or to the side).
+    if dot > .82 then
+        self.wayfinder.Visible = false
+        return
+    end
+    -- Screen-space angle around the camera's forward axis.
+    local right = camera.CFrame.RightVector
+    local up = Vector3.new(0, 1, 0)
+    local screenX = flatDir:Dot(right)
+    local screenY = flatDir:Dot(up)
+    local angle = math.atan2(-screenX, screenY)
+    local radius = 140
+    local cx, cy = camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2
+    local px = cx + math.sin(angle) * radius
+    local py = cy - math.cos(angle) * radius
+    -- Clamp to screen edges.
+    local margin = 30
+    px = math.clamp(px, margin, camera.ViewportSize.X - margin)
+    py = math.clamp(py, margin, camera.ViewportSize.Y - margin)
+    self.wayfinder.Position = UDim2.fromOffset(px - 10, py - 10)
+    self.wayfinder.Rotation = math.deg(angle) - 90
+    self.wayfinder.Visible = true
+end
+
+-- Show a brief interaction cue when standing near the current objective target.
+function HUD:updateInteractCue(character)
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if not root or not self.objectivePosition then
+        self.interactCue.Visible = false
+        return
+    end
+    local dist = (root.Position - self.objectivePosition).Magnitude
+    if dist <= 14 then
+        self.interactCue.Visible = true
+    else
+        self.interactCue.Visible = false
+    end
+end
+
 function HUD:ApplyState(data)
     self.state = data.state or self.state
     self.title.Text = string.upper(data.floorName or "TERMINUS CONCOURSE")
@@ -65933,11 +66087,23 @@ function HUD:ApplyState(data)
     self.medkitButton.Visible = self.state == "Floor" or self.state == "Escape"
     self.sprintButton.Visible = UserInputService.TouchEnabled and self.medkitButton.Visible
     self.vitals.Visible = self.medkitButton.Visible
+    -- Objective stage + wayfinding data.
+    self.objectiveStage = data.objectiveStage or 0
+    self.objectivePosition = data.objectivePosition
+    if self.objectiveStage and self.objectiveStage > 0 then
+        self.stageLabel.Text = string.format("STAGE %d / 5", math.clamp(self.objectiveStage, 1, 5))
+        self.stageLabel.Visible = true
+    else
+        self.stageLabel.Visible = false
+    end
     for index, segment in self.segments do segment.BackgroundColor3 = index <= (data.progress or 0) and palette.cyan or palette.line end
     if self.state == "Escape" then self.objective.Text = "EXTRACTION OPEN. Return inside the elevator now." end
     if self.state == "Results" then
         self.title.Text = data.result == "BANKED" and "HAUL SECURED" or "EXPEDITION ENDED"
         self.objective.Text = data.message or "Board another expedition when you are ready."
+        self:showResults(data)
+    else
+        self.results.Visible = false
     end
     if data.message then self:ShowToast(data.message) end
 
@@ -65954,9 +66120,31 @@ function HUD:ApplyState(data)
     end
 end
 
--- Expedition transitions can leave CameraSubject pointed at a stale humanoid,
--- which parks Focus under the floor and makes the normal player view black.
--- Re-seat the live humanoid whenever the focus is implausibly far from the head.
+-- Detailed results breakdown shown at the end of an expedition.
+function HUD:showResults(data)
+    self.results.Visible = true
+    local result = data.result
+    local earned = data.earned or 0
+    local secured = data.secured or (data.banked or 0)
+    local lost = data.lost or 0
+    local xp = data.xpEarned or 0
+    if result == "BANKED" then
+        self.resultsTitle.Text = "HAUL SECURED"
+        self.resultsLine1.Text = string.format("COINS EARNED THIS RUN:   %d", earned)
+        self.resultsLine2.Text = string.format("COINS SECURED (BANKED):   %d", secured)
+        self.resultsLine3.Text = string.format("XP EARNED:   %d", xp)
+        self.resultsLine4.Text = ""
+        self.resultsHint.Text = "Your haul is safe. Press BOARD EXPEDITION to descend again — deeper floors pay more."
+    else
+        self.resultsTitle.Text = "EXPEDITION ENDED"
+        self.resultsLine1.Text = string.format("COINS AT RISK LOST:   %d", lost)
+        self.resultsLine2.Text = string.format("COINS SECURED (BANKED):   %d", secured)
+        self.resultsLine3.Text = string.format("XP EARNED:   %d", xp)
+        self.resultsLine4.Text = ""
+        self.resultsHint.Text = "Unbanked coins are lost on failure. Bank early to lock in progress."
+    end
+end
+
 function HUD:EnsureGameplayCamera()
     local camera = workspace.CurrentCamera
     if not camera then return end
@@ -66006,7 +66194,9 @@ function HUD:ShowToast(message)
 end
 function HUD:Destroy()
     self.callbacks.sprint(false)
-    for _, connection in self.connections do connection:Disconnect() end
+    for _, connection in ipairs(self.connections) do
+        connection:Disconnect()
+    end
     self.gui:Destroy()
 end
 return HUD
@@ -66048,6 +66238,121 @@ return InputController
           </Properties>
         </Item>
         <Item class="ModuleScript" referent="2078">
+          <Properties>
+            <string name="Name">OnboardingController</string>
+            <string name="Source"><![CDATA[-- LAST STOP V7 — First-session onboarding.
+--
+-- Optional, contextual, non-blocking tips that explain the core loop to a
+-- first-time player. Returning players (detected from existing profile data)
+-- skip the tutorial entirely. Progress is tracked session-locally so a player
+-- never sees the same tip twice in one sitting, without any ProfileService
+-- schema changes.
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
+
+local Onboarding = {}
+Onboarding.__index = Onboarding
+
+-- Session-local set of tip IDs already shown to this player. Keyed by Player
+-- object so it survives respawns (the LocalScript outlives the character) but
+-- resets when the player rejoins. Never written to a profile.
+local seenTips = setmetatable({}, { __mode = "k" })
+
+local TIPS = {
+	start_expedition = {
+		condition = function(self, state) return state == "Lobby" end,
+		text = "Press BOARD EXPEDITION to begin your first run into the facility.",
+	},
+	boarding = {
+		condition = function(self, state) return state == "Boarding" end,
+		text = "The elevator is boarding. Step inside before the doors close.",
+	},
+	objective_interact = {
+		condition = function(self, state) return state == "Floor" end,
+		text = "Head to the marked waypoint and hold E to interact with the objective.",
+	},
+	sprint = {
+		condition = function(self, state) return state == "Floor" or state == "Escape" end,
+		text = "Hold Shift to sprint. Your stamina drains while running.",
+	},
+	heal = {
+		condition = function(self, state) return state == "Floor" or state == "Escape" end,
+		text = "Press H to use your medkit and restore health.",
+	},
+	coins_at_risk = {
+		condition = function(self, state, data) return (data.unbanked or 0) > 0 end,
+		text = "Coins you collect are AT RISK until you BANK them at the checkpoint.",
+	},
+	bank_continue = {
+		condition = function(self, state) return state == "Decision" end,
+		text = "BANK to secure your haul, or CONTINUE and risk it on the next floor.",
+	},
+}
+
+function Onboarding.new(player, showToast)
+	local self = setmetatable({
+		player = player,
+		showToast = showToast,
+		shown = seenTips[player] or {},
+		lastState = nil,
+	}, Onboarding)
+	seenTips[player] = self.shown
+	return self
+end
+
+-- True when existing profile data indicates this player has played before.
+-- No ProfileService schema changes; we only read what EconomyService already
+-- exposes through the banked-coins snapshot field.
+function Onboarding:isReturning(data)
+	return (data and data.banked or 0) > 0
+end
+
+function Onboarding:hasSeen(tipId)
+	return self.shown[tipId] == true
+end
+
+function Onboarding:markSeen(tipId)
+	self.shown[tipId] = true
+end
+
+-- Show a contextual tip once, as a short toast that does not block gameplay.
+function Onboarding:show(tipId, state, data)
+	if self:hasSeen(tipId) then return end
+	local tip = TIPS[tipId]
+	if not tip then return end
+	if tip.condition and not tip.condition(self, state, data) then return end
+	self:markSeen(tipId)
+	task.defer(function()
+		if self.showToast then self.showToast("TIP · " .. tip.text) end
+	end)
+end
+
+-- Call whenever the expedition state snapshot changes. Fires whichever tip
+-- becomes relevant for the new state, each at most once per session.
+function Onboarding:update(state, data)
+	if self.lastState == state then return end
+	self.lastState = state
+	if self:isReturning(data) then return end
+	self:show("start_expedition", state, data)
+	self:show("boarding", state, data)
+	self:show("objective_interact", state, data)
+	self:show("sprint", state, data)
+	self:show("heal", state, data)
+	self:show("coins_at_risk", state, data)
+	self:show("bank_continue", state, data)
+end
+
+function Onboarding:Destroy()
+	seenTips[self.player] = nil
+end
+
+return Onboarding
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="2079">
           <Properties>
             <string name="Name">SoundscapeController</string>
             <string name="Source"><![CDATA[local SoundService = game:GetService("SoundService")
@@ -66159,13 +66464,13 @@ return Soundscape
       </Item>
     </Item>
   </Item>
-  <Item class="TextChatService" referent="2079">
+  <Item class="TextChatService" referent="2080">
     <Properties>
       <string name="Name">TextChatService</string>
       <token name="ChatVersion">1</token>
     </Properties>
   </Item>
-  <Item class="Workspace" referent="2080">
+  <Item class="Workspace" referent="2081">
     <Properties>
       <string name="Name">Workspace</string>
       <bool name="NeedsPivotMigration">false</bool>

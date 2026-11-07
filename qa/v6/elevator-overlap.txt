@@ -1,0 +1,2 @@
+Elevator: 39 items, 28 base parts
+  AABB overlaps > 0.5 stud: 0

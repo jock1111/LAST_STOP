@@ -1,0 +1,36 @@
+upload_image	Upload Image	Upload a batch of images from http server to Roblox Asset Server, returning imagePath to assetId map, such as {"http://localhost/image.png" 
+open_cloud_invoke	Open Cloud Request	Sends an authenticated request to a Roblox Open Cloud API and returns the status code and response body.
+search_game_tree	Game Tree	Explore the Roblox game hierarchy tree with flat JSON output.
+script_search	File Search	Fast script search based on fuzzy matching against script names.
+skill	Skill	Retrieve detailed knowledge, best practices, or reference material for a specific skill.
+subagent	Subagent	Launch a specialized subagent to handle complex, multi-step tasks autonomously.
+multi_edit	Multi-Edit	Makes multiple edits to a single script in one operation. More efficient than multiple single edits.
+execute_luau	Execute Luau	Executes Luau code in Roblox Studio. Returns the result of the executed code or an error message if the code fails to execute.
+get_console_output	Get Console Output	Get the console output from the Studio output log.
+user_mouse_input	User Mouse Input	Send one or more mouse actions in order: moveTo, mouseButtonDown, mouseButtonUp, mouseButtonClick, scrollUp, scrollDown, or wait. For mouseB
+auto_setup_avatar	Auto Setup Avatar	Rig a static Workspace Model as an R15 avatar and place the result beside it.
+store_image	Store Image	Load an image from a local file path and return an IMAGEID_<id> URI that can be passed to other tools (e.g. as attachedImageUri for generate
+http_get	HTTP GET	Fetches the content of a URL via HTTP GET request. Returns the response body as text.
+character_navigation	Character Navigation	Navigate the character to the given position, or instance.
+script_read	Read File	Reads a script from the Roblox workspace. The output will be returned with line numbers in format: LINE_NUMBERΓåÆLINE_CONTENT.
+screen_capture	Screen Capture	Capture current edit-time screen, return the image data. If camera_position and look_at_position are provided, the camera will be temporaril
+get_studio_state	Get Studio State	Get the state of the studio, including current play state and available datamodel types. If the studio state is not expected, please call st
+user_keyboard_input	User Keyboard Input	Send one or more keyboard inputs to the game in order. Each step is keyDown, keyUp, keyPress (keyDown then keyUp), textInput, or wait.
+generate_scene	Generate Layout	Generates a scene of models and parts from a text prompt and/or reference images, placed within an optional bounding box, and runs the gener
+start_stop_play	Start/Stop Play	Start play the game or stop the play.
+script_grep	Grep Search	Runs a search for a string pattern over all script contents in the game. To avoid overwhelming output, the results are capped at 50 matches.
+wait_job_finished	Wait Job Finished	Wait for a background job to finish. Returns the final status and details when the job reaches a terminal state (Completed, Failed, or Cance
+generate_procedural_model	Primitive Generation	Creates 3D objects built from primitive parts (blocks, spheres, cylinders, wedges) as a ProceduralModel with configurable attributes.
+generate_animation	Animation Generation	Generates new R15+ animations from a prompt, or upscales an existing R6 animation to R15.
+segment_mesh	Mesh Segmentation	Segments an existing mesh into named sub-parts using AI. Requires a source MeshPart or Model and up to 5 part names (e.g. ["head", "body", "
+list_skills	List Skills	Lists every available skill with its source and a description of when to use it. Call this before starting a task to find skills that cover 
+create_skill	Create Skill	Create a new custom skill. The skill will be published and immediately available to the assistant.
+generate_avatar	Generate Avatar	Generate a new rigged, animatable R15 avatar (body, head, and clothing) from a text prompt using Roblox's avatar creation pipeline, then upl
+generate_mesh	Mesh Generation	Generates a textured mesh from a prompt using AI.
+generate_material	Material Generation	Returns the BaseMaterial and Name of the generated MaterialVariant. To use, these must both be set to the Material and MaterialVariant prope
+inspect_instance	Inspect Instance	Inspect a specific Roblox instance to get all its properties, attributes, and children summary.
+generate_texture	Texture Generation	Re-textures an existing mesh using AI, given a text prompt describing the desired look. Requires a source MeshPart or Model. Replaces the so
+search_asset	Search Asset	Searches for assets across Creator Store (public marketplace) and Creator Inventory (user/group/universe).
+edit_skill	Edit Skill	Edit an existing user skill. Can update the name, description, and/or body. Only user-created skills can be edited.
+insert_asset	Insert Asset	Inserts an asset into the game by its numeric Roblox asset ID.
+list_roblox_studios		Lists the connected Roblox Studio instances so a call can be directed at one. Several instances are commonly open at once, so every tool cal

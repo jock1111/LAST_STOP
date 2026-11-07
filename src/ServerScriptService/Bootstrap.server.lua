@@ -115,7 +115,7 @@ local function canQueue(player)
 	return profiles:Get(player) ~= nil and (not currentExpedition or not currentExpedition:IsRunning())
 end
 
-matchmaking = MatchmakingService.new(GameConfig, canQueue, function(group, finished)
+matchmaking = MatchmakingService.new(GameConfig, remotes, canQueue, function(group, finished)
 	local expedition
 	expedition = ExpeditionService.new(
 		GameConfig,

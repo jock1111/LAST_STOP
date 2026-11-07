@@ -1,0 +1,12 @@
+Lobby: 185 items, 149 base parts
+  AABB overlaps > 0.5 stud: 10
+    RivetedCeilingBeam x RivetedCeilingBeam  (82.00 x 1.10 x 0.70)
+    RivetedCeilingBeam x GalleryLintel  (8.00 x 1.00 x 0.70)
+    RivetedCeilingBeam x GalleryLintel  (8.00 x 1.00 x 0.70)
+    RivetedCeilingBeam x GalleryLintel  (8.00 x 1.00 x 0.70)
+    RivetedCeilingBeam x GalleryLintel  (8.00 x 1.00 x 0.70)
+    RivetedCeilingBeam x GalleryLintel  (8.00 x 1.00 x 0.70)
+    RivetedCeilingBeam x GalleryLintel  (8.00 x 1.00 x 0.70)
+    GalleryLintel x GalleryLintel  (8.00 x 1.00 x 1.00)
+    GalleryLintel x GalleryLintel  (8.00 x 1.00 x 1.00)
+    GalleryLintel x GalleryLintel  (8.00 x 1.00 x 1.00)

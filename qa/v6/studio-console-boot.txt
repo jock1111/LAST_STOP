@@ -1,0 +1,10 @@
+[ProfileService] DataStore unavailable; using session-only profiles: You must publish this place to the web to access DataStore.
+[LAST STOP] V6 / VISUAL DEVELOPMENT loaded prefab Lobby + Elevator
+[LAST STOP V4] Audio loaded true true true true
+[ProfileService] could not claim profile for 3 ServerScriptService.Tests.ProfileServiceSpec:46: UpdateAsync failed: p_3
+[ProfileService] Provided store unavailable; using session-only profiles
+[ProfileService] could not claim profile for 5 profile owned by another server
+[ProfileService] renewal failed for 7 failures: 1 reason: nil
+[ProfileService] save failed after retries for 9 ServerScriptService.Tests.ProfileServiceSpec:46: UpdateAsync failed: p_9
+[ProfileService] save failed after retries for 11 conflicting profile ownership
+[QA_V6] FAIL Runtime lobby present :: missing

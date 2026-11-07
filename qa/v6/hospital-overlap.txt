@@ -1,0 +1,2 @@
+Hospital: 158 items, 148 base parts
+  AABB overlaps > 0.5 stud: 0

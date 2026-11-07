@@ -1,0 +1,44 @@
+[ProfileService] DataStore unavailable; using session-only profiles: You must publish this place to the web to access DataStore.
+[LAST STOP] V6 / VISUAL DEVELOPMENT loaded prefab Lobby + Elevator
+[QA_V6] PASS Runtime lobby present :: Workspace.LastStopWorld.Runtime.Lobby
+[QA_V6] PASS Subway template forced for visual run :: weights Subway=100, others=0
+[QA_V6] PASS Elevator display/doors/zone :: display=true left=true right=true zone=true
+[QA_V6] PASS Three indicator dots and rings :: dots=3 rings=3
+[LAST STOP V4] Audio loaded true true true true
+[QA_V6] PASS OPEN display text :: QA OPEN
+[QA_V6] PASS OPEN indicator mode :: open
+[QA_V6] PASS OPEN dot colours :: amber,dark,dark
+[QA_V6] PASS OPEN colours are Color3 :: all Color3
+[QA_V6] PASS OPEN doors displaced from closed :: left=9.80 right=9.80
+[QA_V6] PASS TRAVEL display text :: QA TRAVEL
+[QA_V6] PASS TRAVEL indicator mode :: travel
+[QA_V6] PASS TRAVEL chase changes colours :: amber,cyan,amber -> amber,amber,amber
+[QA_V6] PASS TRAVEL colours are Color3 :: all Color3
+[QA_V6] PASS TRAVEL palette only amber/cyan :: amber,amber,amber
+[QA_V6] PASS TRAVEL doors closed :: left=0.00 right=0.00
+[ProfileService] could not claim profile for 3 ServerScriptService.Tests.ProfileServiceSpec:46: UpdateAsync failed: p_3
+[ProfileService] Provided store unavailable; using session-only profiles
+[ProfileService] could not claim profile for 5 profile owned by another server
+[ProfileService] renewal failed for 7 failures: 1 reason: nil
+[QA_V6] PASS Race A display preserved :: QA RACE OPEN
+[QA_V6] PASS Race A mode open :: open
+[QA_V6] PASS Race A steady colours :: amber,dark,dark
+[QA_V6] PASS Race B display preserved :: QA RACE CLOSED B
+[QA_V6] PASS Race B mode travel :: travel
+[QA_V6] PASS Race B colours are Color3 :: all Color3
+[QA_V6] PASS Lobby restored to idle :: B0 / CONCOURSE
+[QA_V6] harness ready
+[ProfileService] save failed after retries for 9 ServerScriptService.Tests.ProfileServiceSpec:46: UpdateAsync failed: p_9
+[ProfileService] save failed after retries for 11 conflicting profile ownership
+[LAST STOP] Expedition seed 1794511035 players 1
+[Roblox][sabuiltin_Assistant.rbxm.Assistant.Packages._Index.AssistantUI.AssistantUI.Actions.ExecuteLuauActions] The execute_luau changed camera type. Resetting from Enum.CameraType.Custom back to Enum.CameraType.Scriptable
+[LAST STOP] V6 / VISUAL DEVELOPMENT loaded prefab Lobby + Elevator
+[LAST STOP V5] Gameplay recovery QA PASS
+[QA_V6] PASS GameplayRecoverySpec :: completed
+[LAST STOP] V6 / VISUAL DEVELOPMENT loaded prefab Lobby + Elevator
+[QA_V6] PASS TrainHazardSpec :: completed
+[QA_V6] regressions finished
+[LAST STOP] Expedition ended: The floor sealed before the objective was completed.
+[LAST STOP] Expedition seed 1794174596 players 1
+[Roblox][sabuiltin_Assistant.rbxm.Assistant.Packages._Index.AssistantUI.AssistantUI.Actions.ExecuteLuauActions] The execute_luau changed camera type. Resetting from Enum.CameraType.Custom back to Enum.CameraType.Scriptable
+[Roblox][sabuiltin_Assistant.rbxm.Assistant.Packages._Index.AssistantUI.AssistantUI.Actions.ExecuteLuauActions] The execute_luau changed camera type. Resetting from Enum.CameraType.Scriptable back to Enum.CameraType.Custom

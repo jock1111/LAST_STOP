@@ -83,11 +83,17 @@ function ExpeditionService:_send(player, patch)
 		target = self.floorDefinition and self.floorDefinition.Target or 0,
 		unbanked = self.unbanked[player] or 0,
 		banked = self._economyService:GetBankedCoins(player),
+		coinsEarned = self.unbanked[player] or 0,
+		xpEarned = self.pendingXP[player] or 0,
 		activePlayers = self:_activeCount(),
 		seed = self.seed,
 	}
 	for key, value in pairs(patch or {}) do
 		payload[key] = value
+	end
+	if self.state == "Floor" and self.floor then
+		payload.objectiveStage = self.floor:CurrentObjectiveStage()
+		payload.objectivePosition = self.floor:CurrentObjectivePosition()
 	end
 	player:SetAttribute("LastStopSnapshot", game:GetService("HttpService"):JSONEncode(payload))
 	self._remotes.StateChanged:FireClient(player, payload)
@@ -482,12 +488,15 @@ function ExpeditionService:_bankAndReturn(player)
 	end
 	self._banked[player] = true
 	local atRisk = self.unbanked[player] or 0
-	local secured = self._economyService:Bank(player, atRisk, self.pendingXP[player] or 0, self.depth)
+	local xpThisRun = self.pendingXP[player] or 0
+	local secured = self._economyService:Bank(player, atRisk, xpThisRun, self.depth)
 	self.active[player] = nil
 	self.unbanked[player] = 0
 	self.pendingXP[player] = 0
 	self._inventoryService:EndRun(player)
-	self:_send(player, { state = "Results", result = "BANKED", secured = secured, message = "Secured " .. secured .. " coins." })
+	self:_send(player, { state = "Results", result = "BANKED", secured = secured,
+		earned = atRisk, xpEarned = xpThisRun,
+		message = "Secured " .. secured .. " coins." })
 	self:_returnToLobby(player)
 	self._floorService:SetLobbyElevator(true, "LAST STOP")
 end
@@ -497,11 +506,13 @@ function ExpeditionService:_eliminate(player, reason)
 		return
 	end
 	local lost = self.unbanked[player] or 0
+	local xpThisRun = self.pendingXP[player] or 0
 	self.active[player] = nil
 	self.unbanked[player] = 0
 	self.pendingXP[player] = 0
 	self._inventoryService:EndRun(player)
-	self:_send(player, { state = "Results", result = "LOST", lost = lost, message = reason })
+	self:_send(player, { state = "Results", result = "LOST", lost = lost,
+		xpEarned = xpThisRun, message = reason })
 	self:_returnToLobby(player)
 	self._floorService:SetLobbyElevator(true, "LAST STOP")
 end

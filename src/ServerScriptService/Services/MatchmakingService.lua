@@ -1,11 +1,14 @@
 -- Server-local matchmaking for the vertical slice. It supports solo starts and
 -- batches up to twelve queued players; cross-server queues belong in Milestone B.
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MatchmakingService = {}
 MatchmakingService.__index = MatchmakingService
 
-function MatchmakingService.new(config, canQueue, onStart, onToast)
+function MatchmakingService.new(config, remotes, canQueue, onStart, onToast)
 	return setmetatable({
 		_config = config,
+		_remotes = remotes,
 		_canQueue = canQueue,
 		_onStart = onStart,
 		_onToast = onToast,
@@ -36,6 +39,7 @@ function MatchmakingService:RequestJoin(player)
 	if not self._countdown then
 		self._countdown = self._config.LobbyQueueCountdown
 	end
+	self:_broadcastCountdown()
 	return true, "Queued for the next elevator."
 end
 
@@ -48,6 +52,16 @@ function MatchmakingService:Remove(player)
 	end
 	if #self._queue == 0 then
 		self._countdown = nil
+	end
+	self:_broadcastCountdown()
+end
+
+function MatchmakingService:_broadcastCountdown()
+	local remaining = self._countdown or 0
+	for _, player in ipairs(Players:GetPlayers()) do
+		if self._remotes and self._remotes.QueueCountdown then
+			self._remotes.QueueCountdown:FireClient(player, remaining)
+		end
 	end
 end
 
@@ -64,6 +78,7 @@ function MatchmakingService:_startQueuedGroup()
 		end
 	end
 	self._countdown = #self._queue > 0 and self._config.LobbyQueueCountdown or nil
+	self:_broadcastCountdown()
 	if #group > 0 then
 		self._running = true
 		self._onStart(group, function()
@@ -78,9 +93,7 @@ function MatchmakingService:Start()
 			task.wait(1)
 			if not self._running and self._countdown then
 				self._countdown -= 1
-				for player in pairs(self._queued) do
-					self._onToast(player, "Elevator departs in " .. math.max(0, self._countdown) .. "s")
-				end
+				self:_broadcastCountdown()
 				if self._countdown <= 0 then
 					self:_startQueuedGroup()
 				end

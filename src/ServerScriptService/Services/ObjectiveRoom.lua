@@ -252,6 +252,21 @@ function Room:Start()
     task.spawn(function() self:_hazards(self.hazardMode) end)
 end
 
+-- Returns the current objective stage (1..5) and its world position, for
+-- client-side wayfinding cues. Returns nil position when no active target.
+function Room:CurrentObjectiveStage()
+    return self.stage
+end
+
+function Room:CurrentObjectivePosition()
+    for _, entry in pairs(self.targets) do
+        if entry.stage == self.stage and entry.part and entry.part.Parent then
+            return entry.part.Position
+        end
+    end
+    return nil
+end
+
 function Room:_hazards(mode)
     local lastDamage = {}
     local trainHitPass = {}

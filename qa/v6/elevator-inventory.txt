@@ -1,0 +1,3 @@
+Elevator: 39 items, 28 base parts
+  AABB overlaps > 0.5 stud: 1
+    OuterJamb x EntranceSpawn  (1.00 x 1.00 x 1.00)

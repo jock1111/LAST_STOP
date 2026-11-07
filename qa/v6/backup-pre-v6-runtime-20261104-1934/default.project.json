@@ -1,0 +1,101 @@
+{
+  "name": "LAST_STOP",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$path": "src/ReplicatedStorage"
+    },
+    "ServerScriptService": {
+      "$path": "src/ServerScriptService"
+    },
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "LastStopAssets": {
+        "$className": "Folder",
+        "Lobby": {
+          "$path": "assets/prefabs/Lobby.rbxmx"
+        },
+        "Elevator": {
+          "$path": "assets/prefabs/Elevator.rbxmx"
+        },
+        "Stalker": {
+          "$path": "assets/prefabs/Stalker.rbxmx"
+        },
+        "Floors": {
+          "$className": "Folder",
+          "Hospital": {
+            "$path": "assets/prefabs/Hospital.rbxmx"
+          }
+        },
+        "Environment": {
+          "$path": "assets/prefabs/Environment.rbxmx"
+        },
+        "StalkerSkin": {
+          "$path": "assets/prefabs/StalkerSkin.rbxmx"
+        }
+      }
+    },
+    "Workspace": {
+      "$className": "Workspace",
+      "$properties": {
+        "StreamingEnabled": true
+      }
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$path": "src/StarterPlayer/StarterPlayerScripts"
+      }
+    },
+    "Lighting": {
+      "$className": "Lighting",
+      "$properties": {
+        "LightingStyle": "Realistic",
+        "ClockTime": 0,
+        "Technology": "Future"
+      }
+    },
+    "MaterialService": {
+      "$className": "MaterialService",
+      "MetalPlate": {
+        "$properties": {
+          "ColorMap": "rbxassetid://137105055040989",
+          "StudsPerTile": 5,
+          "RoughnessMap": "rbxassetid://88399395045423",
+          "BaseMaterial": "Metal",
+          "MetalnessMap": "rbxassetid://91150503292713",
+          "NormalMap": "rbxassetid://72038388556893"
+        },
+        "$className": "MaterialVariant"
+      },
+      "ChippedConcrete": {
+        "$properties": {
+          "ColorMap": "rbxassetid://80959961009929",
+          "StudsPerTile": 8,
+          "RoughnessMap": "rbxassetid://77587300776452",
+          "BaseMaterial": "Concrete",
+          "MetalnessMap": "rbxassetid://80777076182700",
+          "NormalMap": "rbxassetid://80291856302301"
+        },
+        "$className": "MaterialVariant"
+      },
+      "PaintedSteel": {
+        "$properties": {
+          "ColorMap": "rbxassetid://137105055040989",
+          "StudsPerTile": 5,
+          "RoughnessMap": "rbxassetid://88399395045423",
+          "BaseMaterial": "Metal",
+          "MetalnessMap": "rbxassetid://80777076182700",
+          "NormalMap": "rbxassetid://72038388556893"
+        },
+        "$className": "MaterialVariant"
+      }
+    },
+    "TextChatService": {
+      "$className": "TextChatService",
+      "$properties": {
+        "ChatVersion": "TextChatService"
+      }
+    }
+  }
+}

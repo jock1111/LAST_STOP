@@ -1,0 +1,2 @@
+Lobby: 185 items, 149 base parts
+  AABB overlaps > 0.5 stud: 0

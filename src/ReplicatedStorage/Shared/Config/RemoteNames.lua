@@ -1,5 +1,5 @@
 return {
-RequestSprint = "RequestSprint",
+	RequestSprint = "RequestSprint",
 	RequestQueue = "RequestQueue",
 	RequestState = "RequestState",
 	RequestInteract = "RequestInteract",
@@ -7,4 +7,5 @@ RequestSprint = "RequestSprint",
 	RequestMedkit = "RequestMedkit",
 	StateChanged = "StateChanged",
 	Toast = "Toast",
+	QueueCountdown = "QueueCountdown",
 }

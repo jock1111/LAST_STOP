@@ -1,0 +1,12 @@
+const fs = require('node:fs');
+const xml = fs.readFileSync('assets/prefabs/Lobby.rbxmx', 'utf8');
+const re = /<Item class="([^"]+)" referent="([^"]+)">/g;
+let m, c = 0;
+while ((m = re.exec(xml)) !== null) c++;
+console.log('items found by Item regex:', c);
+const r2 = /<Vector3 name="size">[\s\S]*?<\/Vector3>/g;
+let m2, c2 = 0;
+while ((m2 = r2.exec(xml)) !== null) c2++;
+console.log('size vectors:', c2);
+console.log('has CFrame:', /<CoordinateFrame name="CFrame">/.test(xml));
+console.log('sample size tag:', xml.match(/<Vector3 name="size">[\s\S]{0,80}/)[0]);

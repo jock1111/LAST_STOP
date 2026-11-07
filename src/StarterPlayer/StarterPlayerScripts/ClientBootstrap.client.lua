@@ -7,6 +7,7 @@ local RemoteNames = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChil
 local controllers = script.Parent:WaitForChild("Controllers")
 local HUDController = require(controllers:WaitForChild("HUDController"))
 local InputController = require(controllers:WaitForChild("InputController"))
+local Onboarding = require(controllers:WaitForChild("OnboardingController"))
 
 local soundscape = require(controllers:WaitForChild("SoundscapeController")).new()
 local player = Players.LocalPlayer
@@ -35,15 +36,23 @@ local input = InputController.new(function()
 	remotes.RequestMedkit:FireServer()
 end)
 
+local onboarding = Onboarding.new(player, function(text)
+	hud:ShowToast(text)
+end)
+
 remotes.StateChanged.OnClientEvent:Connect(function(state)
 	if type(state) == "table" then
 		hud:ApplyState(state)
-        soundscape:ApplyState(state)
+		soundscape:ApplyState(state)
+		onboarding:update(state.state, state)
 	end
 end)
 
 remotes.Toast.OnClientEvent:Connect(function(message)
 	hud:ShowToast(message)
+end)
+remotes.QueueCountdown.OnClientEvent:Connect(function(seconds)
+	hud:setQueueCountdown(seconds)
 end)
 -- Recover the authoritative state after listeners are ready and after respawn.
 -- A Results event can arrive while the character/GUI is being recreated.
@@ -57,6 +66,7 @@ player.AncestryChanged:Connect(function(_, parent)
 	if not parent then
 		input:Destroy()
 		hud:Destroy()
+		onboarding:Destroy()
 	end
 end)
 
