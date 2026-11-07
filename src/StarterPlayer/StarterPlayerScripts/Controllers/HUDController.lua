@@ -297,7 +297,11 @@ function HUD:ApplyState(data)
     self.vitals.Visible = self.medkitButton.Visible
     -- Objective stage + wayfinding data.
     self.objectiveStage = data.objectiveStage or 0
-    self.objectivePosition = data.objectivePosition
+    if data.objectivePositionX then
+        self.objectivePosition = Vector3.new(data.objectivePositionX, data.objectivePositionY, data.objectivePositionZ)
+    else
+        self.objectivePosition = nil
+    end
     if self.objectiveStage and self.objectiveStage > 0 then
         self.stageLabel.Text = string.format("STAGE %d / 5", math.clamp(self.objectiveStage, 1, 5))
         self.stageLabel.Visible = true

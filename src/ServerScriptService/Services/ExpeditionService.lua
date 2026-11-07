@@ -93,7 +93,12 @@ function ExpeditionService:_send(player, patch)
 	end
 	if self.state == "Floor" and self.floor then
 		payload.objectiveStage = self.floor:CurrentObjectiveStage()
-		payload.objectivePosition = self.floor:CurrentObjectivePosition()
+		local objPos = self.floor:CurrentObjectivePosition()
+		if objPos then
+			payload.objectivePositionX = objPos.X
+			payload.objectivePositionY = objPos.Y
+			payload.objectivePositionZ = objPos.Z
+		end
 	end
 	player:SetAttribute("LastStopSnapshot", game:GetService("HttpService"):JSONEncode(payload))
 	self._remotes.StateChanged:FireClient(player, payload)
