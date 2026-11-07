@@ -259,8 +259,21 @@ function Room:CurrentObjectiveStage()
 end
 
 function Room:CurrentObjectivePosition()
+    local stage = self.stage
+    -- Stage 3 has two synchronized controls (ControlA and ControlB). Guide
+    -- deterministically to ControlA first (the first operator station), then
+    -- ControlB once ControlA has been activated. This supports both solo and
+    -- cooperative play without arbitrary target selection.
+    if stage == 3 then
+        if not self.controls.ControlA and self.targets.ControlA and self.targets.ControlA.part and self.targets.ControlA.part.Parent then
+            return self.targets.ControlA.part.Position
+        end
+        if self.targets.ControlB and self.targets.ControlB.part and self.targets.ControlB.part.Parent then
+            return self.targets.ControlB.part.Position
+        end
+    end
     for _, entry in pairs(self.targets) do
-        if entry.stage == self.stage and entry.part and entry.part.Parent then
+        if entry.stage == stage and entry.part and entry.part.Parent then
             return entry.part.Position
         end
     end

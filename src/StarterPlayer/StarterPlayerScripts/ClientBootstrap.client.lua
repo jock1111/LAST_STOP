@@ -30,6 +30,13 @@ local hud = HUDController.new(player, {
 	sprint = function(pressed)
 		remotes.RequestSprint:FireServer(pressed)
 	end,
+	hideTutorials = function()
+		onboarding:disable()
+		hud:HideTutorials()
+	end,
+	showTutorialsButton = function(available)
+		hud:ShowTutorialsButton(available)
+	end,
 })
 
 local input = InputController.new(function()
@@ -38,6 +45,9 @@ end)
 
 local onboarding = Onboarding.new(player, function(text)
 	hud:ShowToast(text)
+end, function()
+	onboarding:disable()
+	hud:HideTutorials()
 end)
 
 remotes.StateChanged.OnClientEvent:Connect(function(state)
@@ -45,6 +55,12 @@ remotes.StateChanged.OnClientEvent:Connect(function(state)
 		hud:ApplyState(state)
 		soundscape:ApplyState(state)
 		onboarding:update(state.state, state)
+		-- Show the dismiss-tutorials button to first-time players in the lobby.
+		if state.state == "Lobby" and not onboarding:isReturning(state) then
+			hud:ShowTutorialsButton(true)
+		else
+			hud:ShowTutorialsButton(false)
+		end
 	end
 end)
 

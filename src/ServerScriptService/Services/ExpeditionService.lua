@@ -517,7 +517,7 @@ function ExpeditionService:_eliminate(player, reason)
 	self.pendingXP[player] = 0
 	self._inventoryService:EndRun(player)
 	self:_send(player, { state = "Results", result = "LOST", lost = lost,
-		xpEarned = xpThisRun, message = reason })
+		xpLost = xpThisRun, message = reason })
 	self:_returnToLobby(player)
 	self._floorService:SetLobbyElevator(true, "LAST STOP")
 end

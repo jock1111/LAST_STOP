@@ -58,7 +58,8 @@ end
 
 function MatchmakingService:_broadcastCountdown()
 	local remaining = self._countdown or 0
-	for _, player in ipairs(Players:GetPlayers()) do
+	-- Only queued players see the countdown; it disappears for everyone else.
+	for _, player in ipairs(self._queue) do
 		if self._remotes and self._remotes.QueueCountdown then
 			self._remotes.QueueCountdown:FireClient(player, remaining)
 		end

@@ -80,6 +80,8 @@ function HUD.new(player, callbacks)
     self.stamina = self.health:Clone()
     self.stamina.Position, self.stamina.BackgroundColor3, self.stamina.Parent = UDim2.fromOffset(12, 61), palette.amber, self.vitals
     self.playButton = button(root, "Play", "BOARD EXPEDITION   →", UDim2.new(.5, -120, 1, -86), UDim2.fromOffset(240, 50), palette.cyan, callbacks.queue)
+    self.hideTutorials = button(root, "HideTutorials", "TUTORIALS OFF", UDim2.new(.5, -120, 1, -28), UDim2.fromOffset(240, 22), palette.muted, callbacks.hideTutorials)
+    self.hideTutorials.Visible = false
     self.countdownLabel = label(root, "QueueCountdown", "ELEVATOR DEPARTS IN 0s", UDim2.fromOffset(220, 26), UDim2.new(.5, -110, 1, -144), 12, palette.amber)
     self.countdownLabel.Visible = false
     self.countdownLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -176,12 +178,14 @@ function HUD.new(player, callbacks)
             self.medkitButton.Position = UDim2.new(0, 14, 1, -218)
             self.carry.Position = UDim2.new(.5, -190, 1, -318)
             self.countdownLabel.Position = UDim2.new(.5, -110, 0, 188)
+            self.hideTutorials.Position = UDim2.new(.5, -120, 0, 218)
         else
             self.carry.Position = UDim2.new(.5, -190, 1, -128)
             self.hazard.Position, self.hazard.Size = UDim2.new(.25, 0, 0, 20), UDim2.new(.5, 0, 0, 36)
             self.hazard.TextSize, self.hazard.TextWrapped = mobile and 11 or 14, true
             self.medkitButton.Position = UDim2.new(1, mobile and -310 or -220, 1, mobile and -62 or -85)
             self.countdownLabel.Position = UDim2.new(.5, -110, 1, -144)
+            self.hideTutorials.Position = UDim2.new(.5, -120, 1, -130)
         end
     end
     workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(responsive)
@@ -229,6 +233,8 @@ function HUD:setQueueCountdown(seconds)
 end
 
 -- Update the subtle screen-edge wayfinder pointing at the current objective.
+-- Uses correct camera-space projection via WorldToViewportPoint, clamps the
+-- arrow to the screen edge, and handles objectives behind the camera.
 function HUD:updateWayfinder(dt)
     local camera = Workspace.CurrentCamera
     if not camera then self.wayfinder.Visible = false return end
@@ -238,30 +244,47 @@ function HUD:updateWayfinder(dt)
         self.wayfinder.Visible = false
         return
     end
-    local direction = (self.objectivePosition - root.Position).Unit
-    local cameraDirection = camera.CFrame.LookVector
-    local flatDir = Vector3.new(direction.X, 0, direction.Z).Unit
-    local flatCam = Vector3.new(cameraDirection.X, 0, cameraDirection.Z).Unit
-    local dot = flatDir:Dot(flatCam)
-    -- Only show when the objective is off-screen (behind or to the side).
-    if dot > .82 then
+
+    local screenPos, onScreen = camera:WorldToViewportPoint(self.objectivePosition)
+    if not screenPos then
         self.wayfinder.Visible = false
         return
     end
-    -- Screen-space angle around the camera's forward axis.
-    local right = camera.CFrame.RightVector
-    local up = Vector3.new(0, 1, 0)
-    local screenX = flatDir:Dot(right)
-    local screenY = flatDir:Dot(up)
-    local angle = math.atan2(-screenX, screenY)
-    local radius = 140
-    local cx, cy = camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2
-    local px = cx + math.sin(angle) * radius
-    local py = cy - math.cos(angle) * radius
-    -- Clamp to screen edges.
+    -- If the objective is visible on screen, no wayfinder is needed.
+    if onScreen then
+        self.wayfinder.Visible = false
+        return
+    end
+
+    local vpSize = camera.ViewportSize
+    local cx, cy = vpSize.X / 2, vpSize.Y / 2
     local margin = 30
-    px = math.clamp(px, margin, camera.ViewportSize.X - margin)
-    py = math.clamp(py, margin, camera.ViewportSize.Y - margin)
+
+    local sx, sy = screenPos.X, screenPos.Y
+    local dx = sx - cx
+    local dy = sy - cy
+
+    local px, py
+    if math.abs(dx) < 0.001 and math.abs(dy) < 0.001 then
+        -- Directly behind camera; default to top edge.
+        px, py = cx, margin
+    elseif math.abs(dx) > math.abs(dy) then
+        -- Pointing toward the left or right edge.
+        local sign = dx > 0 and 1 or -1
+        px = cx + sign * (vpSize.X / 2 - margin)
+        py = cy + dy * (vpSize.X / 2 - margin) / math.max(math.abs(dx), 0.001)
+    else
+        -- Pointing toward the top or bottom edge.
+        local sign = dy > 0 and 1 or -1
+        px = cx + dx * (vpSize.Y / 2 - margin) / math.max(math.abs(dy), 0.001)
+        py = cy + sign * (vpSize.Y / 2 - margin)
+    end
+
+    px = math.clamp(px, margin, vpSize.X - margin)
+    py = math.clamp(py, margin, vpSize.Y - margin)
+
+    local angle = math.atan2(px - cx, cy - py)
+
     self.wayfinder.Position = UDim2.fromOffset(px - 10, py - 10)
     self.wayfinder.Rotation = math.deg(angle) - 90
     self.wayfinder.Visible = true
@@ -336,24 +359,26 @@ end
 function HUD:showResults(data)
     self.results.Visible = true
     local result = data.result
-    local earned = data.earned or 0
-    local secured = data.secured or (data.banked or 0)
-    local lost = data.lost or 0
-    local xp = data.xpEarned or 0
+    local earned = data.earned or 0          -- coins at risk this expedition
+    local secured = data.secured or 0        -- coins secured this expedition
+    local banked = data.banked or 0          -- total secured balance (cumulative)
+    local lost = data.lost or 0              -- coins lost this expedition
+    local xpEarned = data.xpEarned or 0      -- XP awarded this expedition
+    local xpLost = data.xpLost or 0          -- XP forfeited this expedition
     if result == "BANKED" then
         self.resultsTitle.Text = "HAUL SECURED"
-        self.resultsLine1.Text = string.format("COINS EARNED THIS RUN:   %d", earned)
-        self.resultsLine2.Text = string.format("COINS SECURED (BANKED):   %d", secured)
-        self.resultsLine3.Text = string.format("XP EARNED:   %d", xp)
-        self.resultsLine4.Text = ""
+        self.resultsLine1.Text = string.format("COINS SECURED THIS RUN:   %d", secured)
+        self.resultsLine2.Text = string.format("TOTAL SECURED BALANCE:   %d", banked)
+        self.resultsLine3.Text = string.format("XP EARNED:   %d", xpEarned)
+        self.resultsLine4.Text = string.format("COINS AT RISK THIS RUN:   %d", earned)
         self.resultsHint.Text = "Your haul is safe. Press BOARD EXPEDITION to descend again — deeper floors pay more."
     else
         self.resultsTitle.Text = "EXPEDITION ENDED"
-        self.resultsLine1.Text = string.format("COINS AT RISK LOST:   %d", lost)
-        self.resultsLine2.Text = string.format("COINS SECURED (BANKED):   %d", secured)
-        self.resultsLine3.Text = string.format("XP EARNED:   %d", xp)
-        self.resultsLine4.Text = ""
-        self.resultsHint.Text = "Unbanked coins are lost on failure. Bank early to lock in progress."
+        self.resultsLine1.Text = string.format("COINS LOST:   %d", lost)
+        self.resultsLine2.Text = string.format("TOTAL SECURED BALANCE:   %d", banked)
+        self.resultsLine3.Text = string.format("XP LOST:   %d", xpLost)
+        self.resultsLine4.Text = string.format("COINS AT RISK THIS RUN:   %d", earned)
+        self.resultsHint.Text = "Unbanked coins and XP are lost on failure. Bank early to lock in progress."
     end
 end
 
@@ -404,6 +429,18 @@ function HUD:ShowToast(message)
         if self.toast.Parent and generation == self.toastGeneration then self.toast.Visible = false end
     end)
 end
+
+-- Hide all tutorial UI (called when the player dismisses tutorials).
+function HUD:HideTutorials()
+    self.hideTutorials.Visible = false
+end
+
+-- Show or hide the dismiss-tutorials button based on whether tutorials are
+-- available for this player.
+function HUD:ShowTutorialsButton(available)
+    self.hideTutorials.Visible = available and self.state == "Lobby" or false
+end
+
 function HUD:Destroy()
     self.callbacks.sprint(false)
     for _, connection in ipairs(self.connections) do
