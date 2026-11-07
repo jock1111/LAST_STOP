@@ -677,8 +677,12 @@ function Environment.BuildSubway()
     local signalBox = Environment.Part(model, "SignalBox", Vector3.new(6, 8, 4), CFrame.new(24, 2, 40), Color3.fromRGB(70, 88, 94), Enum.Material.Metal)
     signalBox:SetAttribute("PbrMaterial", "CorrodedSteel")
     signalBox:SetAttribute("SignalBox", true)
-    for _, color in {Color3.fromRGB(92, 210, 202), Color3.fromRGB(80, 220, 80), Color3.fromRGB(220, 60, 60)} do
-        local lamp = Environment.Part(model, "SignalLamp", Vector3.new(.8, .8, .4), CFrame.new(24, 6, 38), color, Enum.Material.Neon)
+    -- Three distinct signal lamps spaced across the signal-box face
+    -- (red / amber / green, left to right when facing the box).
+    local signalColors = {Color3.fromRGB(220, 60, 60), Color3.fromRGB(233, 166, 77), Color3.fromRGB(80, 220, 80)}
+    for index, color in signalColors do
+        local lamp = Environment.Part(model, "SignalLamp" .. index, Vector3.new(.8, .8, .4),
+            CFrame.new(22.6 + (index - 1) * 1.4, 5.6, 37.9), color, Enum.Material.Neon)
         lamp.CanCollide = false
         lamp:SetAttribute("SignalLamp", true)
     end
@@ -788,16 +792,35 @@ function Environment.BuildSubway()
         pod.CanCollide, pod.CanQuery = false, false
         pod.MaterialVariant = "MetalPlate"
     end
-    -- Headlight: bright white spotlight on the front of the train.
-    local headlight = Environment.Part(train, "Headlight", Vector3.new(2, 2, .4), CFrame.new(0, 3, -106.2), Color3.fromRGB(255, 244, 210), Enum.Material.Neon)
+    -- End fascias: the generated mesh can have open/notched end faces, so both
+    -- ends get a proud cab face panel, windshield band and marker housing.
+    -- The train travels toward +Z, so the cab face is the -64 end.
+    local function fascia(z, isFront)
+        local face = Environment.Part(train, isFront and "FrontFascia" or "RearFascia",
+            Vector3.new(10.6, 7, .5), CFrame.new(0, 1.6, z), Color3.fromRGB(52, 74, 70), Enum.Material.Metal)
+        face.CanCollide, face.CanQuery = false, false
+        face.MaterialVariant = "MetalPlate"
+        local glass = Environment.Part(train, isFront and "FrontWindshield" or "RearWindow",
+            Vector3.new(8, 1.9, .3), CFrame.new(0, 3.7, z + (isFront and .35 or -.35)), Color3.fromRGB(24, 34, 38), Enum.Material.Glass)
+        glass.Transparency, glass.CanCollide, glass.CanQuery = .25, false, false
+        local blind = Environment.Part(train, isFront and "FrontBlind" or "RearBlind", Vector3.new(3.4, 1, .25),
+            CFrame.new(0, 4.9, z + (isFront and .4 or -.4)), Color3.fromRGB(30, 36, 34), Enum.Material.Metal)
+        blind.CanCollide, blind.CanQuery = false, false
+    end
+    fascia(-63.7, true)
+    fascia(-108.3, false)
+    -- Headlight: bright spot on the leading (+Z) end, aimed down the track.
+    local headlight = Environment.Part(train, "Headlight", Vector3.new(2, 2, .4),
+        CFrame.lookAt(Vector3.new(0, 3, -63.4), Vector3.new(0, 1.5, -20)), Color3.fromRGB(255, 244, 210), Enum.Material.Neon)
     headlight.CanCollide = false
     local headlightLight = Instance.new("SpotLight")
     headlightLight.Color, headlightLight.Brightness, headlightLight.Range, headlightLight.Angle = Color3.fromRGB(255, 244, 210), 3, 60, 25
+    headlightLight.Face = Enum.NormalId.Front
     headlightLight.Parent = headlight
     -- Marker lights: red rear, white front.
-    local rearLight = Environment.Part(train, "RearLight", Vector3.new(1, 1, .3), CFrame.new(0, 2, -66), Color3.fromRGB(220, 60, 60), Enum.Material.Neon)
+    local rearLight = Environment.Part(train, "RearLight", Vector3.new(1, 1, .3), CFrame.new(0, 2, -108.6), Color3.fromRGB(220, 60, 60), Enum.Material.Neon)
     rearLight.CanCollide = false
-    local frontLight = Environment.Part(train, "FrontLight", Vector3.new(1, 1, .3), CFrame.new(0, 2, -106), Color3.fromRGB(255, 255, 255), Enum.Material.Neon)
+    local frontLight = Environment.Part(train, "FrontLight", Vector3.new(1, 1, .3), CFrame.new(0, 2, -63.6), Color3.fromRGB(255, 255, 255), Enum.Material.Neon)
     frontLight.CanCollide = false
     train.PrimaryPart = car
 

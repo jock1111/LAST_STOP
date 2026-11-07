@@ -2,7 +2,7 @@
 
 Branch: `v6-visual-development`. Build label: **V6 / VISUAL DEVELOPMENT**.
 
-Canonical artifact: **LAST_STOP.rbxlx**. SHA-256: `2ac28ee6d4b42d99f68d3fa5cda0d26a51d335c03ef166b9b8dbe79325648938`. Size: 3,060,230 bytes.
+Canonical artifact: **LAST_STOP.rbxlx**. SHA-256: `b7ada2dddc1789e50cbc69c4c3f8cbe69cd4cca452ae68a22c1a2fc4b0cfffdd`. Size: 3,061,767 bytes.
 
 Offline build audit: **PASS**. 41 scripts, 61 bones, 2,017 prefab instances (Lobby 557, Elevator 131, Hospital 951, Stalker 40, Environment 53, StalkerSkin 285). `node tools/verify-build.mjs` confirms the saved place contains the current source, prefab, MaterialVariant and PBR definitions.
 
@@ -51,6 +51,83 @@ Root cause of the black normal-camera view: after expedition/respawn transitions
 - Screenshots (player-height and composed): `screenshots/lab-v6-normal.jpg`, `lab-v6-meshes.jpg`, `lab-v6-containment.jpg`, `lab-v6-pumps.jpg`, `lab-v6-catwalk.jpg`, `subway-v6-normal.jpg`, `subway-v6-platform.jpg`, `subway-v6-track.jpg`, `subway-v6-train-active.jpg`, `subway-v6-train-active2.jpg` (the last two captured while `HazardPhase == "Active"`, `TrainZ ≈ 110`).
 
 Note: `execute_luau` runs in a separate VM with its own `require` cache, so runtime weight overrides must be applied inside the server VM (the QA harness was patched in-place for the Subway run); the shipped `FloorConfig` is unchanged.
+
+## Milestone 3 — final quality and gameplay validation (2026-11-05)
+
+### Defect fixes
+
+- **Signal lamps**: the three `SignalLamp` parts were all spawned at `CFrame.new(24, 6, 38)` — identical position. They are now `SignalLamp1/2/3` spaced 1.4 studs apart across the signal-box face (`x = 22.6 / 24.0 / 25.4`, `y = 5.6`, `z = 37.9`) in red / amber / green order.
+- **Train ends**: the generated `subway-train-car` mesh can present open/notched end faces. Both ends now carry a procedural fascia — proud cab-face panel, windshield/glass band and destination blind — so the consist reads as a closed railcar from every angle. The headlight SpotLight was also moved to the **leading (+Z) end** and aimed down the track; previously it sat on the trailing end. Red marker light is on the rear, white on the front.
+
+### Train during Active hazard phase
+
+Captured while `HazardPhase == "Active"` with the train genuinely pivoting (`TrainZ` swept −86 → +130 local, ~54 studs/s):
+
+- `screenshots/subway-v6-train-side.jpg` — side/three-quarter from the west platform at `trainZ ≈ 0` (world z ≈ 700).
+- `screenshots/subway-v6-train-front34.jpg` — front three-quarter at `trainZ ≈ −74` (world z ≈ 626), close to the leading fascia/headlight.
+- `screenshots/subway-v6-train-rear34.jpg` — rear quarter at `trainZ ≈ −60`.
+- `screenshots/subway-v6-train-active.jpg` / `subway-v6-train-active2.jpg` — earlier Active-phase frames.
+
+### Normal camera across transitions
+
+Verified without Scriptable overrides on both floors:
+
+| Transition | Result |
+| --- | --- |
+| Expedition spawn → Floor (Lab & Subway) | `CameraType.Custom`, live humanoid subject, focus at head height, no obstruction |
+| Death → Results/LOST → lobby | `FrameLobby` Scriptable concourse shot (intended) |
+| Re-queue → Floor (2nd expedition) | Custom restored |
+| Decision / Escape / Travel state payloads | Custom maintained |
+| Results/BANKED payload | Scriptable lobby shot (intended) |
+
+**Tooling caveat discovered**: every `execute_luau` client call makes the Studio MCP harness reset `camera.CameraType` to `Scriptable` afterwards (console: *"The execute_luau changed camera type. Resetting…"*). A camera read as Scriptable immediately after a luau call is a QA artifact, not a game state — firing a Floor `StateChanged` restored Custom instantly. All camera verdicts above were taken on the call immediately following each transition.
+
+### Performance (real measurements, `RunService.Heartbeat` sampling, 6 s windows)
+
+| Floor | Quality | Avg FPS | Avg frame | p95 | p99 |
+| --- | --- | --- | --- | --- | --- |
+| AbandonedSubway | Automatic | 60 | 17 ms | 18–19 ms | 20 ms |
+| AbandonedSubway | Level01 (reduced) | 60 | 17 ms | 18 ms | 20 ms |
+| FloodedLaboratory | Automatic | 60 | 17 ms | 21 ms | 26 ms |
+| FloodedLaboratory | Level01 (reduced) | 60 | 17 ms | 19 ms | 24 ms |
+
+Both floors are vsync-bound at 60 FPS even at the lowest quality level; the Laboratory is marginally heavier (water surface, light shafts, particles) but still has ~3 ms of p99 headroom. Quality level was set via `settings().Rendering.QualityLevel` and restored to `Automatic` after each run.
+
+### Mesh asset audit
+
+All eight generated meshes exist in `ServerStorage.LastStopAssets.Environment` as `<name>_Node` Models wrapping a MeshPart with valid `MeshId`/`TextureID` content:
+
+| Mesh | MeshId | Live uses (Subway run) | Live uses (Lab run, milestone 2) |
+| --- | --- | --- | --- |
+| `specimen-canister` | `rbxassetid://95792177258500` | 0 (lab-only) | 24 |
+| `containment-vessel` | `rbxassetid://71376769722129` | 0 (lab-only) | 4 |
+| `pump-machine` | `rbxassetid://87119713783145` | 0 (lab-only) | 2 |
+| `research-console` | `rbxassetid://76438650829671` | 0 (lab-only) | 3 |
+| `subway-train-car` | `rbxassetid://75278130929878` | 1 | — |
+| `station-bench` | `rbxassetid://113924694873821` | 6 | — |
+| `signal-post` | `rbxassetid://71593920777017` | 6 | — |
+| `subway-track-section` | `rbxassetid://134933032983834` | 0 | 0 |
+
+`subway-track-section` is **unused by design**: the 20-stud generation produced a ~1.8×2×1.1 stud mesh that would need extreme non-uniform stretching, so the track is built procedurally (ballast, twin rails, 27 sleepers) which reads better at track scale. The asset remains in the library for future use. The other lab-only meshes show 0 uses on the Subway floor simply because that floor doesn't spawn them.
+
+Ownership: all eight were generated through Studio `generate_mesh` under the logged-in account and publish as `rbxassetid://` content; they load and render in local Play (verified by live census and screenshots). Published ownership/permissions can only be fully verified after a publish, which was not performed.
+
+### Regression suites (this build)
+
+`GameplayRecoverySpec` PASS, `TrainHazardSpec` PASS via `QA_V6_Control` "regressions" on the Laboratory run; `node tools/verify-build.mjs` PASS (SHA above). Studio Output shows only the three pre-existing `rbxassethash://` "Invalid place ID" warnings — identical hashes appear in the archived V5 baseline console, so they predate this work and are unrelated to the new meshes (which use `rbxassetid://`).
+
+### Two-client multiplayer
+
+**Not verifiable in this harness.** The Studio MCP `start_stop_play` tool only exposes solo Play (`is_start`); there is no "Start Server and Players" multi-client mode, and `TwoPlayerRecoverySpec` requires exactly two local clients. Two-player objectives, independent rewards, enemy behavior and recovery-after-death remain covered only by the spec's fixture logic and prior archived evidence — a real limitation, not a pass.
+
+### Remaining limitations (updated)
+
+- Two-client multiplayer unverified (see above).
+- `subway-track-section` mesh unused (procedural trackwork instead).
+- Train fascia is procedural dressing over the generated mesh; the mesh's own end caps may still be visible at glancing angles.
+- Reduced-graphics test used `QualityLevel.Level01`; hardware/mobile coverage unchanged.
+- The three `rbxassethash://` content warnings are pre-existing (V5 baseline) and unrelated to V6 assets.
+- Persistence/DataStore remains session-only in unpublished Studio play.
 
 ## Scope
 
