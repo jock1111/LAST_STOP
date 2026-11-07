@@ -1,0 +1,4 @@
+local ok, err = pcall(function()
+    require(game:GetService("ServerScriptService").Tests.TrainHazardSpec)()
+end)
+return { TrainHazardSpec = { pass = ok, error = ok and nil or tostring(err) } }
